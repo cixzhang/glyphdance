@@ -1,5 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
-import { TopNav, TopNavHeading } from '@astryxdesign/core/TopNav';
+import { TopNav, TopNavHeading, TopNavRenderContext } from '@astryxdesign/core/TopNav';
 import { Button } from '@astryxdesign/core/Button';
 import { Text } from '@astryxdesign/core/Text';
 import Transport from './Transport.tsx';
@@ -39,9 +39,17 @@ const styles = stylex.create({
     alignItems: 'center',
     gap: 6,
   },
+  // Disabled stubs — hidden on mobile to keep the bar compact.
+  stubs: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    '@media (max-width: 760px)': { display: 'none' },
+  },
 });
 
 interface TopBarProps {
+  isMobile: boolean;
   playing: boolean;
   frameLabel: string;
   agentOpen: boolean;
@@ -54,16 +62,20 @@ interface TopBarProps {
 }
 
 export default function TopBar(props: TopBarProps) {
-  const { playing, frameLabel, agentOpen } = props;
+  const { isMobile, playing, frameLabel, agentOpen } = props;
+  // On mobile, TopNav's own mobile-bar mode renders heading + endContent
+  // only — the doc name and transport move out of the way instead of
+  // overlapping. (Transport also lives in the timeline.)
   return (
-    <TopNav
-      xstyle={styles.topNav}
-      heading={
-        <TopNavHeading
-          heading="glyphdance"
-          logo={<span {...stylex.props(styles.logo)}>◈</span>}
-        />
-      }
+    <TopNavRenderContext.Provider value={isMobile ? 'mobile-bar' : 'default'}>
+      <TopNav
+        xstyle={styles.topNav}
+        heading={
+          <TopNavHeading
+            heading="glyphdance"
+            logo={<span {...stylex.props(styles.logo)}>◈</span>}
+          />
+        }
       startContent={
         <div {...stylex.props(styles.doc)}>
           <span {...stylex.props(styles.dirty)} title="Unsaved changes" />
@@ -89,20 +101,22 @@ export default function TopBar(props: TopBarProps) {
       }
       endContent={
         <div {...stylex.props(styles.end)}>
-          <Button
-            label="Grid"
-            variant="ghost"
-            size="sm"
-            tooltip="Toggle grid overlay (soon)"
-            isDisabled
-          />
-          <Button
-            label="100%"
-            variant="ghost"
-            size="sm"
-            tooltip="Canvas zoom (soon)"
-            isDisabled
-          />
+          <div {...stylex.props(styles.stubs)}>
+            <Button
+              label="Grid"
+              variant="ghost"
+              size="sm"
+              tooltip="Toggle grid overlay (soon)"
+              isDisabled
+            />
+            <Button
+              label="100%"
+              variant="ghost"
+              size="sm"
+              tooltip="Canvas zoom (soon)"
+              isDisabled
+            />
+          </div>
           <Button
             label="Export"
             variant="primary"
@@ -115,11 +129,12 @@ export default function TopBar(props: TopBarProps) {
             icon={<span>✦</span>}
             variant={agentOpen ? 'primary' : 'ghost'}
             size="sm"
-            tooltip="Toggle the agent panel"
+            tooltip={isMobile ? 'Open the panels sheet' : 'Toggle the agent panel'}
             onClick={props.onToggleAgent}
           />
         </div>
       }
-    />
+      />
+    </TopNavRenderContext.Provider>
   );
 }

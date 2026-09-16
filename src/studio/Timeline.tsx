@@ -14,11 +14,25 @@ const styles = stylex.create({
     padding: '10px 14px',
     backgroundColor: 'var(--gd-bg1)',
     borderTop: '1px solid var(--gd-border)',
+    '@media (max-width: 760px)': {
+      gap: 8,
+      padding: '8px 10px',
+    },
   },
   cluster: {
     display: 'flex',
     alignItems: 'center',
     gap: 8,
+    '@media (max-width: 760px)': {
+      gap: 4,
+    },
+  },
+  // Frame-rate / range readouts — hidden on mobile where every pixel counts.
+  meta: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    '@media (max-width: 760px)': { display: 'none' },
   },
   filmstrip: {
     flex: 1,
@@ -134,12 +148,14 @@ export default function Timeline(props: TimelineProps) {
           tooltip="Toggle onion skinning"
           onClick={props.onToggleOnion}
         />
-        <Text type="code" size="3xs" color="disabled">
-          12 fps
-        </Text>
-        <Text type="code" size="3xs" color="disabled">
-          1–{STUB_FRAMES.length}
-        </Text>
+        <div {...stylex.props(styles.meta)}>
+          <Text type="code" size="3xs" color="disabled">
+            12 fps
+          </Text>
+          <Text type="code" size="3xs" color="disabled">
+            1–{STUB_FRAMES.length}
+          </Text>
+        </div>
       </div>
     </div>
   );

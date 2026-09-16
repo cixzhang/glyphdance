@@ -13,12 +13,39 @@ const styles = stylex.create({
     paddingBottom: 10,
     backgroundColor: 'var(--gd-bg1)',
     borderRight: '1px solid var(--gd-border)',
+    // Mobile: the rail becomes a horizontal tool strip docked at the bottom.
+    '@media (max-width: 760px)': {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      gap: 6,
+      height: 'auto',
+      padding: '8px 12px calc(8px + env(safe-area-inset-bottom))',
+      overflowX: 'auto',
+      overflowY: 'hidden',
+      borderRight: 'none',
+      borderTop: '1px solid var(--gd-border)',
+      // Hide the scrollbar on the strip; it still scrolls by touch.
+      scrollbarWidth: 'none',
+    },
+  },
+  tool: {
+    // Base value is the flex default; the media query pins buttons at full
+    // size inside the scrolling strip. (StyleX requires a non-conditional
+    // property alongside conditional ones.)
+    flexShrink: 1,
+    '@media (max-width: 760px)': { flexShrink: 0 },
   },
   toolIcon: {
     fontSize: 17,
     lineHeight: 1,
   },
-  spacer: { flex: 1 },
+  spacer: {
+    flex: 1,
+    // In the scrolling strip the spacer would collapse to nothing — the
+    // undo/redo buttons simply follow the tools.
+    '@media (max-width: 760px)': { display: 'none' },
+  },
 });
 
 const TOOLS = [
@@ -42,6 +69,7 @@ export default function ToolRail() {
       {TOOLS.map((t) => (
         <IconButton
           key={t.id}
+          xstyle={styles.tool}
           label={t.label}
           icon={
             <span {...stylex.props(styles.toolIcon)} aria-hidden="true">
@@ -57,6 +85,7 @@ export default function ToolRail() {
       <div {...stylex.props(styles.spacer)} />
       <IconButton
         label="Undo"
+        xstyle={styles.tool}
         icon={
           <span {...stylex.props(styles.toolIcon)} aria-hidden="true">
             ↺
@@ -69,6 +98,7 @@ export default function ToolRail() {
       />
       <IconButton
         label="Redo"
+        xstyle={styles.tool}
         icon={
           <span {...stylex.props(styles.toolIcon)} aria-hidden="true">
             ↻

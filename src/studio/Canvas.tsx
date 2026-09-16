@@ -22,6 +22,13 @@ const styles = stylex.create({
     userSelect: 'none',
     whiteSpace: 'pre',
   },
+  // Phones get a much larger grid — the canvas is the whole stage on mobile.
+  // (Kept separate from `grid` so thumbnails are unaffected.)
+  gridMobile: {
+    '@media (max-width: 760px)': {
+      fontSize: 'clamp(15px, 5vw, 24px)',
+    },
+  },
   row: { display: 'block', height: '1.35em' },
   bg: { color: '#232a33' },
   inv: { color: 'var(--gd-invader)', textShadow: '0 0 12px rgba(74,222,128,0.35)' },
@@ -79,6 +86,8 @@ const styles = stylex.create({
     border: '1px dashed var(--gd-border)',
     borderRadius: 6,
     padding: '4px 8px',
+    // Scaffold chrome — hidden on mobile where space is precious.
+    '@media (max-width: 760px)': { display: 'none' },
   },
 });
 
@@ -103,7 +112,7 @@ export function AsciiGrid({
     [frameIndex, onionOn],
   );
   return (
-    <pre {...stylex.props(styles.grid)} aria-label="Animation canvas">
+    <pre {...stylex.props(styles.grid, styles.gridMobile)} aria-label="Animation canvas">
       {cells.map((row: Cell[], r: number) => (
         <span key={r} {...stylex.props(styles.row)}>
           {row.map((cell, c) => {

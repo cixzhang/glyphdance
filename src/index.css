@@ -27,6 +27,8 @@ body {
   background-color: #101215;
   color: #d7dce2;
   overflow: hidden;
+  /* The studio is a full-screen app: no pull-to-refresh or scroll chaining. */
+  overscroll-behavior: none;
 }
 
 * {
