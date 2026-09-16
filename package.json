@@ -1,0 +1,29 @@
+{
+  "name": "glyphdance",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@astryxdesign/core": "canary",
+    "@astryxdesign/theme-neutral": "canary",
+    "@stylexjs/stylex": "^0.19.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@astryxdesign/build": "canary",
+    "@astryxdesign/cli": "canary",
+    "@stylexjs/unplugin": "^0.19.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.0.3",
+    "typescript": "~6.0.2",
+    "unplugin": "^2.3.11",
+    "vite": "^8.1.0"
+  }
+}
