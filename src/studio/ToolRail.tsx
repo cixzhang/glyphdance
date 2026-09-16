@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
+import { IconButton } from '@astryxdesign/core/IconButton';
 
 const styles = stylex.create({
   rail: {
@@ -13,38 +14,11 @@ const styles = stylex.create({
     backgroundColor: 'var(--gd-bg1)',
     borderRight: '1px solid var(--gd-border)',
   },
-  tool: {
-    appearance: 'none',
-    border: '1px solid transparent',
-    backgroundColor: 'transparent',
-    color: 'var(--gd-dim)',
-    borderRadius: 8,
-    width: 42,
-    height: 42,
-    fontSize: 18,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    ':hover': { backgroundColor: 'var(--gd-bg3)', color: 'var(--gd-text)' },
-  },
-  toolActive: {
-    backgroundColor: 'var(--gd-bg3)',
-    color: 'var(--gd-invader)',
-    borderColor: 'var(--gd-border)',
+  toolIcon: {
+    fontSize: 17,
+    lineHeight: 1,
   },
   spacer: { flex: 1 },
-  soon: {
-    width: 42,
-    height: 42,
-    borderRadius: 8,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: 'var(--gd-faint)',
-    fontSize: 16,
-    cursor: 'not-allowed',
-  },
 });
 
 const TOOLS = [
@@ -58,29 +32,53 @@ const TOOLS = [
   { id: 'pick', icon: '◉', label: 'Eyedropper' },
 ] as const;
 
+// NOTE: IconButton has no selected/pressed state, so the active tool is shown
+// via the primary variant — a workaround worth revisiting (SideNavItem has
+// isSelected but is built for labeled rows, not an icon-only rail).
 export default function ToolRail() {
   const [active, setActive] = useState<string>('brush');
   return (
     <div {...stylex.props(styles.rail)} role="toolbar" aria-label="Tools">
       {TOOLS.map((t) => (
-        <button
+        <IconButton
           key={t.id}
-          {...stylex.props(styles.tool, active === t.id && styles.toolActive)}
+          label={t.label}
+          icon={
+            <span {...stylex.props(styles.toolIcon)} aria-hidden="true">
+              {t.icon}
+            </span>
+          }
+          variant={active === t.id ? 'primary' : 'ghost'}
+          size="md"
+          tooltip={`${t.label} (stub — painting arrives in Phase 1)`}
           onClick={() => setActive(t.id)}
-          title={`${t.label} (stub — painting arrives in Phase 1)`}
-          aria-pressed={active === t.id}
-          aria-label={t.label}
-        >
-          {t.icon}
-        </button>
+        />
       ))}
       <div {...stylex.props(styles.spacer)} />
-      <span {...stylex.props(styles.soon)} title="Undo — soon">
-        ↺
-      </span>
-      <span {...stylex.props(styles.soon)} title="Redo — soon">
-        ↻
-      </span>
+      <IconButton
+        label="Undo"
+        icon={
+          <span {...stylex.props(styles.toolIcon)} aria-hidden="true">
+            ↺
+          </span>
+        }
+        variant="ghost"
+        size="md"
+        tooltip="Undo — soon"
+        isDisabled
+      />
+      <IconButton
+        label="Redo"
+        icon={
+          <span {...stylex.props(styles.toolIcon)} aria-hidden="true">
+            ↻
+          </span>
+        }
+        variant="ghost"
+        size="md"
+        tooltip="Redo — soon"
+        isDisabled
+      />
     </div>
   );
 }

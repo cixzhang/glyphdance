@@ -1,4 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
+import { IconButton } from '@astryxdesign/core/IconButton';
 
 const styles = stylex.create({
   row: {
@@ -6,28 +7,14 @@ const styles = stylex.create({
     alignItems: 'center',
     gap: 2,
   },
-  btn: {
-    appearance: 'none',
-    border: '1px solid transparent',
-    backgroundColor: 'transparent',
-    color: 'var(--gd-dim)',
-    borderRadius: 6,
-    cursor: 'pointer',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    ':hover': { backgroundColor: 'var(--gd-bg3)', color: 'var(--gd-text)' },
-  },
-  play: {
-    color: 'var(--gd-text)',
-    backgroundColor: 'var(--gd-bg3)',
-    borderColor: 'var(--gd-border)',
+  glyph: {
+    fontSize: 13,
+    lineHeight: 1,
   },
 });
 
 interface TransportProps {
   playing: boolean;
-  size?: number;
   onJumpStart: () => void;
   onStepBack: () => void;
   onTogglePlay: () => void;
@@ -35,64 +22,61 @@ interface TransportProps {
   onJumpEnd: () => void;
 }
 
+function Glyph({ children }: { children: string }) {
+  return <span {...stylex.props(styles.glyph)}>{children}</span>;
+}
+
 /** Playback transport cluster, shared by the top bar and the timeline. */
 export default function Transport({
   playing,
-  size = 15,
   onJumpStart,
   onStepBack,
   onTogglePlay,
   onStepFwd,
   onJumpEnd,
 }: TransportProps) {
-  const box = { width: 30, height: 30, fontSize: size };
   return (
     <div {...stylex.props(styles.row)} role="group" aria-label="Playback transport">
-      <button
-        {...stylex.props(styles.btn)}
-        style={box}
+      <IconButton
+        label="Jump to first frame"
+        icon={<Glyph>⏮</Glyph>}
+        variant="ghost"
+        size="sm"
+        tooltip="Jump to first frame"
         onClick={onJumpStart}
-        title="Jump to first frame"
-        aria-label="Jump to first frame"
-      >
-        ⏮
-      </button>
-      <button
-        {...stylex.props(styles.btn)}
-        style={box}
+      />
+      <IconButton
+        label="Previous frame"
+        icon={<Glyph>◀</Glyph>}
+        variant="ghost"
+        size="sm"
+        tooltip="Previous frame"
         onClick={onStepBack}
-        title="Previous frame"
-        aria-label="Previous frame"
-      >
-        ◀
-      </button>
-      <button
-        {...stylex.props(styles.btn, styles.play)}
-        style={box}
+      />
+      <IconButton
+        label={playing ? 'Pause' : 'Play'}
+        icon={<Glyph>{playing ? '❚❚' : '▶'}</Glyph>}
+        variant="secondary"
+        size="sm"
+        tooltip={playing ? 'Pause' : 'Play'}
         onClick={onTogglePlay}
-        title={playing ? 'Pause' : 'Play'}
-        aria-label={playing ? 'Pause' : 'Play'}
-      >
-        {playing ? '❚❚' : '▶'}
-      </button>
-      <button
-        {...stylex.props(styles.btn)}
-        style={box}
+      />
+      <IconButton
+        label="Next frame"
+        icon={<Glyph>▶</Glyph>}
+        variant="ghost"
+        size="sm"
+        tooltip="Next frame"
         onClick={onStepFwd}
-        title="Next frame"
-        aria-label="Next frame"
-      >
-        ▶
-      </button>
-      <button
-        {...stylex.props(styles.btn)}
-        style={box}
+      />
+      <IconButton
+        label="Jump to last frame"
+        icon={<Glyph>⏭</Glyph>}
+        variant="ghost"
+        size="sm"
+        tooltip="Jump to last frame"
         onClick={onJumpEnd}
-        title="Jump to last frame"
-        aria-label="Jump to last frame"
-      >
-        ⏭
-      </button>
+      />
     </div>
   );
 }

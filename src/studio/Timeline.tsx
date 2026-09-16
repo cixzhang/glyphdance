@@ -1,4 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
+import { IconButton } from '@astryxdesign/core/IconButton';
+import { Text } from '@astryxdesign/core/Text';
 import Transport from './Transport.tsx';
 import { AsciiThumb } from './Canvas.tsx';
 import { STUB_FRAMES } from './document.ts';
@@ -27,6 +29,7 @@ const styles = stylex.create({
     padding: '2px',
     minWidth: 0,
   },
+  // Frame thumbnails are the app's domain (character cells) — kept custom.
   thumb: {
     appearance: 'none',
     backgroundColor: 'var(--gd-bg2)',
@@ -44,49 +47,16 @@ const styles = stylex.create({
     borderColor: 'var(--gd-invader)',
     boxShadow: '0 0 0 1px var(--gd-invader)',
   },
-  thumbLabel: {
-    fontFamily: 'var(--gd-mono)',
-    fontSize: 9,
-    color: 'var(--gd-dim)',
-  },
-  thumbLabelActive: { color: 'var(--gd-invader)' },
-  addBtn: {
-    appearance: 'none',
-    backgroundColor: 'transparent',
-    border: '1px dashed var(--gd-border)',
-    borderRadius: 8,
-    color: 'var(--gd-faint)',
-    fontSize: 18,
-    minWidth: 52,
-    cursor: 'not-allowed',
-  },
-  toggle: {
-    appearance: 'none',
-    border: '1px solid var(--gd-border)',
-    backgroundColor: 'transparent',
-    color: 'var(--gd-dim)',
-    borderRadius: 6,
-    fontSize: 11,
-    padding: '6px 10px',
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-    ':hover': { backgroundColor: 'var(--gd-bg3)', color: 'var(--gd-text)' },
-  },
-  toggleOn: { color: 'var(--gd-onion)', borderColor: 'var(--gd-onion)' },
-  meta: {
-    fontFamily: 'var(--gd-mono)',
-    fontSize: 10,
-    color: 'var(--gd-faint)',
-    whiteSpace: 'nowrap',
-    display: 'flex',
-    alignItems: 'center',
-  },
   playhead: {
     width: 3,
     alignSelf: 'stretch',
     backgroundColor: 'var(--gd-invader)',
     borderRadius: 2,
     opacity: 0.85,
+  },
+  addIcon: {
+    fontSize: 16,
+    lineHeight: 1,
   },
 });
 
@@ -110,7 +80,6 @@ export default function Timeline(props: TimelineProps) {
       <div {...stylex.props(styles.cluster)}>
         <Transport
           playing={playing}
-          size={13}
           onJumpStart={props.onJumpStart}
           onStepBack={props.onStepBack}
           onTogglePlay={props.onTogglePlay}
@@ -130,26 +99,47 @@ export default function Timeline(props: TimelineProps) {
             title={`Frame ${f.id} · hold ${f.holdMs}ms`}
           >
             <AsciiThumb frameIndex={i} />
-            <span {...stylex.props(styles.thumbLabel, i === frameIndex && styles.thumbLabelActive)}>
+            <Text
+              type="code"
+              size="3xs"
+              color={i === frameIndex ? 'accent' : 'secondary'}
+            >
               {f.id} · {f.holdMs}ms
-            </span>
+            </Text>
           </button>
         ))}
-        <button {...stylex.props(styles.addBtn)} title="Add frame — soon" disabled aria-label="Add frame (coming soon)">
-          +
-        </button>
+        <IconButton
+          label="Add frame"
+          icon={
+            <span {...stylex.props(styles.addIcon)} aria-hidden="true">
+              +
+            </span>
+          }
+          variant="ghost"
+          size="md"
+          tooltip="Add frame — soon"
+          isDisabled
+        />
       </div>
       <div {...stylex.props(styles.cluster)}>
-        <button
-          {...stylex.props(styles.toggle, onionOn && styles.toggleOn)}
+        <IconButton
+          label="Toggle onion skinning"
+          icon={
+            <span {...stylex.props(styles.addIcon)} aria-hidden="true">
+              ◑
+            </span>
+          }
+          variant={onionOn ? 'primary' : 'ghost'}
+          size="sm"
+          tooltip="Toggle onion skinning"
           onClick={props.onToggleOnion}
-          aria-pressed={onionOn}
-          title="Toggle onion skinning"
-        >
-          ◑ Onion
-        </button>
-        <span {...stylex.props(styles.meta)}>12 fps</span>
-        <span {...stylex.props(styles.meta)}>1–{STUB_FRAMES.length}</span>
+        />
+        <Text type="code" size="3xs" color="disabled">
+          12 fps
+        </Text>
+        <Text type="code" size="3xs" color="disabled">
+          1–{STUB_FRAMES.length}
+        </Text>
       </div>
     </div>
   );
