@@ -18,6 +18,7 @@ body,
   --gd-accent: #7cc7ff;
   --gd-amber: #f5a524;
   --gd-onion: #b48ce8;
+  --gd-bubble: #2b3a4a;
   --gd-mono: 'Cozette', ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -41,4 +42,24 @@ body {
 
 button {
   font-family: inherit;
+}
+
+/* Light mode: Astryx sets data-theme on <html>, so the studio's own chrome
+   tokens follow it. The ASCII stage itself stays dark in both modes — the
+   syntax palettes are darkroom palettes, and the art pops on a dark stage. */
+html[data-theme='light'] {
+  --gd-bg0: #e8ebef;
+  --gd-bg1: #f4f6f8;
+  --gd-bg2: #ffffff;
+  --gd-bg3: #ffffff;
+  --gd-border: #d3d9e0;
+  --gd-text: #1b2026;
+  --gd-dim: #5a6572;
+  --gd-faint: #98a1ac;
+  --gd-invader: #15803d;
+  --gd-star: #a16207;
+  --gd-accent: #0b6bcb;
+  --gd-amber: #b45309;
+  --gd-onion: #7c3aed;
+  --gd-bubble: #d9e8f5;
 }

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
+import { Theme } from '@astryxdesign/core/theme';
+import { glyphdanceTheme } from './studio/glyphdance.js';
 import TopBar from './studio/TopBar.tsx';
 import ToolRail from './studio/ToolRail.tsx';
 import Canvas from './studio/Canvas.tsx';
@@ -47,8 +49,33 @@ const styles = stylex.create({
 
 const LAST = STUB_FRAMES.length - 1;
 
+type ThemeMode = 'light' | 'dark';
+
+const MODE_KEY = 'glyphdance:mode';
+
+function initialMode(): ThemeMode {
+  try {
+    return window.localStorage.getItem(MODE_KEY) === 'light' ? 'light' : 'dark';
+  } catch {
+    return 'dark';
+  }
+}
+
 export default function App() {
   const isMobile = useIsMobile();
+  // The studio is a darkroom by default; the switch persists the choice.
+  const [mode, setMode] = useState<ThemeMode>(initialMode);
+  const toggleMode = useCallback(() => {
+    setMode((m) => {
+      const next = m === 'dark' ? 'light' : 'dark';
+      try {
+        window.localStorage.setItem(MODE_KEY, next);
+      } catch {
+        /* private mode — the toggle still works for the session */
+      }
+      return next;
+    });
+  }, []);
   const [frameIndex, setFrameIndex] = useState(1);
   const [playing, setPlaying] = useState(false);
   const [onionOn, setOnionOn] = useState(true);
@@ -112,6 +139,7 @@ export default function App() {
   const frameLabel = `${frameIndex + 1} / ${STUB_FRAMES.length}`;
 
   return (
+    <Theme theme={glyphdanceTheme} mode={mode}>
     <div {...stylex.props(styles.root)}>
       <div {...stylex.props(styles.topbar)}>
         <TopBar
@@ -126,6 +154,8 @@ export default function App() {
           onJumpEnd={jumpEnd}
           onToggleAgent={togglePanels}
           onOpenControls={() => setDrawerOpen(true)}
+          mode={mode}
+          onToggleMode={toggleMode}
         />
       </div>
       <div {...stylex.props(styles.rail)}>
@@ -169,5 +199,6 @@ export default function App() {
         />
       </div>
     </div>
+    </Theme>
   );
 }

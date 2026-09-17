@@ -20,6 +20,8 @@ import {
   Potion,
   Redo,
   Sparkles,
+  Sun,
+  Moon,
   Undo,
 } from 'pixelarticons/react';
 
@@ -65,3 +67,5 @@ export const IconPlus = px(Plus);
 export const IconSparkles = px(Sparkles);
 export const IconPanels = px(Layout);
 export const IconOnion = px(Copy);
+export const IconSun = px(Sun);
+export const IconMoon = px(Moon);

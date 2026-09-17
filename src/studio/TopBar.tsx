@@ -2,7 +2,7 @@ import * as stylex from '@stylexjs/stylex';
 import { TopNav, TopNavHeading, TopNavRenderContext } from '@astryxdesign/core/TopNav';
 import { Button } from '@astryxdesign/core/Button';
 import { IconButton } from '@astryxdesign/core/IconButton';
-import { IconPanels, IconSparkles } from './icons';
+import { IconMoon, IconPanels, IconSparkles, IconSun } from './icons';
 import { Text } from '@astryxdesign/core/Text';
 import Transport from './Transport.tsx';
 import { DOC_NAME } from './document.ts';
@@ -71,10 +71,12 @@ interface TopBarProps {
   onJumpEnd: () => void;
   onToggleAgent: () => void;
   onOpenControls: () => void;
+  mode: 'light' | 'dark';
+  onToggleMode: () => void;
 }
 
 export default function TopBar(props: TopBarProps) {
-  const { isMobile, playing, frameLabel, agentOpen } = props;
+  const { isMobile, playing, frameLabel, agentOpen, mode, onToggleMode } = props;
   // On mobile, TopNav's own mobile-bar mode renders heading + endContent
   // only — the doc name and transport move out of the way instead of
   // overlapping. (Transport also lives in the timeline.)
@@ -148,6 +150,14 @@ export default function TopBar(props: TopBarProps) {
               onClick={props.onOpenControls}
             />
           </div>
+          <IconButton
+            label={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            icon={mode === 'dark' ? <IconSun /> : <IconMoon />}
+            variant="ghost"
+            size="sm"
+            tooltip={mode === 'dark' ? 'Light mode' : 'Dark mode'}
+            onClick={onToggleMode}
+          />
           <Button
             label="Agent"
             icon={<IconSparkles />}

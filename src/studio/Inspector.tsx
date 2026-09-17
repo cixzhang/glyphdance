@@ -51,7 +51,7 @@ const styles = stylex.create({
   },
   bubbleUser: {
     alignSelf: 'flex-end',
-    backgroundColor: '#2b3a4a',
+    backgroundColor: 'var(--gd-bubble)',
     borderRadius: '12px 12px 3px 12px',
     padding: '7px 10px',
     maxWidth: '92%',
