@@ -14,7 +14,16 @@ import { BottomSheet } from '@astryxdesign/core/BottomSheet';
 import { MobileNav } from '@astryxdesign/core/MobileNav';
 import { IconCheck, IconClose, IconSparkles } from './icons';
 import DocumentPanel from './DocumentPanel.tsx';
-import { ET_SPRITES, PLAYER_SPRITES, themeById } from './scene.ts';
+import {
+  ET_SPRITES,
+  PLAYER_SPRITES,
+  CRITTER_SPRITES,
+  SPACE_SPRITES,
+  NATURE_SPRITES,
+  PLAY_SPRITES,
+  themeById,
+} from './scene.ts';
+import { kindSwatchKey } from './stamps.ts';
 import { downloadFramesGif } from './gif.ts';
 import {
   downloadAllFramesText,
@@ -123,6 +132,11 @@ const styles = stylex.create({
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
     gap: 8,
+    // Mobile: 4-up so a whole category fits in a row or two.
+    '@media (max-width: 760px)': {
+      gridTemplateColumns: 'repeat(4, 1fr)',
+      gap: 6,
+    },
   },
   stamp: {
     appearance: 'none',
@@ -136,6 +150,12 @@ const styles = stylex.create({
     flexDirection: 'column',
     gap: 6,
     ':hover': { borderColor: 'var(--color-text-disabled)' },
+    '@media (max-width: 760px)': {
+      padding: 6,
+      gap: 0,
+      borderRadius: 6,
+      alignItems: 'center',
+    },
   },
   stampActive: {
     borderColor: 'var(--gd-accent)',
@@ -153,6 +173,16 @@ const styles = stylex.create({
     alignItems: 'center',
     justifyContent: 'center',
     whiteSpace: 'pre',
+    '@media (max-width: 760px)': {
+      fontSize: 8,
+      lineHeight: 1.2,
+      minHeight: 40,
+    },
+  },
+  // Stamp id labels hide on mobile (4-up grid); the button keeps an
+  // aria-label so the name is still announced.
+  stampName: {
+    '@media (max-width: 760px)': { display: 'none' },
   },
   // Delete control on a custom stamp card: positioned overlay.
   customDel: {
@@ -639,8 +669,12 @@ function StampsPanel({
   // in the player color. (Custom stamps below keep their own fg.)
   const swatch = themeById(doc.themeId)[mode];
   const sections = [
-    { title: 'Invaders', sprites: ET_SPRITES, color: swatch.invader },
-    { title: 'Ships', sprites: PLAYER_SPRITES, color: swatch.player },
+    { title: 'Invaders', sprites: ET_SPRITES, color: swatch[kindSwatchKey('invader')] },
+    { title: 'Ships', sprites: PLAYER_SPRITES, color: swatch[kindSwatchKey('player')] },
+    { title: 'Critters', sprites: CRITTER_SPRITES, color: swatch[kindSwatchKey('critter')] },
+    { title: 'Space', sprites: SPACE_SPRITES, color: swatch[kindSwatchKey('space')] },
+    { title: 'Nature', sprites: NATURE_SPRITES, color: swatch[kindSwatchKey('nature')] },
+    { title: 'Play', sprites: PLAY_SPRITES, color: swatch[kindSwatchKey('play')] },
   ];
   return (
     <Card padding={3}>
@@ -660,6 +694,7 @@ function StampsPanel({
                     {...stylex.props(styles.stamp, selected && styles.stampActive)}
                     onClick={() => onBrushChange({ tool: 'stamp', stampId: s.id })}
                     title={`Stamp: ${s.id} — tap the canvas to place`}
+                    aria-label={`Stamp: ${s.id}`}
                     aria-pressed={selected}
                   >
                     <pre
@@ -669,7 +704,9 @@ function StampsPanel({
                     >
                       {s.frames[0].join('\n')}
                     </pre>
-                    <Text type="label">{s.id}</Text>
+                    <span {...stylex.props(styles.stampName)}>
+                      <Text type="label">{s.id}</Text>
+                    </span>
                   </button>
                 );
               })}
@@ -700,6 +737,7 @@ function StampsPanel({
                         onBrushChange({ tool: 'stamp', stampId: s.id })
                       }
                       title={`Stamp: ${s.id} — tap the canvas to place`}
+                      aria-label={`Stamp: ${s.id}`}
                       aria-pressed={selected}
                       style={{
                         all: 'unset',
@@ -715,7 +753,9 @@ function StampsPanel({
                       >
                         {s.frames[0].join('\n')}
                       </pre>
-                      <Text type="label">{s.id}</Text>
+                      <span {...stylex.props(styles.stampName)}>
+                        <Text type="label">{s.id}</Text>
+                      </span>
                     </button>
                     <IconButton
                       label={`Delete stamp ${s.id}`}

@@ -3,7 +3,15 @@
 // so it reads like a skill book rather than plumbing. The stamp catalog is
 // generated from the real sprite data so it can't drift out of sync.
 
-import { ET_SPRITES, PLAYER_SPRITES, type Sprite } from './scene.ts';
+import {
+  ET_SPRITES,
+  PLAYER_SPRITES,
+  CRITTER_SPRITES,
+  SPACE_SPRITES,
+  NATURE_SPRITES,
+  PLAY_SPRITES,
+  type Sprite,
+} from './scene.ts';
 
 function renderSprite(s: Sprite, kind: string): string {
   const frames = s.frames
@@ -18,12 +26,16 @@ function renderSprite(s: Sprite, kind: string): string {
 export const STAMP_CATALOG: string = [
   ...ET_SPRITES.map((s) => renderSprite(s, 'invader')),
   ...PLAYER_SPRITES.map((s) => renderSprite(s, 'ship')),
+  ...CRITTER_SPRITES.map((s) => renderSprite(s, 'critter')),
+  ...SPACE_SPRITES.map((s) => renderSprite(s, 'space')),
+  ...NATURE_SPRITES.map((s) => renderSprite(s, 'nature')),
+  ...PLAY_SPRITES.map((s) => renderSprite(s, 'play')),
 ].join('\n\n');
 
 export const STAMP_SKILL = `Stamps
 To USE a stamp from the catalog, emit a placeStamp action — never hand-draw a stamp's cells:
 {"type":"placeStamp","stampId":"crab","frame":0,"x":12,"y":7,"fg":"<invader color>","bg":""}
-x,y is the CENTER of the stamp on the 24x14 grid. bg "" keeps the background transparent. Use the theme's invader/ship colors given above for fg so stamps match the scene.
+x,y is the CENTER of the stamp on the 24x14 grid. bg "" keeps the background transparent. Use the theme's stamp colors given above for fg so stamps match the scene (invaders/nature: invader color; ships/play: player color; critters/space: star color).
 
 To CREATE a new stamp the user can keep and reuse from their Stamps panel, emit addStamp:
 {"type":"addStamp","stamp":{"id":"cat","fg":"#ffd75e","frames":[[" /\\\\_/\\\\ ","( o.o )"," > ^ < "],[" /\\\\_/\\\\ ","( -.- )"," > ^ < "]]}}

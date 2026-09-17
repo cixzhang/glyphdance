@@ -130,7 +130,7 @@ Rules:
 Current document:
 name: ${doc.name}
 frames: ${doc.frames.length}, active frame index: ${doc.active}
-theme: ${doc.themeId} (background ${theme.bg}; stamp colors: invaders ${theme.invader}, ships ${theme.player})
+theme: ${doc.themeId} (background ${theme.bg}; stamp colors: invaders/nature ${theme.invader}, ships/play ${theme.player}, critters/space ${theme.star})
 user-created stamps: ${doc.stamps.length > 0 ? doc.stamps.map((s) => s.id).join(', ') : '(none yet)'}
 Active frame (y=0 is the top row, x=0 is the left column):
 \`\`\`

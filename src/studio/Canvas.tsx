@@ -18,7 +18,7 @@ import {
 } from './document.ts';
 import type { PaintCell } from './actions.ts';
 import { themeById } from './scene.ts';
-import { resolveStamp, stampCellsFor } from './stamps.ts';
+import { resolveStamp, stampCellsFor, kindSwatchKey } from './stamps.ts';
 import type { Brush, ToolId } from './brush.ts';
 
 const styles = stylex.create({
@@ -342,8 +342,7 @@ export function AsciiGrid({
     if (!brush.stampId) return;
     const stamp = resolveStamp(brush.stampId, doc.stamps);
     if (!stamp) return;
-    const fg =
-      stamp.fg ?? (stamp.kind === 'player' ? theme.player : theme.invader);
+    const fg = stamp.fg ?? theme[kindSwatchKey(stamp.kind)];
     const out = stampCells(stamp.frames[0], x, y, fg);
     if (out.length > 0) onPaint(out, id);
   };

@@ -2,7 +2,15 @@
 // the agent. Built-in sprites live in scene.ts; user/agent-created stamps live
 // in the document (doc.stamps).
 
-import { ET_SPRITES, PLAYER_SPRITES } from './scene.ts';
+import {
+  ET_SPRITES,
+  PLAYER_SPRITES,
+  CRITTER_SPRITES,
+  SPACE_SPRITES,
+  NATURE_SPRITES,
+  PLAY_SPRITES,
+  type Sprite,
+} from './scene.ts';
 import {
   GRID_H,
   GRID_W,
@@ -10,18 +18,57 @@ import {
 } from './document.ts';
 import type { PaintCell } from './actions.ts';
 
+export type StampKind =
+  | 'invader'
+  | 'player'
+  | 'critter'
+  | 'space'
+  | 'nature'
+  | 'play'
+  | 'custom';
+
 export interface ResolvedStamp {
   id: string;
   frames: string[][];
   /** Null for built-ins (they use theme invader/player colors). */
   fg: string | null;
   builtin: boolean;
-  kind: 'invader' | 'player' | 'custom';
+  kind: StampKind;
 }
 
-/** All built-in stamp ids (invaders + ships). */
+const BUILTIN: Array<{ sprites: Sprite[]; kind: StampKind }> = [
+  { sprites: ET_SPRITES, kind: 'invader' },
+  { sprites: PLAYER_SPRITES, kind: 'player' },
+  { sprites: CRITTER_SPRITES, kind: 'critter' },
+  { sprites: SPACE_SPRITES, kind: 'space' },
+  { sprites: NATURE_SPRITES, kind: 'nature' },
+  { sprites: PLAY_SPRITES, kind: 'play' },
+];
+
+/**
+ * Which theme-swatch role paints a stamp kind — the single source of truth
+ * for panel previews and canvas placement, so built-ins always follow the
+ * document's theme: critters/space read pale (star), nature reads green
+ * (invader), play reads candy (player).
+ */
+export function kindSwatchKey(kind: StampKind): 'invader' | 'player' | 'star' {
+  switch (kind) {
+    case 'player':
+    case 'play':
+      return 'player';
+    case 'nature':
+      return 'invader';
+    case 'critter':
+    case 'space':
+      return 'star';
+    default:
+      return 'invader';
+  }
+}
+
+/** All built-in stamp ids (invaders + ships + the new variety packs). */
 export function builtinStampIds(): string[] {
-  return [...ET_SPRITES, ...PLAYER_SPRITES].map((s) => s.id);
+  return BUILTIN.flatMap((b) => b.sprites.map((s) => s.id));
 }
 
 /** Find a stamp by id across built-ins and the document's custom stamps. */
@@ -29,24 +76,17 @@ export function resolveStamp(
   id: string,
   custom: CustomStamp[],
 ): ResolvedStamp | null {
-  const invader = ET_SPRITES.find((s) => s.id === id);
-  if (invader)
-    return {
-      id: invader.id,
-      frames: invader.frames,
-      fg: null,
-      builtin: true,
-      kind: 'invader',
-    };
-  const player = PLAYER_SPRITES.find((s) => s.id === id);
-  if (player)
-    return {
-      id: player.id,
-      frames: player.frames,
-      fg: null,
-      builtin: true,
-      kind: 'player',
-    };
+  for (const b of BUILTIN) {
+    const s = b.sprites.find((s) => s.id === id);
+    if (s)
+      return {
+        id: s.id,
+        frames: s.frames,
+        fg: null,
+        builtin: true,
+        kind: b.kind,
+      };
+  }
   const c = custom.find((s) => s.id === id);
   if (c)
     return { id: c.id, frames: c.frames, fg: c.fg, builtin: false, kind: 'custom' };

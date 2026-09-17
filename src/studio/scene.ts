@@ -140,6 +140,205 @@ export const PLAYER_SPRITES: Sprite[] = [
   },
 ];
 
+// Critters — pale things (theme's star color): a wobbling ghost, a blinking
+// cat, and a spotted mushroom.
+export const CRITTER_SPRITES: Sprite[] = [
+  {
+    id: 'ghost',
+    name: 'Ghost',
+    frames: [
+      [
+        ' █████ ',
+        '███████',
+        '█ ██ ██',
+        '███████',
+        '██ █ ██',
+      ],
+      [
+        ' █████ ',
+        '███████',
+        '█ ██ ██',
+        '███████',
+        '█ ██ █ ',
+      ],
+    ],
+  },
+  {
+    id: 'cat',
+    name: 'Cat',
+    frames: [
+      [' /\\_/\\ ', '( o.o )', ' > ^ < '],
+      [' /\\_/\\ ', '( -.- )', ' > ^ < '],
+    ],
+  },
+  {
+    id: 'mushroom',
+    name: 'Mushroom',
+    frames: [
+      [
+        ' █████ ',
+        '███████',
+        '██ █ ██',
+        '  ███  ',
+        '  ███  ',
+      ],
+    ],
+  },
+];
+
+// Space — celestial bodies (theme's star color): a ringed planet with a
+// shimmering ring and a comet with a flickering tail.
+export const SPACE_SPRITES: Sprite[] = [
+  {
+    id: 'planet',
+    name: 'Planet',
+    frames: [
+      [
+        '   ███   ',
+        '  █████  ',
+        '█████████',
+        '  █████  ',
+        '   ███   ',
+      ],
+      [
+        '   ███   ',
+        '  █████  ',
+        ' ███████ ',
+        '  █████  ',
+        '   ███   ',
+      ],
+    ],
+  },
+  {
+    id: 'comet',
+    name: 'Comet',
+    frames: [
+      [
+        '     ● ',
+        '   ██  ',
+        ' ████  ',
+        '██████ ',
+      ],
+      [
+        '     ● ',
+        '    ██ ',
+        '  ████ ',
+        ' ██████',
+      ],
+    ],
+  },
+];
+
+// Nature — green things (theme's invader color): a tree and a swaying flower.
+export const NATURE_SPRITES: Sprite[] = [
+  {
+    id: 'tree',
+    name: 'Tree',
+    frames: [
+      [
+        '   █   ',
+        '  ███  ',
+        ' █████ ',
+        '███████',
+        '   █   ',
+        '   █   ',
+      ],
+    ],
+  },
+  {
+    id: 'flower',
+    name: 'Flower',
+    frames: [
+      [
+        '  █ █  ',
+        ' █████ ',
+        '  ███  ',
+        '   █   ',
+        '   █   ',
+        '   █   ',
+      ],
+      [
+        '   █ █ ',
+        '  █████',
+        '   ███ ',
+        '   █   ',
+        '    █  ',
+        '    █  ',
+      ],
+    ],
+  },
+];
+
+// Play — candy-colored toys (theme's player color): a chomping pac, a
+// pulsing heart, and a bobbing balloon.
+export const PLAY_SPRITES: Sprite[] = [
+  {
+    id: 'pac',
+    name: 'Pac',
+    frames: [
+      [
+        ' ████ ',
+        '████  ',
+        '██    ',
+        '████  ',
+        ' ████ ',
+      ],
+      [
+        ' ████ ',
+        '██████',
+        '██████',
+        '██████',
+        ' ████ ',
+      ],
+    ],
+  },
+  {
+    id: 'heart',
+    name: 'Heart',
+    frames: [
+      [
+        ' ██ ██ ',
+        '███████',
+        '███████',
+        ' █████ ',
+        '  ███  ',
+        '   █   ',
+      ],
+      [
+        '       ',
+        ' █   █ ',
+        ' █████ ',
+        ' █████ ',
+        '  ███  ',
+        '   █   ',
+      ],
+    ],
+  },
+  {
+    id: 'balloon',
+    name: 'Balloon',
+    frames: [
+      [
+        ' ███ ',
+        '█████',
+        '█████',
+        ' ███ ',
+        '  █  ',
+        '  █  ',
+      ],
+      [
+        ' ███ ',
+        '█████',
+        '█████',
+        ' ███ ',
+        '  █  ',
+        '  █  ',
+        '  █  ',
+      ],
+    ],
+  },
+];
+
 export interface ThemeSwatch {
   bg: string;
   dot: string;
