@@ -7,6 +7,7 @@ import {
   blankFrame,
   cellIndex,
   cloneFrame,
+  GRID_W,
   inBounds,
   type Cell,
   type CustomStamp,
@@ -30,6 +31,8 @@ export type Action =
   | { type: 'insertFrame'; at: number; frame: Frame; active: number }
   | { type: 'duplicateFrame'; index: number }
   | { type: 'deleteFrame'; index: number }
+  /** Erase every cell in a frame, keeping its holdMs. The blank-slate action. */
+  | { type: 'clearFrame'; frame: number }
   | { type: 'moveFrame'; from: number; to: number }
   | { type: 'setHold'; index: number; holdMs: number }
   | { type: 'setTheme'; themeId: string }
@@ -86,6 +89,9 @@ export function validate(doc: DocState, a: Action): string | null {
     case 'deleteFrame':
       if (!validFrame(doc, a.index)) return `no frame ${a.index}`;
       if (frameCount(doc) === 1) return 'cannot delete the last frame';
+      return null;
+    case 'clearFrame':
+      if (!validFrame(doc, a.frame)) return `no frame ${a.frame}`;
       return null;
     case 'moveFrame':
       if (!validFrame(doc, a.from) || !validFrame(doc, a.to))
@@ -235,6 +241,22 @@ export function applyAction(doc: DocState, a: Action): Applied {
         active: activeAfterDelete(doc, a.index),
       };
       return { doc: next, inverse };
+    }
+    case 'clearFrame': {
+      const frame = doc.frames[a.frame];
+      const before: PaintCell[] = frame.cells.map((cell, i) => ({
+        x: i % GRID_W,
+        y: Math.floor(i / GRID_W),
+        cell: { ...cell },
+      }));
+      const frames = doc.frames.slice();
+      frames[a.frame] = { ...frame, cells: blankFrame(frame.holdMs).cells };
+      const inverse: Action = {
+        type: 'paintCells',
+        frame: a.frame,
+        cells: before,
+      };
+      return { doc: { ...doc, frames }, inverse };
     }
     case 'moveFrame': {
       const frames = doc.frames.slice();

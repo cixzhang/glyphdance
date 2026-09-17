@@ -14,7 +14,7 @@ import { BottomSheet } from '@astryxdesign/core/BottomSheet';
 import { MobileNav } from '@astryxdesign/core/MobileNav';
 import { IconCheck, IconClose, IconSparkles } from './icons';
 import DocumentPanel from './DocumentPanel.tsx';
-import { ET_SPRITES, PLAYER_SPRITES } from './scene.ts';
+import { ET_SPRITES, PLAYER_SPRITES, themeById } from './scene.ts';
 import { downloadFramesGif } from './gif.ts';
 import {
   downloadAllFramesText,
@@ -145,7 +145,8 @@ const styles = stylex.create({
     fontFamily: 'var(--gd-mono)',
     fontSize: 11,
     lineHeight: 1.25,
-    color: 'var(--gd-invader)',
+    // Color comes from the section (theme actor color) or the custom stamp's
+    // own fg, set inline — never a hardcoded token here.
     margin: 0,
     minHeight: 44,
     display: 'flex',
@@ -625,15 +626,21 @@ function StampsPanel({
   onBrushChange,
   doc,
   dispatch,
+  mode,
 }: {
   brush: Brush;
   onBrushChange: (patch: Partial<Brush>) => void;
   doc: DocState;
   dispatch: (a: Action) => void;
+  mode: 'light' | 'dark';
 }) {
-  const sections: Array<{ title: string; sprites: typeof ET_SPRITES }> = [
-    { title: 'Invaders', sprites: ET_SPRITES },
-    { title: 'Ships', sprites: PLAYER_SPRITES },
+  // Previews use the canvas theme's actor colors so what you see is what
+  // placing the stamp paints: invaders in the theme's invader color, ships
+  // in the player color. (Custom stamps below keep their own fg.)
+  const swatch = themeById(doc.themeId)[mode];
+  const sections = [
+    { title: 'Invaders', sprites: ET_SPRITES, color: swatch.invader },
+    { title: 'Ships', sprites: PLAYER_SPRITES, color: swatch.player },
   ];
   return (
     <Card padding={3}>
@@ -655,7 +662,11 @@ function StampsPanel({
                     title={`Stamp: ${s.id} — tap the canvas to place`}
                     aria-pressed={selected}
                   >
-                    <pre {...stylex.props(styles.stampArt)} aria-hidden="true">
+                    <pre
+                      {...stylex.props(styles.stampArt)}
+                      aria-hidden="true"
+                      style={{ color: sec.color }}
+                    >
                       {s.frames[0].join('\n')}
                     </pre>
                     <Text type="label">{s.id}</Text>
@@ -779,7 +790,7 @@ export default function Inspector({
           <div {...stylex.props(styles.drawerContent)}>
             <DocumentPanel doc={doc} dispatch={dispatch} mode={mode} />
             <GlyphColorPanel brush={brush} onChange={onBrushChange} />
-            <StampsPanel brush={brush} onBrushChange={onBrushChange} doc={doc} dispatch={dispatch} />
+            <StampsPanel brush={brush} onBrushChange={onBrushChange} doc={doc} dispatch={dispatch} mode={mode} />
             <ExportPanel doc={doc} />
           </div>
         </MobileNav>
@@ -826,7 +837,7 @@ export default function Inspector({
             />
       <DocumentPanel doc={doc} dispatch={dispatch} mode={mode} />
       <GlyphColorPanel brush={brush} onChange={onBrushChange} />
-      <StampsPanel brush={brush} onBrushChange={onBrushChange} doc={doc} dispatch={dispatch} />
+      <StampsPanel brush={brush} onBrushChange={onBrushChange} doc={doc} dispatch={dispatch} mode={mode} />
       <ExportPanel doc={doc} />
     </div>
   );

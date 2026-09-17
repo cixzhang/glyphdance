@@ -102,6 +102,7 @@ Action types (every field required):
 - {"type":"addFrame","after":1} — insert a blank frame after the given frame index.
 - {"type":"duplicateFrame","index":1}
 - {"type":"deleteFrame","index":1}
+- {"type":"clearFrame","frame":0} — erase every cell in a frame (keeps its holdMs). To hand the user a blank slate, clearFrame every frame; the document must keep at least one frame, so NEVER try to delete them all.
 - {"type":"moveFrame","from":2,"to":0}
 - {"type":"setHold","index":0,"holdMs":400}
 - {"type":"setTheme","themeId":"dracula"} — one of: ${THEME_IDS.join(', ')}
@@ -120,6 +121,7 @@ ${PIXEL_ART_SKILL}
 
 Rules:
 - Drawing means paintCells on the active frame, or on a frame you just added/duplicated first. Prefer building on the active frame.
+- "Clear the canvas" / "blank slate" means clearFrame on every frame — never deleteFrame them all; the last frame cannot be deleted.
 - Coordinates are 0-based with y=0 at the TOP row. Never emit out-of-bounds cells.
 - Keep every "ch" to one character. For empty/erase use ch " " with any colors.
 - If the request is unclear or impossible, emit NO actions and explain briefly in "message".
@@ -228,6 +230,8 @@ export function summarizeAction(a: Action): OpLine {
       };
     case 'deleteFrame':
       return { segments: [t(`deleted frame ${a.index + 1}`)] };
+    case 'clearFrame':
+      return { segments: [t('cleared '), frameTok(a.frame)] };
     case 'moveFrame':
       return {
         segments: [t('moved '), frameTok(a.from), t(' to position '), frameTok(a.to)],
