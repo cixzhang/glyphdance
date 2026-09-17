@@ -10,6 +10,11 @@ import Timeline from './studio/Timeline.tsx';
 import { useIsMobile } from './studio/responsive.ts';
 import { useDocument } from './studio/store.ts';
 import { seedDocument } from './studio/seed.ts';
+import {
+  clearAutosavedDoc,
+  loadAutosavedDoc,
+  saveAutosavedDoc,
+} from './studio/persist.ts';
 import { DEFAULT_BRUSH, type Brush, type ToolId } from './studio/brush.ts';
 import type { Cell } from './studio/document.ts';
 import type { PaintCell } from './studio/actions.ts';
@@ -80,9 +85,16 @@ export default function App() {
 
   // The document: every mutation goes through typed actions (store.dispatch),
   // so painting, the timeline, and eventually the agent share one validated,
-  // undoable path.
-  const [seedDoc] = useState(() => seedDocument(initialMode()));
+  // undoable path. On launch we restore the autosaved document when one
+  // exists; otherwise we seed the demo scene.
+  const [seedDoc] = useState(() => loadAutosavedDoc() ?? seedDocument(initialMode()));
   const { doc, dispatch, undo, redo, canUndo, canRedo } = useDocument(seedDoc);
+
+  // Autosave: debounce 1.5s so a drag stroke writes once, not per pointer event.
+  useEffect(() => {
+    const timer = window.setTimeout(() => saveAutosavedDoc(doc), 1500);
+    return () => window.clearTimeout(timer);
+  }, [doc]);
 
   const [playing, setPlaying] = useState(false);
   const [onionOn, setOnionOn] = useState(true);

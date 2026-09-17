@@ -16,6 +16,7 @@ import {
   type ThemeSwatch,
 } from './scene.ts';
 import { seedDocument } from './seed.ts';
+import { clearAutosavedDoc } from './persist.ts';
 import type { DocState } from './document.ts';
 import type { Action } from './actions.ts';
 
@@ -147,7 +148,10 @@ export default function DocumentPanel({
           label="Reset to demo scene"
           variant="secondary"
           size="sm"
-          onClick={() => dispatch({ type: 'load', doc: seedDocument(mode) })}
+          onClick={() => {
+            clearAutosavedDoc();
+            dispatch({ type: 'load', doc: seedDocument(mode) });
+          }}
         >
           Reset to demo scene
         </Button>

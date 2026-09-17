@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { Card } from '@astryxdesign/core/Card';
 import { Collapsible } from '@astryxdesign/core/Collapsible';
@@ -7,11 +7,30 @@ import { Text } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { Switch } from '@astryxdesign/core/Switch';
 import { VStack } from '@astryxdesign/core/Stack';
+import { Button } from '@astryxdesign/core/Button';
 import { BottomSheet } from '@astryxdesign/core/BottomSheet';
 import { MobileNav } from '@astryxdesign/core/MobileNav';
 import { IconCheck, IconSparkles } from './icons';
 import DocumentPanel from './DocumentPanel.tsx';
 import { ET_SPRITES, PLAYER_SPRITES } from './scene.ts';
+import {
+  downloadAllFramesText,
+  downloadFramePng,
+  downloadFrameText,
+} from './export.ts';
+import {
+  buildSystemPrompt,
+  callOpenRouter,
+  parseModelReply,
+  runAgentActions,
+  type ChatMessage,
+} from './agent.ts';
+import {
+  DEFAULT_MODEL,
+  loadAgentSettings,
+  saveAgentSettings,
+  type AgentSettings,
+} from './agent-settings.ts';
 import type { DocState } from './document.ts';
 import type { Action } from './actions.ts';
 import type { Brush } from './brush.ts';
@@ -136,35 +155,187 @@ const GLYPHS = ['█', '▓', '▒', '░', '·', '●', '◆', '✦', '◉', '+
 const FG = ['#4ade80', '#7cc7ff', '#ffd75e', '#ff8a8a', '#b48ce8', '#ff9f5a', '#d7dce2', '#8b94a0'];
 const BG = ['#0d0f12', '#1d2126', '#2b3a4a', '#3a2b4a', '#4a2b2b', '#2b4a2f', '#4a3d1e', '#101215'];
 
-// Phase 0 stub — the full Chat component arrives in Phase 2.
-function AgentBody() {
+// The live co-pilot: chat with a model on OpenRouter (user's own BYO key)
+// and watch it edit the document through the same typed, validated,
+// undoable action layer the human tools use.
+function AgentBody({
+  doc,
+  dispatch,
+}: {
+  doc: DocState;
+  dispatch: (a: Action) => void;
+}) {
+  const [settings, setSettings] = useState<AgentSettings>(() => loadAgentSettings());
+  const [keyDraft, setKeyDraft] = useState(settings.apiKey);
+  const [modelDraft, setModelDraft] = useState(settings.model);
+  const [settingsOpen, setSettingsOpen] = useState(settings.apiKey === '');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [working, setWorking] = useState(false);
+  const docRef = useRef(doc);
+  docRef.current = doc;
+
+  const saveSettings = () => {
+    const next: AgentSettings = {
+      apiKey: keyDraft.trim(),
+      model: modelDraft.trim() || DEFAULT_MODEL,
+    };
+    setSettings(next);
+    saveAgentSettings(next);
+    setSettingsOpen(false);
+  };
+
+  const send = async () => {
+    const prompt = input.trim();
+    if (!prompt || working) return;
+    if (!settings.apiKey) {
+      setSettingsOpen(true);
+      return;
+    }
+    setInput('');
+    setWorking(true);
+    const userMsg: ChatMessage = { role: 'user', text: prompt };
+    const history = [...messages, userMsg];
+    setMessages(history);
+    try {
+      const raw = await callOpenRouter(
+        settings,
+        buildSystemPrompt(docRef.current),
+        messages,
+        prompt,
+      );
+      const reply = parseModelReply(raw);
+      if (!reply) {
+        // Not the JSON envelope — show the raw text as a plain answer.
+        setMessages([...history, { role: 'assistant', text: raw }]);
+        return;
+      }
+      const assistantMsg: ChatMessage = {
+        role: 'assistant',
+        text: reply.message,
+        ops: [],
+      };
+      setMessages([...history, assistantMsg]);
+      // Dispatch one action at a time so each edit lands visibly on the
+      // canvas and stays individually undoable.
+      await runAgentActions(
+        reply.actions,
+        () => docRef.current,
+        dispatch,
+        (line) => {
+          setMessages((ms) =>
+            ms.map((m) =>
+              m === assistantMsg
+                ? { ...m, ops: [...(m.ops ?? []), line] }
+                : m,
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      setMessages([
+        ...history,
+        {
+          role: 'assistant',
+          text: `Something went wrong: ${(e as Error).message}`,
+          error: true,
+        },
+      ]);
+    } finally {
+      setWorking(false);
+    }
+  };
+
   return (
     <VStack gap={2}>
-      <div {...stylex.props(styles.bubbleUser)}>
-        <Text type="body" size="sm">
-          add a blink frame after frame 2
+      <Collapsible
+        trigger={<Text type="label">Agent settings</Text>}
+        isOpen={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        chevronPosition="end"
+      >
+        <VStack gap={2}>
+          <TextInput
+            label="OpenRouter API key"
+            type="password"
+            value={keyDraft}
+            onChange={setKeyDraft}
+            placeholder="sk-or-…"
+          />
+          <TextInput
+            label="Model"
+            value={modelDraft}
+            onChange={setModelDraft}
+            placeholder={DEFAULT_MODEL}
+          />
+          <Button
+            label="Save agent settings"
+            variant="secondary"
+            size="sm"
+            onClick={saveSettings}
+          >
+            Save settings
+          </Button>
+          <Text type="supporting" color="disabled">
+            Bring your own OpenRouter key — it's stored only in this browser's
+            localStorage and sent only to api.openrouter.ai. Try a{' '}
+            <Text type="supporting">:free</Text> model to keep costs at zero.
+          </Text>
+        </VStack>
+      </Collapsible>
+      {messages.map((m, i) => (
+        <div
+          key={i}
+          {...stylex.props(
+            m.role === 'user' ? styles.bubbleUser : styles.bubbleAgent,
+          )}
+        >
+          <Text type="body" size="sm">
+            {m.role === 'assistant' && !m.error && (
+              <>
+                <span {...stylex.props(styles.agentName)}>
+                  <IconCheck />
+                </span>{' '}
+              </>
+            )}
+            {m.text}
+          </Text>
+          {m.ops && m.ops.length > 0 && (
+            <div {...stylex.props(styles.opLog)}>
+              {m.ops.map((op, j) => (
+                <div key={j}>· {op}</div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+      {working && (
+        <Text type="supporting" color="disabled">
+          The agent is working…
         </Text>
-      </div>
-      <div {...stylex.props(styles.bubbleAgent)}>
-        <Text type="body" size="sm">
-          <span {...stylex.props(styles.agentName)}>
-            <IconCheck />
-          </span>{' '}
-          Inserted frame 3
-          (blink variant of frame 2).
-        </Text>
-        <div {...stylex.props(styles.opLog)}>2 ops · undo available</div>
-      </div>
+      )}
       <TextInput
         label="Ask the agent"
         isLabelHidden
-        value=""
-        placeholder="Agent arrives in Phase 2…"
-        isDisabled
+        value={input}
+        onChange={setInput}
+        placeholder={
+          settings.apiKey ? 'Describe the edit…' : 'Add your API key first…'
+        }
+        isDisabled={working}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') send();
+        }}
       />
-      <Text type="supporting" color="disabled">
-        Sample exchange — the live co-pilot lands in Phase 2.
-      </Text>
+      <Button
+        label="Send to agent"
+        variant="primary"
+        size="sm"
+        onClick={send}
+        isDisabled={working || input.trim() === ''}
+      >
+        Send
+      </Button>
     </VStack>
   );
 }
@@ -173,10 +344,14 @@ function AgentPanel({
   open,
   onToggle,
   isMobile,
+  doc,
+  dispatch,
 }: {
   open: boolean;
   onToggle: () => void;
   isMobile: boolean;
+  doc: DocState;
+  dispatch: (a: Action) => void;
 }) {
   // Inside the mobile bottom sheet the card is always expanded — the sheet
   // itself is the thing that opens and closes.
@@ -187,7 +362,7 @@ function AgentPanel({
           <Heading level={4}>
             <IconSparkles {...stylex.props(styles.agentName)} /> Agent
           </Heading>
-          <AgentBody />
+          <AgentBody doc={doc} dispatch={dispatch} />
         </VStack>
       </Card>
     );
@@ -204,7 +379,7 @@ function AgentPanel({
         onOpenChange={onToggle}
         chevronPosition="end"
       >
-        <AgentBody />
+        <AgentBody doc={doc} dispatch={dispatch} />
       </Collapsible>
     </Card>
   );
@@ -277,6 +452,46 @@ function GlyphColorPanel({
             size="sm"
           />
         </VStack>
+      </VStack>
+    </Card>
+  );
+}
+
+function ExportPanel({ doc }: { doc: DocState }) {
+  const frame = doc.frames[doc.active];
+  return (
+    <Card padding={3}>
+      <VStack gap={2}>
+        <Heading level={4}>Export</Heading>
+        <VStack gap={1}>
+          <Button
+            label="Download current frame as text"
+            variant="secondary"
+            size="sm"
+            onClick={() => downloadFrameText(doc.name, doc.active, frame)}
+          >
+            TXT · this frame
+          </Button>
+          <Button
+            label="Download all frames as text"
+            variant="secondary"
+            size="sm"
+            onClick={() => downloadAllFramesText(doc.name, doc.frames)}
+          >
+            TXT · all frames
+          </Button>
+          <Button
+            label="Download current frame as PNG"
+            variant="secondary"
+            size="sm"
+            onClick={() => downloadFramePng(doc.name, doc.active, frame)}
+          >
+            PNG · this frame
+          </Button>
+        </VStack>
+        <Text type="supporting" color="disabled">
+          PNG renders at 2× for crispness. GIF export is next.
+        </Text>
       </VStack>
     </Card>
   );
@@ -375,6 +590,7 @@ export default function Inspector({
             <DocumentPanel doc={doc} dispatch={dispatch} mode={mode} />
             <GlyphColorPanel brush={brush} onChange={onBrushChange} />
             <StampsPanel brush={brush} onBrushChange={onBrushChange} />
+            <ExportPanel doc={doc} />
           </div>
         </MobileNav>
         <BottomSheet
@@ -385,7 +601,7 @@ export default function Inspector({
           snapPoints={[0.45]}
         >
           <div {...stylex.props(styles.sheetContent)}>
-            <AgentPanel open={agentOpen} onToggle={onToggleAgent} isMobile={isMobile} />
+            <AgentPanel open={agentOpen} onToggle={onToggleAgent} isMobile={isMobile} doc={doc} dispatch={dispatch} />
           </div>
         </BottomSheet>
       </>
@@ -393,10 +609,11 @@ export default function Inspector({
   }
   return (
     <div {...stylex.props(styles.col)}>
-      <AgentPanel open={agentOpen} onToggle={onToggleAgent} isMobile={isMobile} />
+      <AgentPanel open={agentOpen} onToggle={onToggleAgent} isMobile={isMobile} doc={doc} dispatch={dispatch} />
       <DocumentPanel doc={doc} dispatch={dispatch} mode={mode} />
       <GlyphColorPanel brush={brush} onChange={onBrushChange} />
       <StampsPanel brush={brush} onBrushChange={onBrushChange} />
+      <ExportPanel doc={doc} />
     </div>
   );
 }
