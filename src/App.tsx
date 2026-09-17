@@ -98,7 +98,9 @@ export default function App() {
     return () => window.clearTimeout(timer);
   }, [doc]);
 
-  const [playing, setPlaying] = useState(false);
+  // The studio boots into playback: the seeded document is a real
+  // multi-frame animation, so the first thing a new user sees is motion.
+  const [playing, setPlaying] = useState(true);
   const [onionOn, setOnionOn] = useState(true);
   const [agentOpen, setAgentOpen] = useState(true);
   // Mobile only: the agent chat lives in a bottom sheet, and the control
