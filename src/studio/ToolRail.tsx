@@ -23,8 +23,8 @@ const styles = stylex.create({
     height: '100%',
     paddingTop: 10,
     paddingBottom: 10,
-    backgroundColor: 'var(--gd-bg1)',
-    borderRight: '1px solid var(--gd-border)',
+    backgroundColor: 'var(--color-background-surface)',
+    borderRight: '1px solid var(--color-border)',
     // Mobile: the rail becomes a horizontal tool strip docked at the bottom.
     '@media (max-width: 760px)': {
       flexDirection: 'row',
@@ -36,7 +36,7 @@ const styles = stylex.create({
       overflowX: 'auto',
       overflowY: 'hidden',
       borderRight: 'none',
-      borderTop: '1px solid var(--gd-border)',
+      borderTop: '1px solid var(--color-border)',
       // Hide the scrollbar on the strip; it still scrolls by touch.
       scrollbarWidth: 'none',
     },

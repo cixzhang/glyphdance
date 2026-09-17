@@ -29,8 +29,8 @@ const styles = stylex.create({
     gridTemplateRows: '52px minmax(0, 1fr) 148px',
     gridTemplateColumns: '60px minmax(0, 1fr) 300px',
     gridTemplateAreas: '"topbar topbar topbar" "rail canvas inspector" "timeline timeline timeline"',
-    backgroundColor: 'var(--gd-bg0)',
-    color: 'var(--gd-text)',
+    backgroundColor: 'var(--color-background-body)',
+    color: 'var(--color-text-primary)',
     fontSize: 13,
     // Mobile: single column. The tool rail becomes a bottom strip ("tools")
     // and the inspector becomes a bottom sheet (position: fixed, so the

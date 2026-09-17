@@ -4,30 +4,25 @@ body,
   height: 100%;
 }
 
+/* Studio color system: generic chrome uses Astryx design tokens
+   (--color-*, --font-*) from the built theme (src/studio/glyphdance.css),
+   which follow html[data-theme] via color-scheme. Only domain-specific
+   colors live here as --gd-* (invader/star/accent/amber/onion/bubble are
+   game/chat semantics with per-mode values; --gd-float derives from
+   Astryx's popover token so the floating pills stay translucent). */
 :root {
-  --gd-bg0: #101215;
-  --gd-bg1: #14161a;
-  --gd-bg2: #1d2126;
-  --gd-bg3: #242a31;
-  --gd-border: #2c3138;
-  --gd-text: #d7dce2;
-  --gd-dim: #8b94a0;
-  --gd-faint: #5c6570;
   --gd-invader: #4ade80;
-  --gd-star: #ffd75e;
   --gd-accent: #7cc7ff;
   --gd-amber: #f5a524;
-  --gd-onion: #b48ce8;
   --gd-bubble: #2b3a4a;
-  --gd-float: rgba(20, 22, 26, 0.85);
-  --gd-mono: 'Cozette', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --gd-float: color-mix(in srgb, var(--color-background-popover) 88%, transparent);
 }
 
 body {
   margin: 0;
   font-family: 'Pixelify Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: #101215;
-  color: #d7dce2;
+  background-color: var(--color-background-body);
+  color: var(--color-text-primary);
   overflow: hidden;
   /* The studio is a full-screen app: no pull-to-refresh or scroll chaining. */
   overscroll-behavior: none;
@@ -38,30 +33,19 @@ body {
 }
 
 ::selection {
-  background: rgba(124, 199, 255, 0.25);
+  background: color-mix(in srgb, var(--color-text-blue) 30%, transparent);
 }
 
 button {
   font-family: inherit;
 }
 
-/* Light mode: Astryx sets data-theme on <html>, so the studio's own chrome
+/* Light mode: Astryx sets data-theme on <html>, so the studio's domain
    tokens follow it. The ASCII stage itself stays dark in both modes — the
    syntax palettes are darkroom palettes, and the art pops on a dark stage. */
 html[data-theme='light'] {
-  --gd-bg0: #e8ebef;
-  --gd-bg1: #f4f6f8;
-  --gd-bg2: #ffffff;
-  --gd-bg3: #ffffff;
-  --gd-border: #d3d9e0;
-  --gd-text: #1b2026;
-  --gd-dim: #5a6572;
-  --gd-faint: #98a1ac;
   --gd-invader: #15803d;
-  --gd-star: #a16207;
   --gd-accent: #0b6bcb;
   --gd-amber: #b45309;
-  --gd-onion: #7c3aed;
   --gd-bubble: #d9e8f5;
-  --gd-float: rgba(244, 246, 248, 0.88);
 }

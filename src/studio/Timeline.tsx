@@ -17,8 +17,8 @@ const styles = stylex.create({
     gap: 12,
     height: '100%',
     padding: '10px 14px',
-    backgroundColor: 'var(--gd-bg1)',
-    borderTop: '1px solid var(--gd-border)',
+    backgroundColor: 'var(--color-background-surface)',
+    borderTop: '1px solid var(--color-border)',
     '@media (max-width: 760px)': {
       gap: 8,
       padding: '8px 10px',
@@ -69,8 +69,8 @@ const styles = stylex.create({
   // Frame thumbnails are the app's domain (character cells) — kept custom.
   thumb: {
     appearance: 'none',
-    backgroundColor: 'var(--gd-bg2)',
-    border: '1px solid var(--gd-border)',
+    backgroundColor: 'var(--color-background-card)',
+    border: '1px solid var(--color-border)',
     borderRadius: 8,
     padding: '6px 8px 4px',
     cursor: 'pointer',
@@ -82,7 +82,7 @@ const styles = stylex.create({
     // `inline: nearest` parks the thumb flush against the strip's edge and
     // the focus ring gets clipped.
     scrollMarginInline: 12,
-    ':hover': { borderColor: 'var(--gd-faint)' },
+    ':hover': { borderColor: 'var(--color-text-disabled)' },
   },
   thumbActive: {
     borderColor: 'var(--gd-invader)',
@@ -92,9 +92,9 @@ const styles = stylex.create({
   addFrame: {
     appearance: 'none',
     backgroundColor: 'transparent',
-    border: '1px dashed var(--gd-faint)',
+    border: '1px dashed var(--color-text-disabled)',
     borderRadius: 8,
-    color: 'var(--gd-dim)',
+    color: 'var(--color-text-secondary)',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',

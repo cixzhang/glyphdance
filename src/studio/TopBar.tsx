@@ -10,8 +10,8 @@ import { DOC_NAME } from './document.ts';
 
 const styles = stylex.create({
   topNav: {
-    backgroundColor: 'var(--gd-bg1)',
-    borderBottom: '1px solid var(--gd-border)',
+    backgroundColor: 'var(--color-background-surface)',
+    borderBottom: '1px solid var(--color-border)',
     height: '100%',
   },
   logo: {

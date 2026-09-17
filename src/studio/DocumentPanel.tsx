@@ -33,15 +33,15 @@ const styles = stylex.create({
     alignItems: 'center',
     gap: 4,
     padding: '6px 8px',
-    backgroundColor: 'var(--gd-bg2)',
-    border: '1px solid var(--gd-border)',
+    backgroundColor: 'var(--color-background-card)',
+    border: '1px solid var(--color-border)',
     borderRadius: 8,
     cursor: 'pointer',
     minWidth: 64,
   },
   themeActive: {
     borderColor: 'var(--gd-accent)',
-    backgroundColor: 'var(--gd-bg3)',
+    backgroundColor: 'var(--color-background-muted)',
   },
   themeChip: {
     display: 'flex',
