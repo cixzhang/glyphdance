@@ -21,11 +21,11 @@ export const glyphdanceTheme = defineTheme({
   extends: neutralTheme,
   typography: {
     body: {
-      family: "'Pixelify Sans'",
+      family: 'Pixelify Sans',
       fallbacks: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     },
     heading: {
-      family: "'Pixelify Sans'",
+      family: 'Pixelify Sans',
       fallbacks: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     },
     code: {

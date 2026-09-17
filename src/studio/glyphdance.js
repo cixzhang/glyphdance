@@ -80,8 +80,8 @@ export const glyphdanceTheme = {
     "--duration-slow-min": "525ms",
     "--duration-slow": "700ms",
     "--duration-slow-max": "935ms",
-    "--font-family-body": "\"'Pixelify Sans'\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
-    "--font-family-heading": "\"'Pixelify Sans'\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+    "--font-family-body": "\"Pixelify Sans\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+    "--font-family-heading": "\"Pixelify Sans\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
     "--font-family-code": "'Cozette', ui-monospace, SFMono-Regular, Menlo, monospace",
     "--color-syntax-keyword": "light-dark(#6b187c, #efa8ff)",
     "--color-syntax-string": "light-dark(#0b5615, #a4d6a3)",
@@ -528,11 +528,11 @@ export const glyphdanceTheme = {
         "ratio": 1.2
       },
       "body": {
-        "family": "'Pixelify Sans'",
+        "family": "Pixelify Sans",
         "fallbacks": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
       },
       "heading": {
-        "family": "'Pixelify Sans'",
+        "family": "Pixelify Sans",
         "fallbacks": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
         "weights": {
           "3": "bold",
