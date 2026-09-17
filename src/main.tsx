@@ -3,9 +3,9 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import './studio/fonts.css';
 import '@astryxdesign/core/reset.css';
-import '@astryxdesign/theme-neutral/theme.css';
 import { Theme } from '@astryxdesign/core/theme';
-import { glyphdanceTheme } from './studio/theme.ts';
+import { glyphdanceTheme } from './studio/glyphdance.js';
+import './studio/glyphdance.css';
 import App from './App.tsx';
 
 createRoot(document.getElementById('root')!).render(
