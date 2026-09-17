@@ -3,7 +3,8 @@ import * as stylex from '@stylexjs/stylex';
 import { Theme } from '@astryxdesign/core/theme';
 import { Button } from '@astryxdesign/core/Button';
 import { useToast, ToastViewport } from '@astryxdesign/core/Toast';
-import { chromeThemeFor } from './studio/syntax-chrome.ts';
+import { glyphdanceTheme } from './studio/glyphdance.js';
+import { applySyntaxChrome } from './studio/syntax-chrome.ts';
 import TopBar from './studio/TopBar.tsx';
 import ToolRail from './studio/ToolRail.tsx';
 import Canvas from './studio/Canvas.tsx';
@@ -92,13 +93,13 @@ export default function App() {
   const [seedDoc] = useState(() => loadAutosavedDoc() ?? seedDocument(initialMode()));
   const { doc, dispatch, undo, redo, canUndo, canRedo } = useDocument(seedDoc);
 
-  // The canvas theme selector re-skins the whole studio: derive the Astryx
-  // theme object from the active syntax swatch so app chrome (backgrounds,
-  // text, borders, accent) marches with the canvas.
-  const chromeTheme = useMemo(
-    () => chromeThemeFor(doc.themeId, mode),
-    [doc.themeId, mode],
-  );
+  // The canvas theme selector re-skins the whole studio: push the active
+  // syntax swatch's colors into the Astryx Theme container as inline custom
+  // properties (they beat the built theme's :scope rule on the same
+  // element). Runs after mount and on every theme/mode change.
+  useEffect(() => {
+    applySyntaxChrome(doc.themeId, mode);
+  }, [doc.themeId, mode]);
 
   // Autosave: debounce 1.5s so a drag stroke writes once, not per pointer event.
   useEffect(() => {
@@ -284,7 +285,7 @@ export default function App() {
   );
 
   return (
-    <Theme theme={chromeTheme} mode={mode}>
+    <Theme theme={glyphdanceTheme} mode={mode}>
     <ToastViewport position="bottomEnd" inset={{ bottom: isMobile ? 210 : 170 }}>
     <div {...stylex.props(styles.root)}>
       <div {...stylex.props(styles.topbar)}>

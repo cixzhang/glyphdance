@@ -109,23 +109,29 @@ export default function ToolRail({
         }}
         xstyle={styles.group}
       >
-        {TOOLS.map((t) => {
-          const live = LIVE_TOOLS.has(t.id);
-          return (
-            <ToggleButton
-              key={t.id}
-              value={t.id}
-              label={t.label}
-              icon={t.icon}
-              isIconOnly
-              tooltip={live ? t.label : `${t.label} — soon`}
-              // Stub tools can't be selected yet; picking one would silently
-              // do nothing on the canvas.
-              isDisabled={!live}
-            />
-          );
-        })}
+        {TOOLS.filter((t) => LIVE_TOOLS.has(t.id)).map((t) => (
+          <ToggleButton
+            key={t.id}
+            value={t.id}
+            label={t.label}
+            icon={t.icon}
+            isIconOnly
+            tooltip={t.label}
+          />
+        ))}
       </ToggleButtonGroup>
+      {/* Select is an honest stub until region selection lands. It renders
+          outside the group because ToggleButtonGroup's context overrides
+          individual isDisabled props (the group's false wins), which made
+          the stub look pressable while doing nothing. */}
+      <ToggleButton
+        label="Select"
+        icon={<IconSelect />}
+        isIconOnly
+        tooltip="Select — soon"
+        isDisabled
+        xstyle={styles.tool}
+      />
       <div {...stylex.props(styles.spacer)} />
       <IconButton
         label="Undo"

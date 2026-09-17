@@ -505,7 +505,7 @@ export function AsciiGrid({
                 setTextValue('');
               }
             }}
-            placeholder="Type text…"
+            placeholder={`Type up to ${GRID_W - textAnchor[0]} characters…`}
             xstyle={styles.textField}
           />
           <Button

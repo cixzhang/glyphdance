@@ -684,7 +684,7 @@ function StampsPanel({
           Tap the canvas to place — animated stamps play across frames.
         </Text>
         {sections.map((sec) => (
-          <VStack key={sec.title} gap={1}>
+          <VStack key={sec.title} gap={1} role="group" aria-label={`${sec.title} stamps`}>
             <Text type="label" color="disabled">
               {sec.title}
             </Text>

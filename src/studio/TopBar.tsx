@@ -121,31 +121,6 @@ export default function TopBar(props: TopBarProps) {
       }
       endContent={
         <div {...stylex.props(styles.end)}>
-          <div {...stylex.props(styles.stubs)}>
-            <Button
-              label="Grid"
-              variant="ghost"
-              size="sm"
-              tooltip="Toggle grid overlay (soon)"
-              isDisabled
-            />
-            <Button
-              label="100%"
-              variant="ghost"
-              size="sm"
-              tooltip="Canvas zoom (soon)"
-              isDisabled
-            />
-          </div>
-          <div {...stylex.props(styles.desktopOnly)}>
-            <Button
-              label="Export"
-              variant="primary"
-              size="sm"
-              tooltip="Export GIF / PNG / TXT — coming in Phase 1"
-              isDisabled
-            />
-          </div>
           <IconButton
             label={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             icon={mode === 'dark' ? <IconSun /> : <IconMoon />}
