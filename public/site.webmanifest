@@ -1,0 +1,14 @@
+{
+  "name": "glyphdance — ASCII animation studio",
+  "short_name": "glyphdance",
+  "description": "An agentically powered ASCII art animation studio.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#14161d",
+  "theme_color": "#14161d",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
