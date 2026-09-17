@@ -610,6 +610,13 @@ export function AsciiGrid({
                 typeof el.selectionStart === 'number'
                   ? el.selectionStart
                   : textCaret;
+              // An active selection (e.g. select-all) spans [pos, selEnd);
+              // edits must operate on the selection, not just the caret.
+              const selEnd =
+                typeof el.selectionEnd === 'number'
+                  ? el.selectionEnd
+                  : textCaret;
+              const hasSel = selEnd !== pos;
               const move = (c: number) => {
                 e.preventDefault();
                 setText(anchor, textValue, c);
@@ -647,7 +654,13 @@ export function AsciiGrid({
                   return;
                 case 'Backspace':
                   e.preventDefault();
-                  if (pos > 0) {
+                  if (hasSel) {
+                    setText(
+                      anchor,
+                      textValue.slice(0, pos) + textValue.slice(selEnd),
+                      pos,
+                    );
+                  } else if (pos > 0) {
                     setText(
                       anchor,
                       textValue.slice(0, pos - 1) + textValue.slice(pos),
@@ -657,7 +670,13 @@ export function AsciiGrid({
                   return;
                 case 'Delete':
                   e.preventDefault();
-                  if (pos < textValue.length) {
+                  if (hasSel) {
+                    setText(
+                      anchor,
+                      textValue.slice(0, pos) + textValue.slice(selEnd),
+                      pos,
+                    );
+                  } else if (pos < textValue.length) {
                     setText(
                       anchor,
                       textValue.slice(0, pos) + textValue.slice(pos + 1),
@@ -666,12 +685,12 @@ export function AsciiGrid({
                   }
                   return;
                 default:
-                  // Printable character: insert at the caret.
+                  // Printable character: replace any selection, insert at caret.
                   if (e.key.length === 1) {
                     e.preventDefault();
                     setText(
                       anchor,
-                      textValue.slice(0, pos) + e.key + textValue.slice(pos),
+                      textValue.slice(0, pos) + e.key + textValue.slice(selEnd),
                       pos + 1,
                     );
                   }
