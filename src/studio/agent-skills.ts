@@ -33,6 +33,12 @@ export const STAMP_CATALOG: string = [
 ].join('\n\n');
 
 export const STAMP_SKILL = `Stamps
+Finding the right stamp — when the user names a thing ("add snowflakes", "put a ufo here"):
+1. SEARCH the built-in catalog below and their stamp list for a match — be generous with plurals and synonyms ("snowflakes"→no match; "kitty"→cat; "ufo"→saucer; "ship"→dart/rocket/dish; "ghost"→ghost).
+2. Match found → placeStamp it. Never re-create a stamp that already exists.
+3. No match → CREATE it with addStamp, designing the art from the glyph advice below, then placeStamp it in the SAME reply so the user sees it immediately.
+4. No placement given ("add snowflakes") → don't stall and don't emit empty actions: place 2-4 copies across empty areas of the active frame — on every frame with slight offsets for weather/falling effects — and say what you chose in "message".
+
 To USE a stamp from the catalog, emit a placeStamp action — never hand-draw a stamp's cells:
 {"type":"placeStamp","stampId":"crab","frame":0,"x":12,"y":7,"fg":"<invader color>","bg":""}
 x,y is the CENTER of the stamp on the 24x14 grid, and the WHOLE stamp must fit inside the grid — placements that would clip at the edge are rejected, so keep the full stamp extent in bounds. bg "" keeps the background transparent. Use the theme's stamp colors given above for fg so stamps match the scene (invaders/nature: invader color; ships/play: player color; critters/space: star color).
@@ -46,6 +52,40 @@ Rules:
 - fg: a hex color that reads on the background color given above.
 - After addStamp, ALWAYS placeStamp it onto the canvas so the user sees it. Creating without placing is incomplete.
 - To animate a custom stamp across document frames, placeStamp its stampFrame 0 on one frame and stampFrame 1 on the next (duplicateFrame first if you need more frames).`;
+
+/** What the canvas font can actually draw — the agent's ASCII palette. */
+export const GLYPH_ADVICE = `Glyph repertoire — the canvas font draws THESE characters and nothing else.
+Use ONLY these in stamp art and paintCells "ch" values; anything else renders as an empty box:
+█ ▓ ▒ ░ · ● ◆ ✦ ◉ ❄ ♥ ♦ ♣ ♠ ▲ ▼ ◀ ▶ ✚ ♪ ♫ + × * / \\ | - _ ^ ~ = : ; ! ? % $ ( ) [ ] < > o O # @
+Watch out: ★ ☆ ❅ ❆ and emoji are NOT in the font — never use them (use ✦ instead of ★, ❄ instead of ❅/❆).
+
+Concept → glyph starter kit (adapt freely; keep new stamps 3-7 cells wide so they read on the 24x14 grid):
+- snowflake: ❄ on its own reads instantly; a larger flake:
+  \\  |  /
+   * * *
+  --❄--
+   * * *
+  /  |  \\
+- star: ✦, or
+      *
+     ***
+    *****
+     ***
+      *
+- heart:
+   ♥♥ ♥♥
+  ♥♥♥♥♥♥
+  ♥♥♥♥♥♥
+   ♥♥♥♥
+    ♥♥
+     ♥
+- tree:
+      ▲
+     ▲▲▲
+    ▲▲▲▲▲
+      |
+- music: ♪ ♫   suits: ♥ ♦ ♣ ♠   arrows: ▲ ▼ ◀ ▶
+When the user names one small thing ("a star", "snowflakes"), a 1-cell stamp straight from the repertoire (❄, ✦, ♥…) is a complete answer — create it, place it, done.`;
 
 export const PIXEL_ART_SKILL = `Pixel-art technique (24 wide x 14 tall grid)
 - Sketch before you emit: plan the full layout on coordinates first. Keep subjects 5-10 cells wide so they read; the grid is small.

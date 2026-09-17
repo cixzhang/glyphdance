@@ -19,6 +19,7 @@ import {
   PIXEL_ART_SKILL,
   STAMP_CATALOG,
   STAMP_SKILL,
+  GLYPH_ADVICE,
 } from './agent-skills.ts';
 import { themeById } from './scene.ts';
 
@@ -159,6 +160,8 @@ Action types (every field required):
 
 ${STAMP_SKILL}
 
+${GLYPH_ADVICE}
+
 Built-in stamp catalog (placeable art):
 ${STAMP_CATALOG}
 
@@ -171,7 +174,7 @@ Rules:
 - placeStamp centers the stamp on x,y and the WHOLE stamp must fit inside the grid — clipped placements are rejected, so keep the full stamp extent in bounds.
 - Frame numbers for the HUMAN are 1-based: the timeline, status pill, and op log all call the first frame "frame 1". In your "message" text always use 1-based frame numbers — never write "frame 0". In action payloads ("frame", "index", "after", "from", "to") use 0-based indices: human frame N = index N-1. When the user says "frame one" or "the first frame", they mean index 0.
 - Keep every "ch" to one character. For empty/erase use ch " " with any colors.
-- If the request is unclear or impossible, emit NO actions and explain briefly in "message".
+- If the request is truly impossible (contradicts the grid limits or the action set), emit NO actions and explain briefly in "message". If it's merely vague about placement ("add snowflakes", "decorate the sky"), make a reasonable choice per the stamp skill's finding-the-right-stamp steps and say what you chose — a visible best-effort result beats an empty reply. Stay conservative with destructive requests: only clear/delete what the user named.
 - Keep "message" to one or two sentences. Only describe what your actions actually did.
 
 Current document (all frames shown; use the rulers to locate things):
