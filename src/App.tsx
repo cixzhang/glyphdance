@@ -130,6 +130,7 @@ export default function App() {
     (info: { id: string; summary: string; error?: boolean }) => setAgentDone(info),
     [],
   );
+  const handleAgentScrolled = useCallback(() => setScrollToMessage(null), []);
   // The brush: active tool plus the glyph and colors it paints with.
   const [brush, setBrush] = useState<Brush>(DEFAULT_BRUSH);
   const patchBrush = useCallback(
@@ -396,7 +397,7 @@ export default function App() {
           mode={mode}
           onAgentDone={handleAgentDone}
           scrollToMessage={scrollToMessage}
-          onAgentScrolled={() => setScrollToMessage(null)}
+          onAgentScrolled={handleAgentScrolled}
           onSelectStamp={selectStamp}
           onWorkingChange={setAgentWorking}
         />

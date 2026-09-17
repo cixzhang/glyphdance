@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode, type Ref, type RefObject } from 'react';
+import { memo, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { Popover } from '@astryxdesign/core/Popover';
@@ -22,6 +22,7 @@ import {
 } from './tool-popovers.tsx';
 import type { Brush, ToolId } from './brush.ts';
 import type { DocState } from './document.ts';
+import { docContentEqual } from './document.ts';
 import type { Action } from './actions.ts';
 
 const styles = stylex.create({
@@ -104,13 +105,15 @@ const styles = stylex.create({
 const LIVE_TOOLS = new Set(['brush', 'erase', 'fill', 'text', 'stamp', 'pick']);
 
 // Shared with the canvas: the mobile tool badge shows the active tool's
-// icon + label, so this list is the single source of truth.
+// icon + label, so this list is the single source of truth. Order is the
+// toolbar order: text, brush, stamp, eraser, fill, eyedropper, then the
+// Colors button (rendered separately, right after the group).
 export const TOOLS = [  { id: 'select', icon: <IconSelect />, label: 'Select' },
+  { id: 'text', icon: <IconText />, label: 'Text' },
   { id: 'brush', icon: <IconBrush />, label: 'Brush' },
+  { id: 'stamp', icon: <IconStamp />, label: 'Stamp' },
   { id: 'erase', icon: <IconEraser />, label: 'Eraser' },
   { id: 'fill', icon: <IconFill />, label: 'Fill' },
-  { id: 'text', icon: <IconText />, label: 'Text' },
-  { id: 'stamp', icon: <IconStamp />, label: 'Stamp' },
   { id: 'pick', icon: <IconEyedropper />, label: 'Eyedropper' },
 ] as const;
 
@@ -142,18 +145,7 @@ function ColorSwatchIcon({ fg, bg }: { fg: string; bg: string }) {
 // of the group — the auto-mode wrapper would break the group's stretch
 // layout); on mobile they share one bottom sheet, which fits the thumb
 // strip better than a floating popover.
-export default function ToolRail({
-  isMobile,
-  brush,
-  onBrushChange,
-  doc,
-  dispatch,
-  mode,
-  canUndo,
-  canRedo,
-  onUndo,
-  onRedo,
-}: {
+interface ToolRailProps {
   isMobile: boolean;
   brush: Brush;
   onBrushChange: (patch: Partial<Brush>) => void;
@@ -164,7 +156,20 @@ export default function ToolRail({
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
-}) {
+}
+
+function ToolRail({
+  isMobile,
+  brush,
+  onBrushChange,
+  doc,
+  dispatch,
+  mode,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
+}: ToolRailProps) {
   const [open, setOpen] = useState<'glyph' | 'color' | 'stamp' | null>(null);
   const brushRef = useRef<HTMLButtonElement>(null);
   const stampRef = useRef<HTMLButtonElement>(null);
@@ -363,3 +368,23 @@ export default function ToolRail({
     </div>
   );
 }
+
+// Playback ticks only advance doc.active, which the rail never renders
+// (the stamp library reads stamps/theme — both content-stable), so the
+// toolbar skips re-rendering on every animation tick.
+export function toolRailEqual(prev: ToolRailProps, next: ToolRailProps): boolean {
+  return (
+    prev.isMobile === next.isMobile &&
+    prev.brush === next.brush &&
+    prev.onBrushChange === next.onBrushChange &&
+    docContentEqual(prev.doc, next.doc) &&
+    prev.dispatch === next.dispatch &&
+    prev.mode === next.mode &&
+    prev.canUndo === next.canUndo &&
+    prev.canRedo === next.canRedo &&
+    prev.onUndo === next.onUndo &&
+    prev.onRedo === next.onRedo
+  );
+}
+
+export default memo(ToolRail, toolRailEqual);

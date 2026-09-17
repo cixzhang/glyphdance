@@ -46,6 +46,23 @@ export interface DocState {
   stamps: CustomStamp[];
 }
 
+/**
+ * Content equality for render memoization: everything except the selected
+ * frame index. The action layer's setActive spreads the doc and keeps the
+ * frames/stamps array identities, so during playback this is an O(1)
+ * reference check that lets side panels skip re-rendering on every tick —
+ * only the canvas and the timeline (which actually show the frame) update.
+ */
+export function docContentEqual(a: DocState, b: DocState): boolean {
+  return (
+    a === b ||
+    (a.name === b.name &&
+      a.themeId === b.themeId &&
+      a.frames === b.frames &&
+      a.stamps === b.stamps)
+  );
+}
+
 export const cellIndex = (x: number, y: number): number => y * GRID_W + x;
 
 export const inBounds = (x: number, y: number): boolean =>

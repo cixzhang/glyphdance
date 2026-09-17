@@ -1,10 +1,19 @@
+import { useMemo, useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { Heading } from '@astryxdesign/core/Heading';
 import { Text } from '@astryxdesign/core/Text';
+import { TextInput } from '@astryxdesign/core/TextInput';
 import { VStack } from '@astryxdesign/core/Stack';
 import { Switch } from '@astryxdesign/core/Switch';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { IconClose } from './icons';
+import {
+  ASCII_GLYPHS,
+  SYMBOL_GLYPHS,
+  glyphName,
+  searchGlyphs,
+  type SymbolGlyph,
+} from './glyphs.ts';
 import {
   ET_SPRITES,
   PLAYER_SPRITES,
@@ -128,11 +137,18 @@ const styles = stylex.create({
   },
 });
 
-export const GLYPHS = ['█', '▓', '▒', '░', '·', '●', '◆', '✦', '◉', '+', '×', '/', '\\', '|', '(', ')', '[', ']', 'o', 'O', '#', '@', '<', '>'];
 export const FG = ['#4ade80', '#7cc7ff', '#ffd75e', '#ff8a8a', '#b48ce8', '#ff9f5a', '#d7dce2', '#8b94a0'];
 export const BG = ['#0d0f12', '#1d2126', '#2b3a4a', '#3a2b4a', '#4a2b2b', '#2b4a2f', '#4a3d1e', '#101215'];
 
-/** Special-character picker for the brush tool. */
+// ASCII glyphs as {ch, name} entries for the picker's ASCII section.
+const ASCII_ENTRIES: readonly SymbolGlyph[] = [...ASCII_GLYPHS].map((ch) => ({
+  ch,
+  name: ch === ' ' ? 'space' : ch,
+}));
+
+/** Brush glyph picker: the full font repertoire, searchable by name or by
+ *  typing the character itself — including the ones a normal keyboard
+ *  can't easily produce (— … ❄ → █). */
 export function GlyphPopoverContent({
   brush,
   onChange,
@@ -140,22 +156,65 @@ export function GlyphPopoverContent({
   brush: Brush;
   onChange: (patch: Partial<Brush>) => void;
 }) {
+  const [query, setQuery] = useState('');
+  const searching = query.trim() !== '';
+  const results = useMemo(() => searchGlyphs(query), [query]);
+  // Keep the current glyph visible even when it doesn't match the query,
+  // so the selection never silently disappears from the picker.
+  const shown = useMemo(() => {
+    if (!searching || results.some((g) => g.ch === brush.glyph)) return results;
+    return [{ ch: brush.glyph, name: glyphName(brush.glyph) }, ...results];
+  }, [results, searching, brush.glyph]);
+
+  const glyphButton = (g: SymbolGlyph) => (
+    <button
+      key={g.ch}
+      {...stylex.props(styles.glyph, brush.glyph === g.ch && styles.glyphActive)}
+      onClick={() => onChange({ glyph: g.ch })}
+      title={g.name}
+      aria-label={`Glyph ${g.name}`}
+      aria-pressed={brush.glyph === g.ch}
+    >
+      {g.ch}
+    </button>
+  );
+
   return (
     <div {...stylex.props(styles.pop)}>
       <Heading level={4}>Brush glyph</Heading>
-      <div {...stylex.props(styles.glyphGrid)} role="group" aria-label="Glyphs">
-        {GLYPHS.map((g) => (
-          <button
-            key={g}
-            {...stylex.props(styles.glyph, brush.glyph === g && styles.glyphActive)}
-            onClick={() => onChange({ glyph: g })}
-            title={`Glyph ${g}`}
-            aria-pressed={brush.glyph === g}
-          >
-            {g}
-          </button>
-        ))}
-      </div>
+      <TextInput
+        label="Search glyphs"
+        isLabelHidden
+        size="sm"
+        hasClear
+        placeholder="Search name or character…"
+        value={query}
+        onChange={setQuery}
+      />
+      {searching ? (
+        shown.length > 0 ? (
+          <div {...stylex.props(styles.glyphGrid)} role="group" aria-label="Matching glyphs">
+            {shown.map(glyphButton)}
+          </div>
+        ) : (
+          <Text>No glyphs match &ldquo;{query.trim()}&rdquo;.</Text>
+        )
+      ) : (
+        <>
+          <Text type="label" color="disabled">
+            Symbols · {SYMBOL_GLYPHS.length}
+          </Text>
+          <div {...stylex.props(styles.glyphGrid)} role="group" aria-label="Symbol glyphs">
+            {SYMBOL_GLYPHS.map(glyphButton)}
+          </div>
+          <Text type="label" color="disabled">
+            ASCII · {ASCII_ENTRIES.length}
+          </Text>
+          <div {...stylex.props(styles.glyphGrid)} role="group" aria-label="ASCII glyphs">
+            {ASCII_ENTRIES.map(glyphButton)}
+          </div>
+        </>
+      )}
     </div>
   );
 }

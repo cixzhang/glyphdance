@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { Card } from '@astryxdesign/core/Card';
 import { Collapsible } from '@astryxdesign/core/Collapsible';
@@ -37,6 +37,7 @@ import {
   type AgentSettings,
 } from './agent-settings.ts';
 import type { DocState } from './document.ts';
+import { docContentEqual } from './document.ts';
 import type { Action } from './actions.ts';
 import type { Brush } from './brush.ts';
 
@@ -518,8 +519,18 @@ function AgentPanel({
   );
 }
 
-function ExportPanel({ doc }: { doc: DocState }) {
-  const frame = doc.frames[doc.active];
+function ExportPanel({ doc, getActive }: { doc: DocState; getActive: () => number }) {
+  // The selected frame is read live at click time: the inspector skips
+  // re-rendering on playback ticks (memo below), so a render-time snapshot
+  // of doc.active would export a stale frame.
+  const exportFrameText = () => {
+    const i = getActive();
+    downloadFrameText(doc.name, i, doc.frames[i]);
+  };
+  const exportFramePng = () => {
+    const i = getActive();
+    downloadFramePng(doc.name, i, doc.frames[i]);
+  };
   return (
     <Card padding={3}>
       <VStack gap={2}>
@@ -529,7 +540,7 @@ function ExportPanel({ doc }: { doc: DocState }) {
             label="Download current frame as text"
             variant="secondary"
             size="sm"
-            onClick={() => downloadFrameText(doc.name, doc.active, frame)}
+            onClick={exportFrameText}
           >
             TXT · this frame
           </Button>
@@ -545,7 +556,7 @@ function ExportPanel({ doc }: { doc: DocState }) {
             label="Download current frame as PNG"
             variant="secondary"
             size="sm"
-            onClick={() => downloadFramePng(doc.name, doc.active, frame)}
+            onClick={exportFramePng}
           >
             PNG · this frame
           </Button>
@@ -567,25 +578,7 @@ function ExportPanel({ doc }: { doc: DocState }) {
   );
 }
 
-export default function Inspector({
-  isMobile,
-  agentOpen,
-  onToggleAgent,
-  sheetOpen,
-  onSheetOpenChange,
-  drawerOpen,
-  onDrawerOpenChange,
-  doc,
-  dispatch,
-  brush,
-  onBrushChange,
-  mode,
-  onAgentDone,
-  scrollToMessage,
-  onAgentScrolled,
-  onSelectStamp,
-  onWorkingChange,
-}: {
+interface InspectorProps {
   isMobile: boolean;
   agentOpen: boolean;
   onToggleAgent: () => void;
@@ -603,7 +596,33 @@ export default function Inspector({
   onAgentScrolled: () => void;
   onSelectStamp: (id: string) => void;
   onWorkingChange: (working: boolean) => void;
-}) {
+}
+
+function Inspector({
+  isMobile,
+  agentOpen,
+  onToggleAgent,
+  sheetOpen,
+  onSheetOpenChange,
+  drawerOpen,
+  onDrawerOpenChange,
+  doc,
+  dispatch,
+  brush,
+  onBrushChange,
+  mode,
+  onAgentDone,
+  scrollToMessage,
+  onAgentScrolled,
+  onSelectStamp,
+  onWorkingChange,
+}: InspectorProps) {
+  // Live doc for event-time reads: the inspector skips re-rendering on
+  // playback ticks (memo at the bottom), so handlers that need the current
+  // frame read it from this ref instead of a render-time snapshot.
+  const docRef = useRef(doc);
+  docRef.current = doc;
+  const getActive = () => docRef.current.active;
   // Mobile splits the inspector by pattern: the control cards (document,
   // glyph & color, stamps) live in an Astryx MobileNav side drawer so the
   // canvas stays visible while tweaking, and the agent chat keeps the bottom
@@ -619,7 +638,7 @@ export default function Inspector({
         >
           <div {...stylex.props(styles.drawerContent)}>
             <DocumentPanel doc={doc} dispatch={dispatch} mode={mode} />
-            <ExportPanel doc={doc} />
+            <ExportPanel doc={doc} getActive={getActive} />
           </div>
         </MobileNav>
         <BottomSheet
@@ -666,7 +685,36 @@ export default function Inspector({
               onWorkingChange={onWorkingChange}
             />
       <DocumentPanel doc={doc} dispatch={dispatch} mode={mode} />
-      <ExportPanel doc={doc} />
+      <ExportPanel doc={doc} getActive={getActive} />
     </div>
   );
 }
+
+// Playback ticks only advance doc.active: none of the inspector's panels
+// render the selected frame (ExportPanel reads it live at click time via
+// getActive; the agent chat reads docRef at send time), so content equality
+// is enough to keep the whole sidebar — including long chat histories —
+// from re-rendering on every animation tick.
+export function inspectorEqual(prev: InspectorProps, next: InspectorProps): boolean {
+  return (
+    prev.isMobile === next.isMobile &&
+    prev.agentOpen === next.agentOpen &&
+    prev.onToggleAgent === next.onToggleAgent &&
+    prev.sheetOpen === next.sheetOpen &&
+    prev.onSheetOpenChange === next.onSheetOpenChange &&
+    prev.drawerOpen === next.drawerOpen &&
+    prev.onDrawerOpenChange === next.onDrawerOpenChange &&
+    docContentEqual(prev.doc, next.doc) &&
+    prev.dispatch === next.dispatch &&
+    prev.brush === next.brush &&
+    prev.onBrushChange === next.onBrushChange &&
+    prev.mode === next.mode &&
+    prev.onAgentDone === next.onAgentDone &&
+    prev.scrollToMessage === next.scrollToMessage &&
+    prev.onAgentScrolled === next.onAgentScrolled &&
+    prev.onSelectStamp === next.onSelectStamp &&
+    prev.onWorkingChange === next.onWorkingChange
+  );
+}
+
+export default memo(Inspector, inspectorEqual);
