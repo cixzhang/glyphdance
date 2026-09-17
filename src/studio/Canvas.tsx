@@ -1,11 +1,11 @@
-import { useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { Button } from '@astryxdesign/core/Button';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { Text } from '@astryxdesign/core/Text';
 import { Kbd } from '@astryxdesign/core/Kbd';
-import { IconSparkles, IconGrid, IconZoomIn, IconZoomOut, IconPanels } from './icons';
+import { IconSparkles, IconGrid, IconZoomIn, IconZoomOut, IconPanels, IconClose } from './icons';
 import Transport from './Transport.tsx';
 import { TOOLS } from './ToolRail.tsx';
 import {
@@ -19,7 +19,7 @@ import {
 import type { PaintCell } from './actions.ts';
 import { themeById } from './scene.ts';
 import { resolveStamp, stampCellsFor } from './stamps.ts';
-import type { Brush } from './brush.ts';
+import type { Brush, ToolId } from './brush.ts';
 
 const styles = stylex.create({
   wrap: {
@@ -295,6 +295,29 @@ export function AsciiGrid({
   const [textAnchor, setTextAnchor] = useState<[number, number] | null>(null);
   const [textValue, setTextValue] = useState('');
 
+  // Per-tool dispose: when a tool is toggled off, run its cleanup so no
+  // in-progress state (a text draft, a line preview) lingers after the
+  // switch. Tools without draft state need no case.
+  const disposeTool = (tool: ToolId) => {
+    switch (tool) {
+      case 'text':
+        setTextAnchor(null);
+        setTextValue('');
+        break;
+      case 'line':
+        setLineAnchor(null);
+        setLineEnd(null);
+        break;
+    }
+  };
+  const prevToolRef = useRef<ToolId>(brush.tool);
+  useEffect(() => {
+    if (prevToolRef.current !== brush.tool) {
+      disposeTool(prevToolRef.current);
+      prevToolRef.current = brush.tool;
+    }
+  }, [brush.tool]);
+
   const paintFreehand = (x0: number, y0: number, x1: number, y1: number, id: string, painted: Set<string>) => {
     // Bresenham so fast drags don't leave dotted strokes.
     const out: PaintCell[] = [];
@@ -500,6 +523,15 @@ export function AsciiGrid({
           >
             Place
           </Button>
+          {/* Dismiss without placing — mobile keyboards have no Escape. */}
+          <IconButton
+            label="Discard text"
+            icon={<IconClose />}
+            variant="ghost"
+            size="sm"
+            tooltip="Discard the text"
+            onClick={() => disposeTool('text')}
+          />
         </div>
       )}
     </>
