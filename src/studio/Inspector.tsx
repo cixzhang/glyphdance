@@ -208,6 +208,7 @@ function AgentBody({
   scrollToId,
   onScrolled,
   onSelectStamp,
+  onWorkingChange,
 }: {
   doc: DocState;
   dispatch: (a: Action) => void;
@@ -221,6 +222,8 @@ function AgentBody({
   onScrolled: () => void;
   /** A stamp token was tapped: arm the stamp tool and show the Stamps panel. */
   onSelectStamp: (id: string) => void;
+  /** Fired whenever the agent starts/stops working (drives the top-bar icon). */
+  onWorkingChange: (working: boolean) => void;
 }) {
   const [settings, setSettings] = useState<AgentSettings>(() => loadAgentSettings());
   const [keyDraft, setKeyDraft] = useState(settings.apiKey);
@@ -229,6 +232,10 @@ function AgentBody({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [working, setWorking] = useState(false);
+  // Let the top bar animate its agent icon while a turn is in flight.
+  useEffect(() => {
+    onWorkingChange(working);
+  }, [working, onWorkingChange]);
   const docRef = useRef(doc);
   docRef.current = doc;
   const panelOpenRef = useRef(panelOpen);
@@ -467,6 +474,7 @@ function AgentPanel({
   scrollToId,
   onScrolled,
   onSelectStamp,
+  onWorkingChange,
 }: {
   open: boolean;
   onToggle: () => void;
@@ -479,6 +487,7 @@ function AgentPanel({
   scrollToId: string | null;
   onScrolled: () => void;
   onSelectStamp: (id: string) => void;
+  onWorkingChange: (working: boolean) => void;
 }) {
   // Inside the mobile bottom sheet the card is always expanded — the sheet
   // itself is the thing that opens and closes.
@@ -498,6 +507,7 @@ function AgentPanel({
               scrollToId={scrollToId}
               onScrolled={onScrolled}
               onSelectStamp={onSelectStamp}
+              onWorkingChange={onWorkingChange}
             />
         </VStack>
       </Card>
@@ -524,6 +534,7 @@ function AgentPanel({
               scrollToId={scrollToId}
               onScrolled={onScrolled}
               onSelectStamp={onSelectStamp}
+              onWorkingChange={onWorkingChange}
             />
       </Collapsible>
     </Card>
@@ -799,6 +810,7 @@ export default function Inspector({
   scrollToMessage,
   onAgentScrolled,
   onSelectStamp,
+  onWorkingChange,
 }: {
   isMobile: boolean;
   agentOpen: boolean;
@@ -816,6 +828,7 @@ export default function Inspector({
   scrollToMessage: string | null;
   onAgentScrolled: () => void;
   onSelectStamp: (id: string) => void;
+  onWorkingChange: (working: boolean) => void;
 }) {
   // Mobile splits the inspector by pattern: the control cards (document,
   // glyph & color, stamps) live in an Astryx MobileNav side drawer so the
@@ -857,6 +870,7 @@ export default function Inspector({
               scrollToId={scrollToMessage}
               onScrolled={onAgentScrolled}
               onSelectStamp={onSelectStamp}
+              onWorkingChange={onWorkingChange}
             />
           </div>
         </BottomSheet>
@@ -877,6 +891,7 @@ export default function Inspector({
               scrollToId={scrollToMessage}
               onScrolled={onAgentScrolled}
               onSelectStamp={onSelectStamp}
+              onWorkingChange={onWorkingChange}
             />
       <DocumentPanel doc={doc} dispatch={dispatch} mode={mode} />
       <GlyphColorPanel brush={brush} onChange={onBrushChange} />

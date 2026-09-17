@@ -8,7 +8,25 @@ import { Text } from '@astryxdesign/core/Text';
 import Transport from './Transport.tsx';
 import { DOC_NAME } from './document.ts';
 
+// Slow turn for the agent icon while a turn is in flight — one full
+// revolution every 3s, calm rather than frantic. Disabled entirely for
+// users who prefer reduced motion.
+const agentSpin = stylex.keyframes({
+  from: { transform: 'rotate(0deg)' },
+  to: { transform: 'rotate(360deg)' },
+});
+
 const styles = stylex.create({
+  agentSpin: {
+    display: 'inline-flex',
+    animationName: agentSpin,
+    animationDuration: '3s',
+    animationTimingFunction: 'linear',
+    animationIterationCount: 'infinite',
+    '@media (prefers-reduced-motion: reduce)': {
+      animation: 'none',
+    },
+  },
   topNav: {
     backgroundColor: 'var(--color-background-surface)',
     borderBottom: '1px solid var(--color-border)',
@@ -71,6 +89,8 @@ interface TopBarProps {
   agentOpen: boolean;
   /** The agent finished a turn while the chat was closed — show a badge. */
   agentDone?: boolean;
+  /** The agent is working on a turn — spin its button icon slowly. */
+  agentWorking?: boolean;
   onJumpStart: () => void;
   onStepBack: () => void;
   onTogglePlay: () => void;
@@ -132,7 +152,11 @@ export default function TopBar(props: TopBarProps) {
           <span {...stylex.props(styles.agentWrap)}>
             <Button
               label="Agent"
-              icon={<IconSparkles />}
+              icon={
+                <span {...stylex.props(props.agentWorking && styles.agentSpin)}>
+                  <IconSparkles />
+                </span>
+              }
               variant={agentOpen ? 'primary' : 'ghost'}
               size="sm"
               tooltip={isMobile ? 'Open the agent' : 'Toggle the agent panel'}

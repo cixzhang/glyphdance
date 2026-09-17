@@ -112,6 +112,7 @@ export default function App() {
   const [playing, setPlaying] = useState(true);
   const [onionOn, setOnionOn] = useState(true);
   const [agentOpen, setAgentOpen] = useState(true);
+  const [agentWorking, setAgentWorking] = useState(false);
   // Mobile only: the agent chat lives in a bottom sheet, and the control
   // cards (document, glyph/color, stamps) live in a side drawer.
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -294,6 +295,7 @@ export default function App() {
           playing={playing}
           frameLabel={frameLabel}
           agentOpen={isMobile ? sheetOpen : agentOpen}
+          agentWorking={agentWorking}
           onJumpStart={jumpStart}
           onStepBack={stepBack}
           onTogglePlay={togglePlay}
@@ -358,6 +360,7 @@ export default function App() {
           scrollToMessage={scrollToMessage}
           onAgentScrolled={() => setScrollToMessage(null)}
           onSelectStamp={selectStamp}
+          onWorkingChange={setAgentWorking}
         />
       </div>
       <div {...stylex.props(styles.timeline)}>
