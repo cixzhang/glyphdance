@@ -1,18 +1,27 @@
+import { useRef, useState, type ReactNode, type Ref, type RefObject } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { IconButton } from '@astryxdesign/core/IconButton';
+import { Popover } from '@astryxdesign/core/Popover';
 import { ToggleButton, ToggleButtonGroup } from '@astryxdesign/core/ToggleButton';
 import {
   IconBrush,
   IconEraser,
   IconEyedropper,
   IconFill,
-  IconLine,
   IconRedo,
   IconSelect,
   IconStamp,
   IconText,
   IconUndo,
 } from './icons';
+import {
+  ColorPopoverContent,
+  GlyphPopoverContent,
+  StampPopoverContent,
+} from './tool-popovers.tsx';
+import type { Brush, ToolId } from './brush.ts';
+import type { DocState } from './document.ts';
+import type { Action } from './actions.ts';
 
 const styles = stylex.create({
   rail: {
@@ -58,11 +67,34 @@ const styles = stylex.create({
     // undo/redo buttons simply follow the tools.
     '@media (max-width: 760px)': { display: 'none' },
   },
+  // The color button's icon: the current BG with the FG overlaid, so the
+  // toolbar always shows what painting will lay down.
+  colorIcon: {
+    position: 'relative',
+    width: 14,
+    height: 14,
+    display: 'inline-block',
+  },
+  colorBg: {
+    position: 'absolute',
+    inset: 0,
+    borderRadius: 3,
+    border: '1px solid var(--color-border)',
+  },
+  colorFg: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 9,
+    height: 9,
+    borderRadius: 2,
+    border: '1px solid var(--color-border)',
+  },
 });
 
 // Every tool paints today except Select, which stays an honest stub until
 // region selection lands.
-const LIVE_TOOLS = new Set(['brush', 'erase', 'fill', 'line', 'text', 'stamp', 'pick']);
+const LIVE_TOOLS = new Set(['brush', 'erase', 'fill', 'text', 'stamp', 'pick']);
 
 // Shared with the canvas: the mobile tool badge shows the active tool's
 // icon + label, so this list is the single source of truth.
@@ -70,56 +102,158 @@ export const TOOLS = [  { id: 'select', icon: <IconSelect />, label: 'Select' },
   { id: 'brush', icon: <IconBrush />, label: 'Brush' },
   { id: 'erase', icon: <IconEraser />, label: 'Eraser' },
   { id: 'fill', icon: <IconFill />, label: 'Fill' },
-  { id: 'line', icon: <IconLine />, label: 'Line' },
   { id: 'text', icon: <IconText />, label: 'Text' },
   { id: 'stamp', icon: <IconStamp />, label: 'Stamp' },
   { id: 'pick', icon: <IconEyedropper />, label: 'Eyedropper' },
 ] as const;
 
+function ColorSwatchIcon({ fg, bg }: { fg: string; bg: string }) {
+  const transparent = bg === '';
+  return (
+    <span {...stylex.props(styles.colorIcon)} aria-hidden="true">
+      <span
+        {...stylex.props(styles.colorBg)}
+        style={{
+          backgroundColor: transparent ? 'transparent' : bg,
+          borderStyle: transparent ? 'dashed' : 'solid',
+        }}
+      />
+      <span {...stylex.props(styles.colorFg)} style={{ backgroundColor: fg }} />
+    </span>
+  );
+}
+
 // The tool rail is a textbook single-select toolbar: exactly one tool is
 // active, so it maps directly onto ToggleButtonGroup (vertical on desktop,
 // horizontal in the mobile strip). Undo/redo are momentary actions, not
 // toggles, so they stay as plain IconButtons outside the group.
+//
+// Brush, stamp, and colors carry popovers anchored to their toolbar
+// buttons: the glyph picker, the stamp library, and the FG/BG swatches all
+// live where the tools live instead of the side panel. The popovers use
+// anchorRef mode so the toggle buttons stay direct flex items of the
+// group (the auto-mode wrapper would break the group's stretch layout).
 export default function ToolRail({
   isMobile,
-  tool,
-  onToolChange,
+  brush,
+  onBrushChange,
+  doc,
+  dispatch,
+  mode,
   canUndo,
   canRedo,
   onUndo,
   onRedo,
 }: {
   isMobile: boolean;
-  tool: string;
-  onToolChange: (tool: string) => void;
+  brush: Brush;
+  onBrushChange: (patch: Partial<Brush>) => void;
+  doc: DocState;
+  dispatch: (a: Action) => void;
+  mode: 'light' | 'dark';
   canUndo: boolean;
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
 }) {
+  const [open, setOpen] = useState<'glyph' | 'color' | 'stamp' | null>(null);
+  const brushRef = useRef<HTMLButtonElement>(null);
+  const stampRef = useRef<HTMLButtonElement>(null);
+  // Popover's anchorRef is typed RefObject<HTMLElement> and only reads
+  // .current — adapt the button refs.
+  const brushAnchor = brushRef as unknown as RefObject<HTMLElement>;
+  const stampAnchor = stampRef as unknown as RefObject<HTMLElement>;
+  // Desktop rail sits left of the canvas → popovers open toward it ('end');
+  // the mobile strip is docked at the bottom → popovers open upward.
+  const placement = isMobile ? 'above' : 'end';
+
+  const handleGroupChange = (v: string | null) => {
+    if (typeof v !== 'string') return;
+    onBrushChange({ tool: v as ToolId });
+    // Brush/stamp popovers toggle through their own triggers; switching to
+    // any other tool closes whatever is open.
+    if (v !== 'brush' && v !== 'stamp') setOpen(null);
+  };
+
+  const toolButton = (
+    id: ToolId,
+    label: string,
+    icon: ReactNode,
+    ref?: Ref<HTMLButtonElement>,
+  ) => (
+    <ToggleButton
+      key={id}
+      ref={ref}
+      value={id}
+      label={label}
+      icon={icon}
+      isIconOnly
+      tooltip={label}
+    />
+  );
+
   return (
     <div {...stylex.props(styles.rail)} role="toolbar" aria-label="Tools">
       <ToggleButtonGroup
         label="Tools"
         type="single"
         orientation={isMobile ? 'horizontal' : 'vertical'}
-        value={tool}
-        onChange={(v) => {
-          if (typeof v === 'string') onToolChange(v);
-        }}
+        value={brush.tool}
+        onChange={handleGroupChange}
         xstyle={styles.group}
       >
-        {TOOLS.filter((t) => LIVE_TOOLS.has(t.id)).map((t) => (
-          <ToggleButton
-            key={t.id}
-            value={t.id}
-            label={t.label}
-            icon={t.icon}
-            isIconOnly
-            tooltip={t.label}
-          />
-        ))}
+        {TOOLS.filter((t) => LIVE_TOOLS.has(t.id)).map((t) => {
+          // 'select' never passes the filter, so the cast is honest.
+          const id = t.id as ToolId;
+          if (id === 'brush') return toolButton(id, t.label, t.icon, brushRef);
+          if (id === 'stamp') return toolButton(id, t.label, t.icon, stampRef);
+          return toolButton(id, t.label, t.icon);
+        })}
       </ToggleButtonGroup>
+      {/* Tool option popovers, anchored to their toolbar buttons. */}
+      <Popover
+        anchorRef={brushAnchor}
+        isOpen={open === 'glyph'}
+        onOpenChange={(o) => setOpen(o ? 'glyph' : null)}
+        placement={placement}
+        alignment="start"
+        label="Brush glyph"
+        content={<GlyphPopoverContent brush={brush} onChange={onBrushChange} />}
+      />
+      <Popover
+        anchorRef={stampAnchor}
+        isOpen={open === 'stamp'}
+        onOpenChange={(o) => setOpen(o ? 'stamp' : null)}
+        placement={placement}
+        alignment="start"
+        label="Stamps"
+        content={
+          <StampPopoverContent
+            brush={brush}
+            onBrushChange={onBrushChange}
+            doc={doc}
+            dispatch={dispatch}
+            mode={mode}
+          />
+        }
+      />
+      <Popover
+        isOpen={open === 'color'}
+        onOpenChange={(o) => setOpen(o ? 'color' : null)}
+        placement={placement}
+        alignment="start"
+        label="Colors"
+        content={<ColorPopoverContent brush={brush} onChange={onBrushChange} />}
+      >
+        <IconButton
+          label="Colors"
+          icon={<ColorSwatchIcon fg={brush.fg} bg={brush.bg} />}
+          variant="ghost"
+          size="md"
+          tooltip={`Colors — FG ${brush.fg}, BG ${brush.bg === '' ? 'transparent' : brush.bg}`}
+          xstyle={styles.tool}
+        />
+      </Popover>
       {/* Select is an honest stub until region selection lands. It's a plain
           IconButton (not a ToggleButton): Astryx renders isDisabled as
           aria-disabled when a tooltip is present, and a ToggleButton's

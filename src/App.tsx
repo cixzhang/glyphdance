@@ -334,8 +334,11 @@ export default function App() {
       <div {...stylex.props(styles.rail)}>
         <ToolRail
           isMobile={isMobile}
-          tool={brush.tool}
-          onToolChange={(tool) => patchBrush({ tool: tool as ToolId })}
+          brush={brush}
+          onBrushChange={patchBrush}
+          doc={doc}
+          dispatch={dispatch}
+          mode={mode}
           canUndo={canUndo}
           canRedo={canRedo}
           onUndo={undo}

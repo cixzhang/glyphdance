@@ -289,19 +289,6 @@ export function AsciiGrid({
   const strokeSeq = useRef(0);
   const nextStroke = () => `s${++strokeSeq.current}`;
 
-  // Line tool: anchor on pointer-down, live preview while dragging, commit
-  // as a single action on release.
-  const [lineAnchor, setLineAnchor] = useState<[number, number] | null>(null);
-  const [lineEnd, setLineEnd] = useState<[number, number] | null>(null);
-  const linePreview = useMemo(() => {
-    if (!lineAnchor || !lineEnd) return null;
-    const set = new Set<string>();
-    for (const [x, y] of lineCells(lineAnchor[0], lineAnchor[1], lineEnd[0], lineEnd[1])) {
-      if (inBounds(x, y)) set.add(`${x},${y}`);
-    }
-    return set;
-  }, [lineAnchor, lineEnd]);
-
   // Text tool: tap a cell to anchor; keystrokes paint LIVE into the grid.
   // The whole session shares one stroke id → a single undo step.
   // Backspace restores each cell's pre-session content.
@@ -396,17 +383,13 @@ export function AsciiGrid({
   };
 
   // Per-tool dispose: when a tool is toggled off, run its cleanup so no
-  // in-progress state (a text draft, a line preview) lingers after the
-  // switch. Tools without draft state need no case.
+  // in-progress state (a text draft) lingers after the switch. Tools
+  // without draft state need no case.
   const disposeTool = (tool: ToolId) => {
     switch (tool) {
       case 'text':
         // Live paints stay — switching tools commits the text.
         commitText();
-        break;
-      case 'line':
-        setLineAnchor(null);
-        setLineEnd(null);
         break;
     }
   };
@@ -459,10 +442,6 @@ export function AsciiGrid({
         if (out.length > 0) onPaint(out, nextStroke());
         return;
       }
-      case 'line':
-        setLineAnchor([x, y]);
-        setLineEnd([x, y]);
-        return;
       case 'text':
         // Tapping a new cell commits the previous session (paints are
         // already live) and starts a fresh one anchored here. Pause
@@ -495,10 +474,6 @@ export function AsciiGrid({
 
   const continueStroke = (x: number, y: number, buttons: number) => {
     if (!(buttons & 1)) return;
-    if (brush.tool === 'line') {
-      if (inBounds(x, y)) setLineEnd([x, y]);
-      return;
-    }
     const s = strokeRef.current;
     if (s === null) return;
     if (brush.tool === 'stamp') {
@@ -512,17 +487,6 @@ export function AsciiGrid({
   };
 
   const endStroke = () => {
-    if (lineAnchor && lineEnd) {
-      const out: PaintCell[] = [];
-      for (const [x, y] of lineCells(lineAnchor[0], lineAnchor[1], lineEnd[0], lineEnd[1])) {
-        if (inBounds(x, y)) {
-          out.push({ x, y, cell: { ch: brush.glyph, fg: brush.fg, bg: brush.bg } });
-        }
-      }
-      if (out.length > 0) onPaint(out, nextStroke());
-    }
-    setLineAnchor(null);
-    setLineEnd(null);
     strokeRef.current = null;
   };
 
@@ -550,13 +514,12 @@ export function AsciiGrid({
                 prevCells !== null &&
                 prevCells[cellIndex(c, r)].ch !== ' ';
               const ghostCell = ghost && prevCells ? prevCells[cellIndex(c, r)] : null;
-              const preview = linePreview !== null && linePreview.has(`${c},${r}`);
+              const shownCh = ghost && ghostCell ? ghostCell.ch : empty ? '·' : cell.ch;
               // Caret: the next cell the text tool will type into.
               const caret =
                 textAnchor !== null &&
                 textAnchor[0] + textCaret === c &&
                 textAnchor[1] === r;
-              const shownCh = preview ? brush.glyph : ghost && ghostCell ? ghostCell.ch : empty ? '·' : cell.ch;
               return (
                 <span
                   key={c}
@@ -567,18 +530,15 @@ export function AsciiGrid({
                   }}
                   onPointerEnter={(e) => continueStroke(c, r, e.buttons)}
                   style={{
-                    color: preview
-                      ? brush.fg
-                      : ghost
-                        ? mode === 'dark'
-                          ? GHOST_DARK
-                          : GHOST_LIGHT
-                        : empty
-                          ? theme.dot
-                          : cell.fg,
+                    color: ghost
+                      ? mode === 'dark'
+                        ? GHOST_DARK
+                        : GHOST_LIGHT
+                      : empty
+                        ? theme.dot
+                        : cell.fg,
                     backgroundColor: !empty && cell.bg ? cell.bg : undefined,
-                    textShadow:
-                      preview || ghost || empty ? 'none' : `0 0 10px ${cell.fg}66`,
+                    textShadow: ghost || empty ? 'none' : `0 0 10px ${cell.fg}66`,
                     outline: caret ? '1px solid var(--gd-accent)' : undefined,
                     outlineOffset: caret ? -1 : undefined,
                   }}

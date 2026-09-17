@@ -5,7 +5,6 @@ export type ToolId =
   | 'brush'
   | 'erase'
   | 'fill'
-  | 'line'
   | 'text'
   | 'stamp'
   | 'pick';
