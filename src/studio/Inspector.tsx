@@ -680,6 +680,9 @@ function StampsPanel({
     <Card padding={3}>
       <VStack gap={2}>
         <Heading level={4}>Stamps</Heading>
+        <Text type="supporting" color="disabled">
+          Tap the canvas to place — animated stamps play across frames.
+        </Text>
         {sections.map((sec) => (
           <VStack key={sec.title} gap={1}>
             <Text type="label" color="disabled">

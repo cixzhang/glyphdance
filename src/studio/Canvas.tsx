@@ -18,7 +18,7 @@ import {
 } from './document.ts';
 import type { PaintCell } from './actions.ts';
 import { themeById } from './scene.ts';
-import { resolveStamp, stampCellsFor, kindSwatchKey } from './stamps.ts';
+import { resolveStamp, kindSwatchKey } from './stamps.ts';
 import type { Brush, ToolId } from './brush.ts';
 
 const styles = stylex.create({
@@ -232,16 +232,6 @@ function floodFill(cells: Cell[], x: number, y: number, brush: Brush): PaintCell
   return out;
 }
 
-/** Stamp a sprite centered on (ax, ay), painting its real characters. */
-function stampCells(
-  rows: string[],
-  ax: number,
-  ay: number,
-  fg: string,
-): PaintCell[] {
-  return stampCellsFor(rows, ax, ay, fg, '');
-}
-
 /** Full-size character grid for the canvas. Empty cells render the theme's
  *  dot so the grid reads as graph paper; the document only stores real marks. */
 export function AsciiGrid({
@@ -254,6 +244,7 @@ export function AsciiGrid({
   zoom,
   onPaint,
   onPick,
+  onPlaceStamp,
 }: {
   doc: DocState;
   frame: number;
@@ -264,6 +255,8 @@ export function AsciiGrid({
   zoom: number;
   onPaint: (cells: PaintCell[], stroke: string) => void;
   onPick: (cell: Cell) => void;
+  /** Stamp tap: the App spreads the stamp's frames across document frames. */
+  onPlaceStamp: (stampId: string, x: number, y: number, fg: string) => void;
 }) {
   const theme = themeById(doc.themeId)[mode];
   const cells = doc.frames[frame].cells;
@@ -343,8 +336,9 @@ export function AsciiGrid({
     const stamp = resolveStamp(brush.stampId, doc.stamps);
     if (!stamp) return;
     const fg = stamp.fg ?? theme[kindSwatchKey(stamp.kind)];
-    const out = stampCells(stamp.frames[0], x, y, fg);
-    if (out.length > 0) onPaint(out, id);
+    // The App spreads the stamp's animation frames across the document
+    // frames — one tap and the stamp animates to the end of the timeline.
+    onPlaceStamp(brush.stampId, x, y, fg);
   };
 
   const beginStroke = (x: number, y: number) => {
@@ -589,6 +583,8 @@ interface CanvasProps {
   onZoomOut: () => void;
   onPaint: (cells: PaintCell[], stroke: string) => void;
   onPick: (cell: Cell) => void;
+  /** Stamp tap: the App spreads the stamp's frames across document frames. */
+  onPlaceStamp: (stampId: string, x: number, y: number, fg: string) => void;
   onOpenAgent: () => void;
   /** Mobile only: the playback transport floats top-left of the canvas. */
   playing: boolean;
@@ -613,6 +609,7 @@ export default function Canvas({
   onZoomOut,
   onPaint,
   onPick,
+  onPlaceStamp,
   onOpenAgent,
   playing,
   onJumpStart,
@@ -643,6 +640,7 @@ export default function Canvas({
         zoom={zoom}
         onPaint={onPaint}
         onPick={onPick}
+        onPlaceStamp={onPlaceStamp}
       />
       <div {...stylex.props(styles.fab)} role="toolbar" aria-label="Canvas view">
         <IconButton

@@ -18,6 +18,7 @@ import {
   saveAutosavedDoc,
 } from './studio/persist.ts';
 import { DEFAULT_BRUSH, type Brush, type ToolId } from './studio/brush.ts';
+import { resolveStamp } from './studio/stamps.ts';
 import type { Cell } from './studio/document.ts';
 import type { PaintCell } from './studio/actions.ts';
 
@@ -168,6 +169,31 @@ export default function App() {
       dispatch({ type: 'paintCells', frame: doc.active, cells, stroke }),
     [dispatch, doc.active],
   );
+  // Stamp placement: a multi-frame stamp animates itself. One tap paints
+  // the stamp's frames across consecutive document frames from the active
+  // frame to the end, cycling — so a ghost wobbles through the whole
+  // timeline instead of sitting static on one frame. Each frame's paint
+  // stays its own undo step, via the validated placeStamp action.
+  const onPlaceStamp = useCallback(
+    (stampId: string, x: number, y: number, fg: string) => {
+      const stamp = resolveStamp(stampId, doc.stamps);
+      if (!stamp) return;
+      const n = stamp.frames.length;
+      for (let f = doc.active; f < doc.frames.length; f++) {
+        dispatch({
+          type: 'placeStamp',
+          stampId,
+          frame: f,
+          x,
+          y,
+          fg,
+          bg: '',
+          stampFrame: (f - doc.active) % n,
+        });
+      }
+    },
+    [dispatch, doc],
+  );
   // Eyedropper: lift the cell's glyph and colors into the brush, then go
   // back to the brush so the next touch paints.
   const onPick = useCallback(
@@ -295,6 +321,7 @@ export default function App() {
           onZoomOut={zoomOut}
           onPaint={onPaint}
           onPick={onPick}
+          onPlaceStamp={onPlaceStamp}
           onOpenAgent={openPanels}
           playing={playing}
           onJumpStart={jumpStart}
