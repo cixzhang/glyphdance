@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import * as stylex from '@stylexjs/stylex';
+import { Sparkles } from 'lucide-react';
 import { GRID_W, GRID_H, type Cell } from './document.ts';
 import {
   sceneCells,
@@ -200,7 +201,7 @@ export default function Canvas({ frameIndex, frameCount, onionOn, scene, onOpenA
         onClick={onOpenAgent}
         title="Open the agent panel"
       >
-        <span {...stylex.props(styles.pillAccent)}>✦</span> Ask the agent…
+        <Sparkles size={13} {...stylex.props(styles.pillAccent)} /> Ask the agent…
         <span {...stylex.props(styles.kbd)}>⌘K</span>
       </button>
       <div {...stylex.props(styles.status)}>

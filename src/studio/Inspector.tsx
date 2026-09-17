@@ -10,6 +10,7 @@ import { Badge } from '@astryxdesign/core/Badge';
 import { VStack } from '@astryxdesign/core/Stack';
 import { BottomSheet } from '@astryxdesign/core/BottomSheet';
 import { MobileNav } from '@astryxdesign/core/MobileNav';
+import { Check, Sparkles } from 'lucide-react';
 import ScenePanel from './ScenePanel.tsx';
 import type { SceneConfig } from './scene.ts';
 import { AsciiThumb } from './Canvas.tsx';
@@ -141,7 +142,10 @@ function AgentBody() {
       </div>
       <div {...stylex.props(styles.bubbleAgent)}>
         <Text type="body" size="sm">
-          <span {...stylex.props(styles.agentName)}>✓</span> Inserted frame 3
+          <span {...stylex.props(styles.agentName)}>
+            <Check size={12} />
+          </span>{' '}
+          Inserted frame 3
           (blink variant of frame 2).
         </Text>
         <div {...stylex.props(styles.opLog)}>2 ops · undo available</div>
@@ -176,7 +180,7 @@ function AgentPanel({
       <Card padding={3}>
         <VStack gap={2}>
           <Heading level={4}>
-            <span {...stylex.props(styles.agentName)}>✦</span> Agent
+            <Sparkles size={13} {...stylex.props(styles.agentName)} /> Agent
           </Heading>
           <AgentBody />
         </VStack>
@@ -188,7 +192,7 @@ function AgentPanel({
       <Collapsible
         trigger={
           <Heading level={4}>
-            <span {...stylex.props(styles.agentName)}>✦</span> Agent
+            <Sparkles size={13} {...stylex.props(styles.agentName)} /> Agent
           </Heading>
         }
         isOpen={open}

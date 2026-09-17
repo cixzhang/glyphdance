@@ -2,6 +2,18 @@ import { useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { ToggleButton, ToggleButtonGroup } from '@astryxdesign/core/ToggleButton';
+import {
+  Brush,
+  Eraser,
+  MousePointer2,
+  PaintBucket,
+  Pipette,
+  Redo2,
+  Slash,
+  Stamp,
+  Type,
+  Undo2,
+} from 'lucide-react';
 
 const styles = stylex.create({
   rail: {
@@ -41,10 +53,6 @@ const styles = stylex.create({
     flexShrink: 1,
     '@media (max-width: 760px)': { flexShrink: 0 },
   },
-  toolIcon: {
-    fontSize: 17,
-    lineHeight: 1,
-  },
   spacer: {
     flex: 1,
     // In the scrolling strip the spacer would collapse to nothing — the
@@ -54,14 +62,14 @@ const styles = stylex.create({
 });
 
 const TOOLS = [
-  { id: 'select', icon: '⌖', label: 'Select' },
-  { id: 'brush', icon: '✎', label: 'Brush' },
-  { id: 'erase', icon: '⌫', label: 'Eraser' },
-  { id: 'fill', icon: '◨', label: 'Fill' },
-  { id: 'line', icon: '╱', label: 'Line' },
-  { id: 'text', icon: 'T', label: 'Text' },
-  { id: 'stamp', icon: '❖', label: 'Stamp' },
-  { id: 'pick', icon: '◉', label: 'Eyedropper' },
+  { id: 'select', icon: <MousePointer2 size={16} />, label: 'Select' },
+  { id: 'brush', icon: <Brush size={16} />, label: 'Brush' },
+  { id: 'erase', icon: <Eraser size={16} />, label: 'Eraser' },
+  { id: 'fill', icon: <PaintBucket size={16} />, label: 'Fill' },
+  { id: 'line', icon: <Slash size={16} />, label: 'Line' },
+  { id: 'text', icon: <Type size={16} />, label: 'Text' },
+  { id: 'stamp', icon: <Stamp size={16} />, label: 'Stamp' },
+  { id: 'pick', icon: <Pipette size={16} />, label: 'Eyedropper' },
 ] as const;
 
 // The tool rail is a textbook single-select toolbar: exactly one tool is
@@ -87,11 +95,7 @@ export default function ToolRail({ isMobile }: { isMobile: boolean }) {
             key={t.id}
             value={t.id}
             label={t.label}
-            icon={
-              <span {...stylex.props(styles.toolIcon)} aria-hidden="true">
-                {t.icon}
-              </span>
-            }
+            icon={t.icon}
             isIconOnly
             tooltip={`${t.label} (stub — painting arrives in Phase 1)`}
           />
@@ -101,11 +105,7 @@ export default function ToolRail({ isMobile }: { isMobile: boolean }) {
       <IconButton
         label="Undo"
         xstyle={styles.tool}
-        icon={
-          <span {...stylex.props(styles.toolIcon)} aria-hidden="true">
-            ↺
-          </span>
-        }
+        icon={<Undo2 size={18} />}
         variant="ghost"
         size="md"
         tooltip="Undo — soon"
@@ -114,11 +114,7 @@ export default function ToolRail({ isMobile }: { isMobile: boolean }) {
       <IconButton
         label="Redo"
         xstyle={styles.tool}
-        icon={
-          <span {...stylex.props(styles.toolIcon)} aria-hidden="true">
-            ↻
-          </span>
-        }
+        icon={<Redo2 size={18} />}
         variant="ghost"
         size="md"
         tooltip="Redo — soon"

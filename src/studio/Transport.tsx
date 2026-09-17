@@ -1,16 +1,20 @@
 import * as stylex from '@stylexjs/stylex';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { ToggleButton } from '@astryxdesign/core/ToggleButton';
+import {
+  Pause,
+  Play,
+  SkipBack,
+  SkipForward,
+  StepBack,
+  StepForward,
+} from 'lucide-react';
 
 const styles = stylex.create({
   row: {
     display: 'flex',
     alignItems: 'center',
     gap: 2,
-  },
-  glyph: {
-    fontSize: 13,
-    lineHeight: 1,
   },
 });
 
@@ -21,10 +25,6 @@ interface TransportProps {
   onTogglePlay: () => void;
   onStepFwd: () => void;
   onJumpEnd: () => void;
-}
-
-function Glyph({ children }: { children: string }) {
-  return <span {...stylex.props(styles.glyph)}>{children}</span>;
 }
 
 /** Playback transport cluster, shared by the top bar and the timeline. */
@@ -40,7 +40,7 @@ export default function Transport({
     <div {...stylex.props(styles.row)} role="group" aria-label="Playback transport">
       <IconButton
         label="Jump to first frame"
-        icon={<Glyph>⏮</Glyph>}
+        icon={<SkipBack size={14} />}
         variant="ghost"
         size="sm"
         tooltip="Jump to first frame"
@@ -48,7 +48,7 @@ export default function Transport({
       />
       <IconButton
         label="Previous frame"
-        icon={<Glyph>◀</Glyph>}
+        icon={<StepBack size={14} />}
         variant="ghost"
         size="sm"
         tooltip="Previous frame"
@@ -58,8 +58,8 @@ export default function Transport({
           icon swap, not a momentary IconButton. */}
       <ToggleButton
         label={playing ? 'Pause' : 'Play'}
-        icon={<Glyph>▶</Glyph>}
-        pressedIcon={<Glyph>❚❚</Glyph>}
+        icon={<Play size={14} />}
+        pressedIcon={<Pause size={14} />}
         isPressed={playing}
         onPressedChange={() => onTogglePlay()}
         size="sm"
@@ -68,7 +68,7 @@ export default function Transport({
       />
       <IconButton
         label="Next frame"
-        icon={<Glyph>▶</Glyph>}
+        icon={<StepForward size={14} />}
         variant="ghost"
         size="sm"
         tooltip="Next frame"
@@ -76,7 +76,7 @@ export default function Transport({
       />
       <IconButton
         label="Jump to last frame"
-        icon={<Glyph>⏭</Glyph>}
+        icon={<SkipForward size={14} />}
         variant="ghost"
         size="sm"
         tooltip="Jump to last frame"
