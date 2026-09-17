@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { Card } from '@astryxdesign/core/Card';
 import { Collapsible } from '@astryxdesign/core/Collapsible';
@@ -25,6 +25,7 @@ import {
   parseModelReply,
   runAgentActions,
   type ChatMessage,
+  type OpTarget,
 } from './agent.ts';
 import {
   DEFAULT_MODEL,
@@ -69,6 +70,19 @@ const styles = stylex.create({
     fontSize: 10,
     color: 'var(--gd-dim)',
     marginTop: 4,
+  },
+  // Tappable token inside an op-log line: jumps to the stamp or frame.
+  token: {
+    fontFamily: 'var(--gd-mono)',
+    fontSize: 10,
+    color: 'var(--gd-accent)',
+    backgroundColor: 'transparent',
+    border: '1px solid var(--gd-accent)',
+    borderRadius: 8,
+    padding: '0 6px',
+    margin: '0 2px',
+    cursor: 'pointer',
+    lineHeight: 1.6,
   },
   bubbleUser: {
     alignSelf: 'flex-end',
@@ -163,10 +177,24 @@ function AgentBody({
   doc,
   dispatch,
   mode,
+  panelOpen,
+  onDone,
+  scrollToId,
+  onScrolled,
+  onSelectStamp,
 }: {
   doc: DocState;
   dispatch: (a: Action) => void;
   mode: 'light' | 'dark';
+  /** Whether the chat is currently visible (sheet on mobile, card on desktop). */
+  panelOpen: boolean;
+  /** Fired when an assistant turn finishes while the chat is not visible. */
+  onDone: (info: { id: string; summary: string }) => void;
+  /** Message id to scroll to (from the done toast), or null. */
+  scrollToId: string | null;
+  onScrolled: () => void;
+  /** A stamp token was tapped: arm the stamp tool and show the Stamps panel. */
+  onSelectStamp: (id: string) => void;
 }) {
   const [settings, setSettings] = useState<AgentSettings>(() => loadAgentSettings());
   const [keyDraft, setKeyDraft] = useState(settings.apiKey);
@@ -177,6 +205,27 @@ function AgentBody({
   const [working, setWorking] = useState(false);
   const docRef = useRef(doc);
   docRef.current = doc;
+  const panelOpenRef = useRef(panelOpen);
+  panelOpenRef.current = panelOpen;
+  const msgRefs = useRef(new Map<string, HTMLDivElement>());
+  const msgId = () =>
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  // Deep link: the done toast hands us a message id to scroll to.
+  useEffect(() => {
+    if (!scrollToId) return;
+    // Let the sheet/card finish opening before scrolling.
+    const timer = window.setTimeout(() => {
+      const el = msgRefs.current.get(scrollToId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        onScrolled();
+      }
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [scrollToId, onScrolled]);
 
   const saveSettings = () => {
     const next: AgentSettings = {
@@ -197,7 +246,7 @@ function AgentBody({
     }
     setInput('');
     setWorking(true);
-    const userMsg: ChatMessage = { role: 'user', text: prompt };
+    const userMsg: ChatMessage = { id: msgId(), role: 'user', text: prompt };
     const history = [...messages, userMsg];
     setMessages(history);
     try {
@@ -210,10 +259,13 @@ function AgentBody({
       const reply = parseModelReply(raw);
       if (!reply) {
         // Not the JSON envelope — show the raw text as a plain answer.
-        setMessages([...history, { role: 'assistant', text: raw }]);
+        const rawMsg: ChatMessage = { id: msgId(), role: 'assistant', text: raw };
+        setMessages([...history, rawMsg]);
+        if (!panelOpenRef.current) onDone({ id: rawMsg.id, summary: raw.slice(0, 120) });
         return;
       }
       const assistantMsg: ChatMessage = {
+        id: msgId(),
         role: 'assistant',
         text: reply.message,
         ops: [],
@@ -225,28 +277,38 @@ function AgentBody({
         reply.actions,
         () => docRef.current,
         dispatch,
-        (line) => {
+        (op) => {
           setMessages((ms) =>
             ms.map((m) =>
               m === assistantMsg
-                ? { ...m, ops: [...(m.ops ?? []), line] }
+                ? { ...m, ops: [...(m.ops ?? []), op] }
                 : m,
             ),
           );
         },
       );
+      // Notify when done, especially if the chat isn't open — the toast
+      // deep-links back to this message.
+      if (!panelOpenRef.current)
+        onDone({ id: assistantMsg.id, summary: reply.message });
     } catch (e) {
-      setMessages([
-        ...history,
-        {
-          role: 'assistant',
-          text: `Something went wrong: ${(e as Error).message}`,
-          error: true,
-        },
-      ]);
+      const errMsg: ChatMessage = {
+        id: msgId(),
+        role: 'assistant',
+        text: `Something went wrong: ${(e as Error).message}`,
+        error: true,
+      };
+      setMessages([...history, errMsg]);
+      if (!panelOpenRef.current)
+        onDone({ id: errMsg.id, summary: 'The agent hit an error.' });
     } finally {
       setWorking(false);
     }
+  };
+
+  const onToken = (target: OpTarget) => {
+    if (target.kind === 'stamp') onSelectStamp(target.id);
+    else dispatch({ type: 'setActive', index: target.index });
   };
 
   return (
@@ -286,9 +348,13 @@ function AgentBody({
           </Text>
         </VStack>
       </Collapsible>
-      {messages.map((m, i) => (
+      {messages.map((m) => (
         <div
-          key={i}
+          key={m.id}
+          ref={(el) => {
+            if (el) msgRefs.current.set(m.id, el);
+            else msgRefs.current.delete(m.id);
+          }}
           {...stylex.props(
             m.role === 'user' ? styles.bubbleUser : styles.bubbleAgent,
           )}
@@ -306,7 +372,27 @@ function AgentBody({
           {m.ops && m.ops.length > 0 && (
             <div {...stylex.props(styles.opLog)}>
               {m.ops.map((op, j) => (
-                <div key={j}>· {op}</div>
+                <div key={j}>
+                  ·
+                  {op.segments.map((seg, k) =>
+                    seg.kind === 'text' ? (
+                      <span key={k}>{seg.text}</span>
+                    ) : (
+                      <button
+                        key={k}
+                        {...stylex.props(styles.token)}
+                        onClick={() => onToken(seg.target)}
+                        title={
+                          seg.target.kind === 'stamp'
+                            ? `Show stamp ${seg.label}`
+                            : `Go to ${seg.label}`
+                        }
+                      >
+                        {seg.label}
+                      </button>
+                    ),
+                  )}
+                </div>
               ))}
             </div>
           )}
@@ -350,6 +436,11 @@ function AgentPanel({
   doc,
   dispatch,
   mode,
+  panelOpen,
+  onDone,
+  scrollToId,
+  onScrolled,
+  onSelectStamp,
 }: {
   open: boolean;
   onToggle: () => void;
@@ -357,6 +448,11 @@ function AgentPanel({
   doc: DocState;
   dispatch: (a: Action) => void;
   mode: 'light' | 'dark';
+  panelOpen: boolean;
+  onDone: (info: { id: string; summary: string }) => void;
+  scrollToId: string | null;
+  onScrolled: () => void;
+  onSelectStamp: (id: string) => void;
 }) {
   // Inside the mobile bottom sheet the card is always expanded — the sheet
   // itself is the thing that opens and closes.
@@ -367,7 +463,16 @@ function AgentPanel({
           <Heading level={4}>
             <IconSparkles {...stylex.props(styles.agentName)} /> Agent
           </Heading>
-          <AgentBody doc={doc} dispatch={dispatch} mode={mode} />
+          <AgentBody
+              doc={doc}
+              dispatch={dispatch}
+              mode={mode}
+              panelOpen={panelOpen}
+              onDone={onDone}
+              scrollToId={scrollToId}
+              onScrolled={onScrolled}
+              onSelectStamp={onSelectStamp}
+            />
         </VStack>
       </Card>
     );
@@ -384,7 +489,16 @@ function AgentPanel({
         onOpenChange={onToggle}
         chevronPosition="end"
       >
-        <AgentBody doc={doc} dispatch={dispatch} mode={mode} />
+        <AgentBody
+              doc={doc}
+              dispatch={dispatch}
+              mode={mode}
+              panelOpen={panelOpen}
+              onDone={onDone}
+              scrollToId={scrollToId}
+              onScrolled={onScrolled}
+              onSelectStamp={onSelectStamp}
+            />
       </Collapsible>
     </Card>
   );
@@ -645,6 +759,10 @@ export default function Inspector({
   brush,
   onBrushChange,
   mode,
+  onAgentDone,
+  scrollToMessage,
+  onAgentScrolled,
+  onSelectStamp,
 }: {
   isMobile: boolean;
   agentOpen: boolean;
@@ -658,6 +776,10 @@ export default function Inspector({
   brush: Brush;
   onBrushChange: (patch: Partial<Brush>) => void;
   mode: 'light' | 'dark';
+  onAgentDone: (info: { id: string; summary: string }) => void;
+  scrollToMessage: string | null;
+  onAgentScrolled: () => void;
+  onSelectStamp: (id: string) => void;
 }) {
   // Mobile splits the inspector by pattern: the control cards (document,
   // glyph & color, stamps) live in an Astryx MobileNav side drawer so the
@@ -687,7 +809,19 @@ export default function Inspector({
           snapPoints={[0.45]}
         >
           <div {...stylex.props(styles.sheetContent)}>
-            <AgentPanel open={agentOpen} onToggle={onToggleAgent} isMobile={isMobile} doc={doc} dispatch={dispatch} mode={mode} />
+            <AgentPanel
+              open={agentOpen}
+              onToggle={onToggleAgent}
+              isMobile={isMobile}
+              doc={doc}
+              dispatch={dispatch}
+              mode={mode}
+              panelOpen={isMobile ? sheetOpen : agentOpen}
+              onDone={onAgentDone}
+              scrollToId={scrollToMessage}
+              onScrolled={onAgentScrolled}
+              onSelectStamp={onSelectStamp}
+            />
           </div>
         </BottomSheet>
       </>
@@ -695,7 +829,19 @@ export default function Inspector({
   }
   return (
     <div {...stylex.props(styles.col)}>
-      <AgentPanel open={agentOpen} onToggle={onToggleAgent} isMobile={isMobile} doc={doc} dispatch={dispatch} mode={mode} />
+      <AgentPanel
+              open={agentOpen}
+              onToggle={onToggleAgent}
+              isMobile={isMobile}
+              doc={doc}
+              dispatch={dispatch}
+              mode={mode}
+              panelOpen={isMobile ? sheetOpen : agentOpen}
+              onDone={onAgentDone}
+              scrollToId={scrollToMessage}
+              onScrolled={onAgentScrolled}
+              onSelectStamp={onSelectStamp}
+            />
       <DocumentPanel doc={doc} dispatch={dispatch} mode={mode} />
       <GlyphColorPanel brush={brush} onChange={onBrushChange} />
       <StampsPanel brush={brush} onBrushChange={onBrushChange} doc={doc} dispatch={dispatch} />

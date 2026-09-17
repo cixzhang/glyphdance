@@ -57,6 +57,19 @@ const styles = stylex.create({
     display: 'none',
     '@media (max-width: 760px)': { display: 'flex' },
   },
+  agentWrap: { position: 'relative', display: 'inline-flex' },
+  // Badge dot: the agent finished while the chat was closed.
+  agentDot: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: 'var(--gd-accent)',
+    border: '2px solid var(--gd-bg0)',
+    pointerEvents: 'none',
+  },
 });
 
 interface TopBarProps {
@@ -64,6 +77,8 @@ interface TopBarProps {
   playing: boolean;
   frameLabel: string;
   agentOpen: boolean;
+  /** The agent finished a turn while the chat was closed — show a badge. */
+  agentDone?: boolean;
   onJumpStart: () => void;
   onStepBack: () => void;
   onTogglePlay: () => void;
@@ -158,14 +173,17 @@ export default function TopBar(props: TopBarProps) {
             tooltip={mode === 'dark' ? 'Light mode' : 'Dark mode'}
             onClick={onToggleMode}
           />
-          <Button
-            label="Agent"
-            icon={<IconSparkles />}
-            variant={agentOpen ? 'primary' : 'ghost'}
-            size="sm"
-            tooltip={isMobile ? 'Open the agent' : 'Toggle the agent panel'}
-            onClick={props.onToggleAgent}
-          />
+          <span {...stylex.props(styles.agentWrap)}>
+            <Button
+              label="Agent"
+              icon={<IconSparkles />}
+              variant={agentOpen ? 'primary' : 'ghost'}
+              size="sm"
+              tooltip={isMobile ? 'Open the agent' : 'Toggle the agent panel'}
+              onClick={props.onToggleAgent}
+            />
+            {props.agentDone && <span {...stylex.props(styles.agentDot)} />}
+          </span>
         </div>
       }
       />

@@ -23,11 +23,45 @@ import {
 import { themeById } from './scene.ts';
 
 export interface ChatMessage {
+  id: string;
   role: 'user' | 'assistant';
   text: string;
   /** Human-readable op lines, e.g. "painted 38 cells on frame 1". */
-  ops?: string[];
+  ops?: OpLine[];
   error?: boolean;
+}
+
+/** A tappable token inside an op line — "goes to the thing it affected". */
+export type OpTarget =
+  | { kind: 'stamp'; id: string }
+  | { kind: 'frame'; index: number };
+
+export type OpSegment =
+  | { kind: 'text'; text: string }
+  | { kind: 'token'; label: string; target: OpTarget };
+
+/** One operation-log line: renderable segments, tokens tappable. */
+export interface OpLine {
+  segments: OpSegment[];
+}
+
+const t = (text: string): OpSegment => ({ kind: 'text', text });
+const stampTok = (id: string): OpSegment => ({
+  kind: 'token',
+  label: id,
+  target: { kind: 'stamp', id },
+});
+const frameTok = (index: number): OpSegment => ({
+  kind: 'token',
+  label: `frame ${index + 1}`,
+  target: { kind: 'frame', index },
+});
+
+/** Plain-text rendering of an op line (logs, notifications). */
+export function opText(op: OpLine): string {
+  return op.segments
+    .map((s) => (s.kind === 'text' ? s.text : s.label))
+    .join('');
 }
 
 interface ModelReply {
@@ -177,36 +211,55 @@ export async function callOpenRouter(
 }
 
 /** One-line human summary of an action for the op log. */
-export function summarizeAction(a: Action): string {
+export function summarizeAction(a: Action): OpLine {
   switch (a.type) {
     case 'paintCells':
-      return `painted ${a.cells.length} cell${a.cells.length === 1 ? '' : 's'} on frame ${a.frame + 1}`;
+      return {
+        segments: [
+          t(`painted ${a.cells.length} cell${a.cells.length === 1 ? '' : 's'} on `),
+          frameTok(a.frame),
+        ],
+      };
     case 'addFrame':
-      return `added a frame after frame ${a.after + 1}`;
+      return { segments: [t('added '), frameTok(a.after + 1)] };
     case 'duplicateFrame':
-      return `duplicated frame ${a.index + 1}`;
+      return {
+        segments: [t(`duplicated frame ${a.index + 1} as `), frameTok(a.index + 1)],
+      };
     case 'deleteFrame':
-      return `deleted frame ${a.index + 1}`;
+      return { segments: [t(`deleted frame ${a.index + 1}`)] };
     case 'moveFrame':
-      return `moved frame ${a.from + 1} to position ${a.to + 1}`;
+      return {
+        segments: [t('moved '), frameTok(a.from), t(' to position '), frameTok(a.to)],
+      };
     case 'setHold':
-      return `set frame ${a.index + 1} hold to ${a.holdMs}ms`;
+      return {
+        segments: [t('set '), frameTok(a.index), t(` hold to ${a.holdMs}ms`)],
+      };
     case 'setTheme':
-      return `switched theme to ${a.themeId}`;
+      return { segments: [t(`switched theme to ${a.themeId}`)] };
     case 'rename':
-      return `renamed document to "${a.name}"`;
+      return { segments: [t(`renamed document to "${a.name}"`)] };
     case 'setActive':
-      return `selected frame ${a.index + 1}`;
+      return { segments: [t('selected '), frameTok(a.index)] };
     case 'addStamp':
-      return `created stamp "${a.stamp.id}" (${a.stamp.frames.length} frame${
-        a.stamp.frames.length === 1 ? '' : 's'
-      })`;
+      return {
+        segments: [
+          t('created stamp '),
+          stampTok(a.stamp.id),
+          t(
+            ` (${a.stamp.frames.length} frame${a.stamp.frames.length === 1 ? '' : 's'})`,
+          ),
+        ],
+      };
     case 'deleteStamp':
-      return `deleted stamp "${a.id}"`;
+      return { segments: [t(`deleted stamp "${a.id}"`)] };
     case 'placeStamp':
-      return `placed stamp "${a.stampId}" on frame ${a.frame + 1}`;
+      return {
+        segments: [t('placed stamp '), stampTok(a.stampId), t(' on '), frameTok(a.frame)],
+      };
     default:
-      return 'applied an edit';
+      return { segments: [t('applied an edit')] };
   }
 }
 
@@ -219,13 +272,13 @@ export async function runAgentActions(
   actions: Action[],
   getDoc: () => DocState,
   dispatch: (a: Action) => void,
-  onOp: (line: string) => void,
+  onOp: (op: OpLine) => void,
   delayMs = 350,
 ): Promise<void> {
   for (const a of actions) {
     const err = validate(getDoc(), a);
     if (err) {
-      onOp(`skipped: ${err}`);
+      onOp({ segments: [t(`skipped: ${err}`)] });
       continue;
     }
     dispatch(a);

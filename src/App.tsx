@@ -53,6 +53,40 @@ const styles = stylex.create({
     '@media (max-width: 760px)': { display: 'contents' },
   },
   timeline: { gridArea: 'timeline', minWidth: 0 },
+  // Agent-done toast: tappable, deep-links into the chat message.
+  toast: {
+    position: 'fixed',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    bottom: 160,
+    '@media (max-width: 760px)': { bottom: 190 },
+    zIndex: 60,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    maxWidth: '92vw',
+    padding: '10px 14px',
+    borderRadius: 14,
+    border: '1px solid var(--gd-border)',
+    backgroundColor: 'var(--gd-bg1)',
+    color: 'var(--gd-text)',
+    fontFamily: 'var(--gd-ui)',
+    fontSize: 12,
+    cursor: 'pointer',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+  },
+  toastCheck: { color: 'var(--gd-accent)', flexShrink: 0 },
+  toastText: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    maxWidth: '52vw',
+  },
+  toastView: {
+    color: 'var(--gd-accent)',
+    fontWeight: 700,
+    flexShrink: 0,
+  },
 });
 
 type ThemeMode = 'light' | 'dark';
@@ -103,11 +137,29 @@ export default function App() {
   // cards (document, glyph/color, stamps) live in a side drawer.
   const [sheetOpen, setSheetOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // Agent-done notification: set when an assistant turn finishes while the
+  // chat isn't visible. The toast deep-links to the chat message; tapping a
+  // token inside the message jumps to the stamp or frame it affected.
+  const [agentDone, setAgentDone] = useState<{ id: string; summary: string } | null>(null);
+  const [scrollToMessage, setScrollToMessage] = useState<string | null>(null);
+  const handleAgentDone = useCallback(
+    (info: { id: string; summary: string }) => setAgentDone(info),
+    [],
+  );
   // The brush: active tool plus the glyph and colors it paints with.
   const [brush, setBrush] = useState<Brush>(DEFAULT_BRUSH);
   const patchBrush = useCallback(
     (patch: Partial<Brush>) => setBrush((b) => ({ ...b, ...patch })),
     [],
+  );
+  // A stamp token was tapped: arm the stamp tool and reveal the Stamps panel
+  // (mobile drawer; the desktop inspector is already visible).
+  const selectStamp = useCallback(
+    (id: string) => {
+      patchBrush({ tool: 'stamp', stampId: id });
+      if (isMobile) setDrawerOpen(true);
+    },
+    [patchBrush, isMobile],
   );
   // Canvas view: grid overlay + zoom.
   const [gridOn, setGridOn] = useState(false);
@@ -174,6 +226,11 @@ export default function App() {
       setAgentOpen(true);
     }
   }, [isMobile]);
+  const viewAgentDone = useCallback(() => {
+    setScrollToMessage(agentDone?.id ?? null);
+    setAgentDone(null);
+    openPanels();
+  }, [agentDone, openPanels]);
 
   // Playback honors each frame's hold time.
   useEffect(() => {
@@ -206,6 +263,7 @@ export default function App() {
           onStepFwd={stepFwd}
           onJumpEnd={jumpEnd}
           onToggleAgent={togglePanels}
+          agentDone={agentDone !== null}
           onOpenControls={() => setDrawerOpen(true)}
           mode={mode}
           onToggleMode={toggleMode}
@@ -252,6 +310,10 @@ export default function App() {
           brush={brush}
           onBrushChange={patchBrush}
           mode={mode}
+          onAgentDone={handleAgentDone}
+          scrollToMessage={scrollToMessage}
+          onAgentScrolled={() => setScrollToMessage(null)}
+          onSelectStamp={selectStamp}
         />
       </div>
       <div {...stylex.props(styles.timeline)}>
@@ -269,6 +331,17 @@ export default function App() {
           onToggleOnion={toggleOnion}
         />
       </div>
+      {agentDone && (
+        <button
+          {...stylex.props(styles.toast)}
+          onClick={viewAgentDone}
+          aria-label={`Agent finished. View result: ${agentDone.summary}`}
+        >
+          <span {...stylex.props(styles.toastCheck)}>✓</span>
+          <span {...stylex.props(styles.toastText)}>{agentDone.summary}</span>
+          <span {...stylex.props(styles.toastView)}>View</span>
+        </button>
+      )}
     </div>
     </Theme>
   );
