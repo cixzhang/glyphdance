@@ -3,7 +3,7 @@ import { TopNav, TopNavHeading, TopNavRenderContext } from '@astryxdesign/core/T
 import { Button } from '@astryxdesign/core/Button';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { StatusDot } from '@astryxdesign/core/StatusDot';
-import { IconMoon, IconPanels, IconSparkles, IconSun } from './icons';
+import { IconMoon, IconSparkles, IconSun } from './icons';
 import { Text } from '@astryxdesign/core/Text';
 import Transport from './Transport.tsx';
 import { DOC_NAME } from './document.ts';
@@ -53,11 +53,6 @@ const styles = stylex.create({
   desktopOnly: {
     '@media (max-width: 760px)': { display: 'none' },
   },
-  // Mobile-only controls.
-  mobileOnly: {
-    display: 'none',
-    '@media (max-width: 760px)': { display: 'flex' },
-  },
   agentWrap: { position: 'relative', display: 'inline-flex' },
   // Badge dot: the agent finished while the chat was closed. Astryx
   // StatusDot with positioning; the label keeps it accessible.
@@ -82,7 +77,6 @@ interface TopBarProps {
   onStepFwd: () => void;
   onJumpEnd: () => void;
   onToggleAgent: () => void;
-  onOpenControls: () => void;
   mode: 'light' | 'dark';
   onToggleMode: () => void;
 }
@@ -150,16 +144,6 @@ export default function TopBar(props: TopBarProps) {
               size="sm"
               tooltip="Export GIF / PNG / TXT — coming in Phase 1"
               isDisabled
-            />
-          </div>
-          <div {...stylex.props(styles.mobileOnly)}>
-            <IconButton
-              label="Control panels"
-              icon={<IconPanels />}
-              variant="ghost"
-              size="sm"
-              tooltip="Open the control panels"
-              onClick={props.onOpenControls}
             />
           </div>
           <IconButton

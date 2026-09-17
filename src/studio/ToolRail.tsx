@@ -64,8 +64,9 @@ const styles = stylex.create({
 // region selection lands.
 const LIVE_TOOLS = new Set(['brush', 'erase', 'fill', 'line', 'text', 'stamp', 'pick']);
 
-const TOOLS = [
-  { id: 'select', icon: <IconSelect />, label: 'Select' },
+// Shared with the canvas: the mobile tool badge shows the active tool's
+// icon + label, so this list is the single source of truth.
+export const TOOLS = [  { id: 'select', icon: <IconSelect />, label: 'Select' },
   { id: 'brush', icon: <IconBrush />, label: 'Brush' },
   { id: 'erase', icon: <IconEraser />, label: 'Eraser' },
   { id: 'fill', icon: <IconFill />, label: 'Fill' },

@@ -3,8 +3,11 @@ import * as stylex from '@stylexjs/stylex';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { Button } from '@astryxdesign/core/Button';
 import { TextInput } from '@astryxdesign/core/TextInput';
+import { Text } from '@astryxdesign/core/Text';
 import { Kbd } from '@astryxdesign/core/Kbd';
-import { IconSparkles, IconGrid, IconZoomIn, IconZoomOut } from './icons';
+import { IconSparkles, IconGrid, IconZoomIn, IconZoomOut, IconPanels } from './icons';
+import Transport from './Transport.tsx';
+import { TOOLS } from './ToolRail.tsx';
 import {
   GRID_W,
   GRID_H,
@@ -78,12 +81,51 @@ const styles = stylex.create({
     backdropFilter: 'blur(6px)',
     zIndex: 2,
   },
+  // Mobile only: playback floats top-left so the timeline strip can give
+  // the frame filmstrip the full width.
+  transportFab: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    display: 'flex',
+    gap: 4,
+    backgroundColor: 'rgba(20,22,26,0.85)',
+    border: '1px solid var(--gd-border)',
+    borderRadius: 8,
+    padding: 4,
+    backdropFilter: 'blur(6px)',
+    zIndex: 2,
+    '@media (min-width: 761px)': { display: 'none' },
+  },
+  // Mobile only: the active tool, as icon + label, bottom-right.
+  toolBadge: {
+    position: 'absolute',
+    right: 10,
+    bottom: 10,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(20,22,26,0.85)',
+    border: '1px solid var(--gd-border)',
+    borderRadius: 999,
+    padding: '5px 12px 5px 8px',
+    backdropFilter: 'blur(6px)',
+    zIndex: 2,
+    pointerEvents: 'none',
+    '@media (min-width: 761px)': { display: 'none' },
+  },
+  // Shown only on mobile (inside the floating view bar).
+  mobileOnly: {
+    display: 'none',
+    '@media (max-width: 760px)': { display: 'contents' },
+  },
   textBar: {
     position: 'absolute',
     bottom: 44,
     left: '50%',
     transform: 'translateX(-50%)',
     display: 'flex',
+    alignItems: 'center',
     gap: 6,
     backgroundColor: 'rgba(20,22,26,0.95)',
     border: '1px solid var(--gd-accent)',
@@ -437,6 +479,7 @@ export function AsciiGrid({
             label="Text to place on the canvas"
             isLabelHidden
             hasAutoFocus
+            size="sm"
             value={textValue}
             onChange={(v) => setTextValue(v.slice(0, GRID_W - textAnchor[0]))}
             onEnter={placeText}
@@ -516,6 +559,15 @@ interface CanvasProps {
   onPaint: (cells: PaintCell[], stroke: string) => void;
   onPick: (cell: Cell) => void;
   onOpenAgent: () => void;
+  /** Mobile only: the playback transport floats top-left of the canvas. */
+  playing: boolean;
+  onJumpStart: () => void;
+  onStepBack: () => void;
+  onTogglePlay: () => void;
+  onStepFwd: () => void;
+  onJumpEnd: () => void;
+  /** Mobile only: opens the control-panels drawer. */
+  onOpenControls: () => void;
 }
 
 export default function Canvas({
@@ -531,8 +583,16 @@ export default function Canvas({
   onPaint,
   onPick,
   onOpenAgent,
+  playing,
+  onJumpStart,
+  onStepBack,
+  onTogglePlay,
+  onStepFwd,
+  onJumpEnd,
+  onOpenControls,
 }: CanvasProps) {
   const theme = themeById(doc.themeId)[mode];
+  const activeTool = TOOLS.find((t) => t.id === brush.tool) ?? TOOLS[1];
   return (
     <div
       {...stylex.props(styles.wrap, zoom > 1 && styles.wrapZoomed)}
@@ -580,6 +640,38 @@ export default function Canvas({
           isDisabled={zoom >= 3}
           onClick={onZoomIn}
         />
+        {/* Mobile: the control-panels entry lives here, right of the view
+            controls, instead of crowding the top bar. */}
+        <span {...stylex.props(styles.mobileOnly)}>
+          <IconButton
+            label="Control panels"
+            icon={<IconPanels />}
+            variant="ghost"
+            size="sm"
+            tooltip="Open the control panels"
+            onClick={onOpenControls}
+          />
+        </span>
+      </div>
+      {/* Mobile: playback floats top-left of the canvas. */}
+      <div
+        {...stylex.props(styles.transportFab)}
+        role="toolbar"
+        aria-label="Playback"
+      >
+        <Transport
+          playing={playing}
+          onJumpStart={onJumpStart}
+          onStepBack={onStepBack}
+          onTogglePlay={onTogglePlay}
+          onStepFwd={onStepFwd}
+          onJumpEnd={onJumpEnd}
+        />
+      </div>
+      {/* Mobile: what tool is active, as icon + label. */}
+      <div {...stylex.props(styles.toolBadge)} aria-live="polite">
+        {activeTool.icon}
+        <Text type="label">{activeTool.label}</Text>
       </div>
       <Button
         label="Open the agent panel"

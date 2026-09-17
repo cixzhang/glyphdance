@@ -265,7 +265,6 @@ export default function App() {
           onJumpEnd={jumpEnd}
           onToggleAgent={togglePanels}
           agentDone={agentDone !== null}
-          onOpenControls={() => setDrawerOpen(true)}
           mode={mode}
           onToggleMode={toggleMode}
         />
@@ -295,6 +294,13 @@ export default function App() {
           onPaint={onPaint}
           onPick={onPick}
           onOpenAgent={openPanels}
+          playing={playing}
+          onJumpStart={jumpStart}
+          onStepBack={stepBack}
+          onTogglePlay={togglePlay}
+          onStepFwd={stepFwd}
+          onJumpEnd={jumpEnd}
+          onOpenControls={() => setDrawerOpen(true)}
         />
       </div>
       <div {...stylex.props(styles.inspector)}>

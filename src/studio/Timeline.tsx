@@ -32,6 +32,19 @@ const styles = stylex.create({
       gap: 4,
     },
   },
+  // The playback transport floats on the canvas on mobile — hide it here
+  // so the filmstrip gets the full width.
+  hideOnMobile: {
+    '@media (max-width: 760px)': { display: 'none' },
+  },
+  // Frame ops + onion skin stack vertically on the right edge.
+  sideCluster: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
   // Frame-rate / range readouts — hidden on mobile where every pixel counts.
   meta: {
     display: 'flex',
@@ -47,6 +60,11 @@ const styles = stylex.create({
     overflowX: 'auto',
     padding: '2px',
     minWidth: 0,
+    // Let touch do what it expects: horizontal pans scroll the strip,
+    // vertical pans scroll the page. Without this the strip competes with
+    // the browser's gesture handling and swipe-scrolling feels stuck.
+    touchAction: 'pan-x pan-y',
+    WebkitOverflowScrolling: 'touch',
   },
   // Frame thumbnails are the app's domain (character cells) — kept custom.
   thumb: {
@@ -69,6 +87,21 @@ const styles = stylex.create({
   thumbActive: {
     borderColor: 'var(--gd-invader)',
     boxShadow: '0 0 0 1px var(--gd-invader)',
+  },
+  // The "add frame" cell: reads as a frame, but it's a + button.
+  addFrame: {
+    appearance: 'none',
+    backgroundColor: 'transparent',
+    border: '1px dashed var(--gd-faint)',
+    borderRadius: 8,
+    color: 'var(--gd-dim)',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 56,
+    scrollMarginInline: 12,
+    ':hover': { borderColor: 'var(--gd-accent)', color: 'var(--gd-accent)' },
   },
   playhead: {
     width: 3,
@@ -98,22 +131,29 @@ export default function Timeline(props: TimelineProps) {
   const active = doc.active;
   const activeThumbRef = useRef<HTMLButtonElement | null>(null);
   const swatch = themeById(doc.themeId)[mode];
+  // Timestamp of the last touch/pointer interaction with the filmstrip.
+  const lastStripTouch = useRef(0);
 
   // In play mode, keep the focused frame visible as the playhead advances.
-  // `nearest` is a no-op when the frame is already fully in view.
+  // `nearest` is a no-op when the frame is already fully in view. While the
+  // user is swiping the strip (or just was), stay out of the way — the
+  // smooth scrollIntoView otherwise fights their gesture.
   useEffect(() => {
-    if (playing) {
-      activeThumbRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        inline: 'nearest',
-        block: 'nearest',
-      });
-    }
+    if (!playing) return;
+    if (Date.now() - lastStripTouch.current < 1500) return;
+    activeThumbRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      inline: 'nearest',
+      block: 'nearest',
+    });
   }, [active, playing]);
+  const markStripTouch = () => {
+    lastStripTouch.current = Date.now();
+  };
 
   return (
     <div {...stylex.props(styles.bar)} aria-label="Frame timeline">
-      <div {...stylex.props(styles.cluster)}>
+      <div {...stylex.props(styles.cluster, styles.hideOnMobile)}>
         <Transport
           playing={playing}
           onJumpStart={props.onJumpStart}
@@ -124,7 +164,14 @@ export default function Timeline(props: TimelineProps) {
         />
       </div>
       <div {...stylex.props(styles.playhead)} aria-hidden="true" />
-      <div {...stylex.props(styles.filmstrip)} role="listbox" aria-label="Frames">
+      <div
+        {...stylex.props(styles.filmstrip)}
+        role="listbox"
+        aria-label="Frames"
+        onPointerDown={markStripTouch}
+        onPointerUp={markStripTouch}
+        onPointerCancel={markStripTouch}
+      >
         {doc.frames.map((f, i) => (
           <button
             key={f.id}
@@ -145,19 +192,21 @@ export default function Timeline(props: TimelineProps) {
             </Text>
           </button>
         ))}
-        <IconButton
-          label="Add frame"
-          icon={<IconPlus />}
-          variant="ghost"
-          size="md"
-          tooltip="Add frame after the current one"
+        <button
+          {...stylex.props(styles.addFrame)}
           onClick={() => dispatch({ type: 'addFrame', after: active })}
-        />
+          title="Add frame after the current one"
+          aria-label="Add frame"
+        >
+          <IconPlus />
+        </button>
+      </div>
+      <div {...stylex.props(styles.sideCluster)}>
         <IconButton
           label="Duplicate frame"
           icon={<IconDuplicate />}
           variant="ghost"
-          size="md"
+          size="sm"
           tooltip="Duplicate the current frame"
           onClick={() => dispatch({ type: 'duplicateFrame', index: active })}
         />
@@ -165,7 +214,7 @@ export default function Timeline(props: TimelineProps) {
           label="Delete frame"
           icon={<IconTrash />}
           variant="ghost"
-          size="md"
+          size="sm"
           tooltip={
             doc.frames.length > 1
               ? 'Delete the current frame'
@@ -174,8 +223,6 @@ export default function Timeline(props: TimelineProps) {
           isDisabled={doc.frames.length <= 1}
           onClick={() => dispatch({ type: 'deleteFrame', index: active })}
         />
-      </div>
-      <div {...stylex.props(styles.cluster)}>
         {/* Onion skinning is persistent binary state — a ToggleButton. */}
         <ToggleButton
           label="Toggle onion skinning"
