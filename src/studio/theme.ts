@@ -10,15 +10,15 @@ export const glyphdanceTheme = defineTheme({
   extends: neutralTheme,
   typography: {
     body: {
-      family: 'Inter',
+      family: "'Pixelify Sans'",
       fallbacks: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     },
     heading: {
-      family: 'Inter',
+      family: "'Pixelify Sans'",
       fallbacks: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     },
     code: {
-      family: "'JetBrains Mono'",
+      family: "'Cozette'",
       fallbacks: 'ui-monospace, SFMono-Regular, Menlo, monospace',
     },
   },

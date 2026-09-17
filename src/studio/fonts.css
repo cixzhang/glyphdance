@@ -1,0 +1,23 @@
+/* Pixel typography for glyphdance. Both faces are bundled and inlined as
+   data URIs at build time (see vite.config.ts assetsInlineLimit), so the
+   standalone HTML stays fully self-contained. */
+
+/* UI face: rounded pixel sans for buttons, labels, panels. */
+@font-face {
+  font-family: 'Pixelify Sans';
+  src: url('../assets/fonts/pixelify-sans-latin.woff2') format('woff2');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Canvas face: bitmap programmer font for the ASCII grid. Covers the block
+   and shade characters the canvas needs (U+2588, U+2593-2592, U+00B7,
+   U+25CF, U+25C6, U+2726, U+2716). */
+@font-face {
+  font-family: 'Cozette';
+  src: url('../assets/fonts/cozette.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}

@@ -127,7 +127,7 @@ const styles = stylex.create({
   },
 });
 
-const GLYPHS = ['█', '▓', '▒', '░', '·', '●', '◆', '★', '✧', '+', '×', '/', '\\', '|', '(', ')', '[', ']', 'o', 'O', '#', '@', '<', '>'];
+const GLYPHS = ['█', '▓', '▒', '░', '·', '●', '◆', '✦', '◉', '+', '×', '/', '\\', '|', '(', ')', '[', ']', 'o', 'O', '#', '@', '<', '>'];
 const FG = ['#4ade80', '#7cc7ff', '#ffd75e', '#ff8a8a', '#b48ce8', '#ff9f5a', '#d7dce2', '#8b94a0'];
 const BG = ['#0d0f12', '#1d2126', '#2b3a4a', '#3a2b4a', '#4a2b2b', '#2b4a2f', '#4a3d1e', '#101215'];
 
@@ -289,8 +289,8 @@ function StampsPanel() {
     animated: boolean;
   }> = [
     { name: 'invader', thumb: true, tag: 'static · soon', animated: false },
-    { name: 'star', thumb: false, art: '★', tag: 'static · soon', animated: false },
-    { name: 'ghost', thumb: false, art: GHOST, tag: '▶ animated · soon', animated: true },
+    { name: 'star', thumb: false, art: '✦', tag: 'static · soon', animated: false },
+    { name: 'ghost', thumb: false, art: GHOST, tag: 'animated · soon', animated: true },
     { name: 'tree', thumb: false, art: TREE, tag: 'static · soon', animated: false },
   ];
   return (

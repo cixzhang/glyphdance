@@ -18,12 +18,12 @@ body,
   --gd-accent: #7cc7ff;
   --gd-amber: #f5a524;
   --gd-onion: #b48ce8;
-  --gd-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --gd-mono: 'Cozette', ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 body {
   margin: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Pixelify Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background-color: #101215;
   color: #d7dce2;
   overflow: hidden;
