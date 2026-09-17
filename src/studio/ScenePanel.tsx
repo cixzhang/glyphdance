@@ -194,7 +194,7 @@ export default function ScenePanel({
           </Text>
           <div {...stylex.props(styles.optionRow)} role="group" aria-label="Syntax theme">
             {SYNTAX_THEMES.map((t) => (
-              <ThemeOption swatch={swatch}
+              <ThemeOption swatch={t[mode]}
                 key={t.id}
                 theme={t}
                 selected={scene.theme === t.id}

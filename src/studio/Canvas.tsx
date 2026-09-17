@@ -95,7 +95,12 @@ const styles = stylex.create({
   },
 });
 
-const GHOST = 'rgba(180,140,232,0.4)';
+const GHOST_DARK = 'rgba(180,140,232,0.4)';
+const GHOST_LIGHT = 'rgba(124,58,237,0.5)';
+const VIGNETTE_DARK =
+  'radial-gradient(circle at 50% 40%, transparent 0%, rgba(0,0,0,0.4) 100%)';
+const VIGNETTE_LIGHT =
+  'radial-gradient(circle at 50% 40%, transparent 0%, rgba(60,50,40,0.14) 100%)';
 
 /** Full-size character grid for the canvas. */
 export function AsciiGrid({
@@ -131,7 +136,7 @@ export function AsciiGrid({
               <span
                 key={c}
                 style={{
-                  color: ghost ? GHOST : cell.fg,
+                  color: ghost ? (mode === 'dark' ? GHOST_DARK : GHOST_LIGHT) : cell.fg,
                   textShadow:
                     ghost || cell.kind === 'bg'
                       ? 'none'
@@ -199,8 +204,7 @@ export default function Canvas({ frameIndex, frameCount, onionOn, scene, mode, o
       {...stylex.props(styles.wrap)}
       style={{
         backgroundColor: theme.bg,
-        backgroundImage:
-          'radial-gradient(circle at 50% 40%, transparent 0%, rgba(0,0,0,0.4) 100%)',
+        backgroundImage: mode === 'dark' ? VIGNETTE_DARK : VIGNETTE_LIGHT,
       }}
     >
       <AsciiGrid frameIndex={frameIndex} onionOn={onionOn} scene={scene} mode={mode} />
