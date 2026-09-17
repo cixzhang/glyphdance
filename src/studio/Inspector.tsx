@@ -236,6 +236,8 @@ function AgentBody({
   const [input, setInput] = useState('');
   const [working, setWorking] = useState(false);
   // Let the top bar animate its agent icon while a turn is in flight.
+  const [promptHist, setPromptHist] = useState<string[]>([]);
+  const histPos = useRef<number | null>(null);
   useEffect(() => {
     onWorkingChange(working);
   }, [working, onWorkingChange]);
@@ -281,6 +283,9 @@ function AgentBody({
       return;
     }
     setInput('');
+    // Terminal-style history: Up/Down in the input cycles sent prompts.
+    setPromptHist((h) => [...h, prompt]);
+    histPos.current = null;
     setWorking(true);
     const userMsg: ChatMessage = { id: msgId(), role: 'user', text: prompt };
     const history = [...messages, userMsg];
@@ -499,7 +504,33 @@ function AgentBody({
         }
         isDisabled={working}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') send();
+          if (e.key === 'Enter') {
+            send();
+            return;
+          }
+          // Cycle sent prompts with Up/Down, terminal-style.
+          if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            if (promptHist.length === 0) return;
+            e.preventDefault();
+            if (e.key === 'ArrowUp') {
+              const next =
+                histPos.current === null
+                  ? promptHist.length - 1
+                  : Math.max(0, histPos.current - 1);
+              histPos.current = next;
+              setInput(promptHist[next]);
+            } else {
+              if (histPos.current === null) return;
+              const next = histPos.current + 1;
+              if (next >= promptHist.length) {
+                histPos.current = null;
+                setInput('');
+              } else {
+                histPos.current = next;
+                setInput(promptHist[next]);
+              }
+            }
+          }
         }}
       />
       <Button

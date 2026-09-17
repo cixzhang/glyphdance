@@ -15,17 +15,22 @@ import { themeById, type ThemeSwatch } from './scene.ts';
  * App backgrounds march with the swatch bg, text marches with its star
  * color, borders use its dot color, and the accent follows the player
  * color. Surfaces always lift toward the text color, which reads as
- * elevation in both dark and light swatches. The swatch is already
- * mode-correct (themeById(id)[mode]), so no light-dark() is needed.
+ * elevation in both dark and light swatches. Interaction washes (hover /
+ * pressed / tint overlays), icon colors, and the syntax/code palette are
+ * also derived from the swatch so no neutral gray survives anywhere in
+ * the chrome. The swatch is already mode-correct (themeById(id)[mode]),
+ * so no light-dark() is needed.
  */
 function chromeTokens(
   themeId: string,
   mode: 'light' | 'dark',
 ): Record<string, string> {
   const sw: ThemeSwatch = themeById(themeId)[mode];
-  const { bg, dot, star, player } = sw;
+  const { bg, dot, star, player, invader } = sw;
   const mix = (a: string, pct: number, b: string): string =>
     `color-mix(in srgb, ${a} ${pct}%, ${b})`;
+  const wash = (a: string, pct: number): string =>
+    `color-mix(in srgb, ${a} ${pct}%, transparent)`;
   return {
     '--color-background-body': bg,
     '--color-background-muted': mix(bg, 92, star),
@@ -33,15 +38,46 @@ function chromeTokens(
     '--color-background-card': mix(bg, 76, star),
     '--color-background-popover': mix(bg, 68, star),
     '--color-border': dot,
+    '--color-border-emphasized': mix(dot, 50, star),
     '--color-text-primary': star,
     '--color-text-secondary': mix(star, 70, bg),
     '--color-text-disabled': mix(star, 45, bg),
     '--color-accent': player,
     '--color-accent-muted': mix(player, 22, bg),
     '--color-text-accent': player,
+    // Interaction washes: hover/pressed/tint overlays follow the swatch's
+    // light color instead of the neutral theme's gray.
+    '--color-overlay': wash(star, 8),
+    '--color-overlay-hover': wash(star, 13),
+    '--color-overlay-pressed': wash(star, 19),
+    '--color-tint-hover': wash(star, 10),
+    // Icons: primary + accent march with the swatch; disabled sinks to bg.
+    '--color-icon-primary': star,
+    '--color-icon-accent': player,
+    '--color-icon-disabled': mix(star, 40, bg),
+    '--color-skeleton': mix(bg, 82, star),
+    // Code/syntax surfaces sit on the canvas hue; token colors come from
+    // the swatch palette (player = keyword, invader = string).
+    '--color-syntax-background': bg,
+    '--color-syntax-comment': mix(dot, 55, star),
+    '--color-syntax-keyword': player,
+    '--color-syntax-string': invader,
+    '--color-syntax-function': star,
+    '--color-syntax-variable': star,
+    '--color-syntax-property': star,
+    '--color-syntax-number': mix(player, 55, invader),
+    '--color-syntax-constant': mix(player, 60, star),
+    '--color-syntax-type': invader,
+    '--color-syntax-operator': mix(star, 70, bg),
+    '--color-syntax-punctuation': mix(star, 70, bg),
+    '--color-syntax-attribute': player,
+    '--color-syntax-tag': player,
     // Domain tokens that were hardcoded: selection + agent bubble follow.
     '--gd-accent': player,
     '--gd-bubble': mix(bg, 70, star),
+    // Top nav + timeline sit on the EXACT canvas bg so the chrome melts
+    // into the stage instead of floating a different neutral above it.
+    '--gd-chrome-bg': bg,
   };
 }
 

@@ -17,7 +17,8 @@ const styles = stylex.create({
     gap: 12,
     height: '100%',
     padding: '10px 14px',
-    backgroundColor: 'var(--color-background-surface)',
+    // Exact canvas bg, like the top nav (see --gd-chrome-bg).
+    backgroundColor: 'var(--gd-chrome-bg, var(--color-background-surface))',
     borderTop: '1px solid var(--color-border)',
     '@media (max-width: 760px)': {
       gap: 8,

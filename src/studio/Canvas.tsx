@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { Button } from '@astryxdesign/core/Button';
@@ -284,9 +284,76 @@ export function AsciiGrid({
     return set;
   }, [lineAnchor, lineEnd]);
 
-  // Text tool: tap a cell to anchor, type in the floating bar, place.
+  // Text tool: tap a cell to anchor; keystrokes paint LIVE into the grid.
+  // The whole session shares one stroke id → a single undo step.
+  // Backspace restores each cell's pre-session content.
   const [textAnchor, setTextAnchor] = useState<[number, number] | null>(null);
   const [textValue, setTextValue] = useState('');
+  const textStroke = useRef<string | null>(null);
+  const textOrig = useRef(new Map<string, Cell>());
+  const clearTextSession = useCallback(() => {
+    setTextAnchor(null);
+    setTextValue('');
+    textStroke.current = null;
+    textOrig.current = new Map();
+  }, []);
+  // Switching frames commits the live text (paints are already on the grid).
+  const frameRef = useRef(frame);
+  useEffect(() => {
+    if (frameRef.current !== frame) {
+      frameRef.current = frame;
+      clearTextSession();
+    }
+  }, [frame, clearTextSession]);
+
+  // Mirror the input into the grid on every keystroke: restore the
+  // session's previous paints, then paint the new string. Originals are
+  // captured once per cell (first touch wins from the fresh grid), so
+  // backspace always restores the pre-session content and the store
+  // merges the session into one undo step.
+  const syncTextLive = (v: string) => {
+    const anchor = textAnchor;
+    const id = textStroke.current;
+    if (!anchor || !id) return;
+    const [ax, ay] = anchor;
+    const str = v.slice(0, GRID_W - ax);
+    const restore: PaintCell[] = [];
+    textOrig.current.forEach((orig, key) => {
+      const [x, y] = key.split(',').map(Number);
+      restore.push({ x, y, cell: { ...orig } });
+    });
+    const paint: PaintCell[] = [];
+    [...str].forEach((ch, i) => {
+      const x = ax + i;
+      if (!inBounds(x, ay)) return;
+      const key = `${x},${ay}`;
+      if (!textOrig.current.has(key)) {
+        textOrig.current.set(key, cells[cellIndex(x, ay)]);
+      }
+      paint.push({ x, y: ay, cell: { ch, fg: brush.fg, bg: brush.bg } });
+    });
+    if (restore.length > 0 || paint.length > 0) {
+      onPaint([...restore, ...paint], id);
+    }
+    setTextValue(str);
+  };
+  /** Commit: keep the live paints, dismiss the bar. */
+  const commitText = () => clearTextSession();
+  /** Cancel: paint every touched cell back to its pre-session content. */
+  const cancelText = () => {
+    const id = textStroke.current;
+    if (id && textOrig.current.size > 0) {
+      const restore: PaintCell[] = [];
+      textOrig.current.forEach((orig, key) => {
+        const [x, y] = key.split(',').map(Number);
+        restore.push({ x, y, cell: { ...orig } });
+      });
+      // Same stroke id → merges into the session's undo step (a no-op
+      // entry), so the grid is exactly as before the session.
+      onPaint(restore, id);
+    }
+    clearTextSession();
+  };
 
   // Per-tool dispose: when a tool is toggled off, run its cleanup so no
   // in-progress state (a text draft, a line preview) lingers after the
@@ -294,8 +361,8 @@ export function AsciiGrid({
   const disposeTool = (tool: ToolId) => {
     switch (tool) {
       case 'text':
-        setTextAnchor(null);
-        setTextValue('');
+        // Live paints stay — switching tools commits the text.
+        commitText();
         break;
       case 'line':
         setLineAnchor(null);
@@ -357,8 +424,11 @@ export function AsciiGrid({
         setLineEnd([x, y]);
         return;
       case 'text':
+        // Tapping a new cell commits the previous session (paints are
+        // already live) and starts a fresh one anchored here.
+        clearTextSession();
         setTextAnchor([x, y]);
-        setTextValue('');
+        textStroke.current = nextStroke();
         return;
       case 'stamp': {
         const id = nextStroke();
@@ -412,22 +482,6 @@ export function AsciiGrid({
     strokeRef.current = null;
   };
 
-  const placeText = () => {
-    if (textAnchor && textValue.length > 0) {
-      const [ax, ay] = textAnchor;
-      const out: PaintCell[] = [];
-      [...textValue].forEach((ch, i) => {
-        const x = ax + i;
-        if (inBounds(x, ay)) {
-          out.push({ x, y: ay, cell: { ch, fg: brush.fg, bg: brush.bg } });
-        }
-      });
-      if (out.length > 0) onPaint(out, nextStroke());
-    }
-    setTextAnchor(null);
-    setTextValue('');
-  };
-
   const cursor =
     brush.tool === 'text' ? 'text' : brush.tool === 'pick' ? 'copy' : 'crosshair';
 
@@ -453,8 +507,11 @@ export function AsciiGrid({
                 prevCells[cellIndex(c, r)].ch !== ' ';
               const ghostCell = ghost && prevCells ? prevCells[cellIndex(c, r)] : null;
               const preview = linePreview !== null && linePreview.has(`${c},${r}`);
-              const anchored =
-                textAnchor !== null && textAnchor[0] === c && textAnchor[1] === r;
+              // Caret: the next cell the text tool will type into.
+              const caret =
+                textAnchor !== null &&
+                textAnchor[0] + textValue.length === c &&
+                textAnchor[1] === r;
               const shownCh = preview ? brush.glyph : ghost && ghostCell ? ghostCell.ch : empty ? '·' : cell.ch;
               return (
                 <span
@@ -477,8 +534,8 @@ export function AsciiGrid({
                     backgroundColor: !empty && cell.bg ? cell.bg : undefined,
                     textShadow:
                       preview || ghost || empty ? 'none' : `0 0 10px ${cell.fg}66`,
-                    outline: anchored ? '1px solid var(--gd-accent)' : undefined,
-                    outlineOffset: anchored ? -1 : undefined,
+                    outline: caret ? '1px solid var(--gd-accent)' : undefined,
+                    outlineOffset: caret ? -1 : undefined,
                   }}
                 >
                   {shownCh}
@@ -497,33 +554,32 @@ export function AsciiGrid({
             hasAutoFocus
             size="sm"
             value={textValue}
-            onChange={(v) => setTextValue(v.slice(0, GRID_W - textAnchor[0]))}
-            onEnter={placeText}
+            onChange={syncTextLive}
+            onEnter={commitText}
             onKeyDown={(e) => {
               if (e.key === 'Escape') {
-                setTextAnchor(null);
-                setTextValue('');
+                cancelText();
               }
             }}
-            placeholder={`Type up to ${GRID_W - textAnchor[0]} characters…`}
+            placeholder={`Type up to ${GRID_W - textAnchor[0]} characters — live on the canvas…`}
             xstyle={styles.textField}
           />
           <Button
-            label="Place text on canvas"
+            label="Done typing"
             variant="primary"
             size="sm"
-            onClick={placeText}
+            onClick={commitText}
           >
-            Place
+            Done
           </Button>
-          {/* Dismiss without placing — mobile keyboards have no Escape. */}
+          {/* Discard restores the pre-session cells — mobile keyboards have no Escape. */}
           <IconButton
             label="Discard text"
             icon={<IconClose />}
             variant="ghost"
             size="sm"
             tooltip="Discard the text"
-            onClick={() => disposeTool('text')}
+            onClick={cancelText}
           />
         </div>
       )}

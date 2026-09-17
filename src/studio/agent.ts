@@ -113,12 +113,12 @@ export function describeDocument(
   const theme = themeById(doc.themeId)[mode];
   const parts = [
     `name: ${doc.name}`,
-    `frames: ${doc.frames.length}, active: frame ${doc.active + 1} (index ${doc.active} in actions)`,
+    `frames: ${doc.frames.length}, active: frame ${doc.active + 1} (in actions, use index ${doc.active})`,
     `theme: ${doc.themeId} (background ${theme.bg}; stamp colors: invaders/nature ${theme.invader}, ships/play ${theme.player}, critters/space ${theme.star})`,
     `user-created stamps: ${doc.stamps.length > 0 ? doc.stamps.map((s) => s.id).join(', ') : '(none yet)'}`,
     '',
     ...doc.frames.flatMap((f, i) => [
-      `Frame ${i + 1}/${doc.frames.length}${i === doc.active ? ' — ACTIVE' : ''} (index ${i} in actions, hold ${f.holdMs}ms):`,
+      `Frame ${i + 1} of ${doc.frames.length}${i === doc.active ? ' — ACTIVE' : ''} (hold ${f.holdMs}ms; in actions, this frame is index ${i}):`,
       '```',
       frameAsText(doc, i),
       '```',

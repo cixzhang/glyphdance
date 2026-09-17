@@ -14,7 +14,9 @@ import { DOC_NAME } from './document.ts';
 
 const styles = stylex.create({
   topNav: {
-    backgroundColor: 'var(--color-background-surface)',
+    // Exact canvas bg: the chrome melts into the stage instead of floating
+    // a lifted neutral above it (see --gd-chrome-bg in syntax-chrome.ts).
+    backgroundColor: 'var(--gd-chrome-bg, var(--color-background-surface))',
     borderBottom: '1px solid var(--color-border)',
     height: '100%',
   },

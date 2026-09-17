@@ -171,6 +171,30 @@ export default function App() {
   const toggleOnion = useCallback(() => setOnionOn((o) => !o), []);
   const toggleAgent = useCallback(() => setAgentOpen((o) => !o), []);
 
+  // Desktop undo/redo shortcuts: Cmd/Ctrl+Z and Cmd/Ctrl+Shift+Z (or
+  // Ctrl+Y). Skipped inside text fields so the field's native undo wins.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      const t = e.target as HTMLElement | null;
+      if (
+        t &&
+        (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)
+      )
+        return;
+      const key = e.key.toLowerCase();
+      if (key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [undo, redo]);
+
   // Canvas painting: one paintCells action per pointer event; the store
   // merges a stroke's actions into a single undo step.
   const onPaint = useCallback(
