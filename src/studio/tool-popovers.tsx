@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { Heading } from '@astryxdesign/core/Heading';
 import { Text } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
+import { Token } from '@astryxdesign/core/Token';
 import { VStack } from '@astryxdesign/core/Stack';
 import { Switch } from '@astryxdesign/core/Switch';
 import { IconButton } from '@astryxdesign/core/IconButton';
@@ -128,6 +129,13 @@ const styles = stylex.create({
   // aria-label so the name is still announced.
   stampName: {
     '@media (max-width: 760px)': { display: 'none' },
+  },
+  // Frame-count badge under animated stamp art.
+  loopBadge: {
+    display: 'flex',
+    justifyContent: 'center',
+    paddingTop: 2,
+    paddingBottom: 2,
   },
   // Delete control on a custom stamp card: positioned overlay.
   customDel: {
@@ -278,6 +286,39 @@ export function ColorPopoverContent({
 }
 
 /** Stamp library picker for the stamp tool. */
+
+/** Stamp artwork preview: multi-frame stamps cycle their art on a timer so
+ *  the loop is visible before placement, with a frame-count badge. */
+function StampArt({ frames, color }: { frames: string[][]; color: string }) {
+  const animated = frames.length > 1;
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (!animated) return;
+    const id = setInterval(() => setTick((t) => t + 1), 400);
+    return () => clearInterval(id);
+  }, [animated]);
+  return (
+    <>
+      <pre
+        {...stylex.props(styles.stampArt)}
+        aria-hidden="true"
+        style={{ color }}
+      >
+        {frames[animated ? tick % frames.length : 0].join('\n')}
+      </pre>
+      {animated && (
+        <span {...stylex.props(styles.loopBadge)}>
+          <Token
+            label={`↻ ${frames.length}-frame loop`}
+            size="sm"
+            color="purple"
+          />
+        </span>
+      )}
+    </>
+  );
+}
+
 export function StampPopoverContent({
   brush,
   onBrushChange,
@@ -307,7 +348,9 @@ export function StampPopoverContent({
     <div {...stylex.props(styles.pop)}>
       <Heading level={4}>Stamps</Heading>
       <Text type="supporting" color="disabled">
-        Pick a stamp, then tap the canvas to place it. Drag to stamp repeatedly.
+        Pick a stamp, then tap the canvas to place it. Multi-frame stamps
+        animate — one tap paints the loop across your frames from here to the
+        end. Drag to stamp repeatedly.
       </Text>
       {sections.map((sec) => (
         <VStack key={sec.title} gap={1} role="group" aria-label={`${sec.title} stamps`}>
@@ -322,17 +365,11 @@ export function StampPopoverContent({
                   key={s.id}
                   {...stylex.props(styles.stamp, selected && styles.stampActive)}
                   onClick={() => onBrushChange({ tool: 'stamp', stampId: s.id })}
-                  title={`Stamp: ${s.id} — tap the canvas to place`}
-                  aria-label={`Stamp: ${s.id}`}
+                  title={`Stamp: ${s.id}${s.frames.length > 1 ? ` — ${s.frames.length}-frame animated loop` : ''} — tap the canvas to place`}
+                  aria-label={`Stamp: ${s.id}${s.frames.length > 1 ? `, ${s.frames.length}-frame animated loop` : ''}`}
                   aria-pressed={selected}
                 >
-                  <pre
-                    {...stylex.props(styles.stampArt)}
-                    aria-hidden="true"
-                    style={{ color: sec.color }}
-                  >
-                    {s.frames[0].join('\n')}
-                  </pre>
+                  <StampArt frames={s.frames} color={sec.color} />
                   <span {...stylex.props(styles.stampName)}>
                     <Text type="label">{s.id}</Text>
                   </span>
@@ -365,8 +402,8 @@ export function StampPopoverContent({
                     onClick={() =>
                       onBrushChange({ tool: 'stamp', stampId: s.id })
                     }
-                    title={`Stamp: ${s.id} — tap the canvas to place`}
-                    aria-label={`Stamp: ${s.id}`}
+                    title={`Stamp: ${s.id}${s.frames.length > 1 ? ` — ${s.frames.length}-frame animated loop` : ''} — tap the canvas to place`}
+                    aria-label={`Stamp: ${s.id}${s.frames.length > 1 ? `, ${s.frames.length}-frame animated loop` : ''}`}
                     aria-pressed={selected}
                     style={{
                       all: 'unset',
@@ -375,13 +412,7 @@ export function StampPopoverContent({
                       width: '100%',
                     }}
                   >
-                    <pre
-                      {...stylex.props(styles.stampArt)}
-                      aria-hidden="true"
-                      style={{ color: s.fg }}
-                    >
-                      {s.frames[0].join('\n')}
-                    </pre>
+                    <StampArt frames={s.frames} color={s.fg} />
                     <span {...stylex.props(styles.stampName)}>
                       <Text type="label">{s.id}</Text>
                     </span>
