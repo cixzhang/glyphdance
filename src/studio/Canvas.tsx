@@ -245,6 +245,8 @@ export function AsciiGrid({
   onPaint,
   onPick,
   onPlaceStamp,
+  playing,
+  onTogglePlay,
 }: {
   doc: DocState;
   frame: number;
@@ -257,6 +259,10 @@ export function AsciiGrid({
   onPick: (cell: Cell) => void;
   /** Stamp tap: the App spreads the stamp's frames across document frames. */
   onPlaceStamp: (stampId: string, x: number, y: number, fg: string) => void;
+  /** Pausing playback when a text session anchors (typing while frames
+   *  advance strands keystrokes across frames). */
+  playing: boolean;
+  onTogglePlay: () => void;
 }) {
   const theme = themeById(doc.themeId)[mode];
   const cells = doc.frames[frame].cells;
@@ -447,9 +453,13 @@ export function AsciiGrid({
         return;
       case 'text':
         // Tapping a new cell commits the previous session (paints are
-        // already live) and starts a fresh one anchored here.
+        // already live) and starts a fresh one anchored here. Pause
+        // playback first: typing while frames advance strands keystrokes
+        // across frames.
+        if (playing) onTogglePlay();
         clearTextSession();
         setTextAnchor([x, y]);
+        setTextCaret(0);
         textStroke.current = nextStroke();
         return;
       case 'stamp': {
@@ -819,6 +829,8 @@ export default function Canvas({
         onPaint={onPaint}
         onPick={onPick}
         onPlaceStamp={onPlaceStamp}
+        playing={playing}
+        onTogglePlay={onTogglePlay}
       />
       <div {...stylex.props(styles.fab)} role="toolbar" aria-label="Canvas view">
         <IconButton
