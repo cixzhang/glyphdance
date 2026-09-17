@@ -25,8 +25,15 @@ import type { PaintCell } from './studio/actions.ts';
 
 const styles = stylex.create({
   root: {
-    // dvh keeps the app clear of the iOS Safari toolbar.
-    height: '100dvh',
+    // 100dvh keeps the app clear of the iOS Safari toolbar; the
+    // -webkit-fill-available fallback is for iOS standalone PWAs, where
+    // vh/dvh resolve shorter than the real visible viewport and left a
+    // dead band below the app. (Later valid declaration wins.)
+    height: ['100dvh', '-webkit-fill-available'],
+    // In the installed PWA there is no browser chrome: pad for the notch /
+    // status bar and the home indicator. Zero elsewhere.
+    paddingTop: 'env(safe-area-inset-top)',
+    paddingBottom: 'env(safe-area-inset-bottom)',
     display: 'grid',
     gridTemplateRows: '52px minmax(0, 1fr) 148px',
     gridTemplateColumns: '60px minmax(0, 1fr) 300px',
