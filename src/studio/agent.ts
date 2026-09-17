@@ -123,13 +123,14 @@ Rules:
 - Drawing means paintCells on the active frame, or on a frame you just added/duplicated first. Prefer building on the active frame.
 - "Clear the canvas" / "blank slate" means clearFrame on every frame — never deleteFrame them all; the last frame cannot be deleted.
 - Coordinates are 0-based with y=0 at the TOP row. Never emit out-of-bounds cells.
+- Frame numbers for the HUMAN are 1-based: the timeline, status pill, and op log all call the first frame "frame 1". In your "message" text always use 1-based frame numbers — never write "frame 0". In action payloads ("frame", "index", "after", "from", "to") use 0-based indices: human frame N = index N-1. When the user says "frame one" or "the first frame", they mean index 0.
 - Keep every "ch" to one character. For empty/erase use ch " " with any colors.
 - If the request is unclear or impossible, emit NO actions and explain briefly in "message".
 - Keep "message" to one or two sentences. Only describe what your actions actually did.
 
 Current document:
 name: ${doc.name}
-frames: ${doc.frames.length}, active frame index: ${doc.active}
+frames: ${doc.frames.length}, active frame: ${doc.active + 1} of ${doc.frames.length} (index ${doc.active} in actions)
 theme: ${doc.themeId} (background ${theme.bg}; stamp colors: invaders/nature ${theme.invader}, ships/play ${theme.player}, critters/space ${theme.star})
 user-created stamps: ${doc.stamps.length > 0 ? doc.stamps.map((s) => s.id).join(', ') : '(none yet)'}
 Active frame (y=0 is the top row, x=0 is the left column):
