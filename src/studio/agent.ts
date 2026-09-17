@@ -71,17 +71,62 @@ interface ModelReply {
 
 const THEME_IDS = ['dracula', 'monokai', 'nord', 'solarized', 'tokyo', 'onedark'];
 
+const COL_RULER = Array.from({ length: GRID_W }, (_, x) =>
+  String(x % 10),
+).join('');
+
+/** Compact color legend for a frame: distinct ch/fg pairs actually in use. */
+function frameColors(doc: DocState, index: number): string {
+  const seen = new Map<string, string>();
+  for (const c of doc.frames[index].cells) {
+    if (c.ch === ' ') continue;
+    const key = `${c.ch}${c.fg}${c.bg}`;
+    if (!seen.has(key)) {
+      seen.set(
+        key,
+        `'${c.ch}' fg ${c.fg || '(theme)'}${c.bg ? ` bg ${c.bg}` : ''}`,
+      );
+    }
+    if (seen.size >= 16) break;
+  }
+  return seen.size > 0 ? [...seen.values()].join(', ') : '(empty)';
+}
+
 function frameAsText(doc: DocState, index: number): string {
   const frame = doc.frames[index];
-  const rows: string[] = [];
+  const rows: string[] = [`    ${COL_RULER}`];
   for (let y = 0; y < GRID_H; y++) {
     let row = '';
     for (let x = 0; x < GRID_W; x++) {
       row += frame.cells[cellIndex(x, y)].ch;
     }
-    rows.push(row);
+    rows.push(`${String(y).padStart(2, '0')}  ${row}`);
   }
   return rows.join('\n');
+}
+
+/** Full multi-frame canvas description: every frame with ruler + colors. */
+export function describeDocument(
+  doc: DocState,
+  mode: 'light' | 'dark' = 'dark',
+): string {
+  const theme = themeById(doc.themeId)[mode];
+  const parts = [
+    `name: ${doc.name}`,
+    `frames: ${doc.frames.length}, active: frame ${doc.active + 1} (index ${doc.active} in actions)`,
+    `theme: ${doc.themeId} (background ${theme.bg}; stamp colors: invaders/nature ${theme.invader}, ships/play ${theme.player}, critters/space ${theme.star})`,
+    `user-created stamps: ${doc.stamps.length > 0 ? doc.stamps.map((s) => s.id).join(', ') : '(none yet)'}`,
+    '',
+    ...doc.frames.flatMap((f, i) => [
+      `Frame ${i + 1}/${doc.frames.length}${i === doc.active ? ' — ACTIVE' : ''} (index ${i} in actions, hold ${f.holdMs}ms):`,
+      '```',
+      frameAsText(doc, i),
+      '```',
+      `colors: ${frameColors(doc, i)}`,
+      '',
+    ]),
+  ];
+  return parts.join('\n');
 }
 
 export function buildSystemPrompt(
@@ -122,21 +167,15 @@ ${PIXEL_ART_SKILL}
 Rules:
 - Drawing means paintCells on the active frame, or on a frame you just added/duplicated first. Prefer building on the active frame.
 - "Clear the canvas" / "blank slate" means clearFrame on every frame — never deleteFrame them all; the last frame cannot be deleted.
-- Coordinates are 0-based with y=0 at the TOP row. Never emit out-of-bounds cells.
+- Coordinates are 0-based with y=0 at the TOP row. Every frame dump has a column ruler across the top and row numbers down the left — read x/y positions off the ruler, never eyeball them. Never emit out-of-bounds cells.
+- placeStamp centers the stamp on x,y and the WHOLE stamp must fit inside the grid — clipped placements are rejected, so keep the full stamp extent in bounds.
 - Frame numbers for the HUMAN are 1-based: the timeline, status pill, and op log all call the first frame "frame 1". In your "message" text always use 1-based frame numbers — never write "frame 0". In action payloads ("frame", "index", "after", "from", "to") use 0-based indices: human frame N = index N-1. When the user says "frame one" or "the first frame", they mean index 0.
 - Keep every "ch" to one character. For empty/erase use ch " " with any colors.
 - If the request is unclear or impossible, emit NO actions and explain briefly in "message".
 - Keep "message" to one or two sentences. Only describe what your actions actually did.
 
-Current document:
-name: ${doc.name}
-frames: ${doc.frames.length}, active frame: ${doc.active + 1} of ${doc.frames.length} (index ${doc.active} in actions)
-theme: ${doc.themeId} (background ${theme.bg}; stamp colors: invaders/nature ${theme.invader}, ships/play ${theme.player}, critters/space ${theme.star})
-user-created stamps: ${doc.stamps.length > 0 ? doc.stamps.map((s) => s.id).join(', ') : '(none yet)'}
-Active frame (y=0 is the top row, x=0 is the left column):
-\`\`\`
-${frameAsText(doc, doc.active)}
-\`\`\``;
+Current document (all frames shown; use the rulers to locate things):
+${describeDocument(doc, mode)}`;
 }
 
 /** Pull the JSON object out of a model reply (tolerates code fences). */
@@ -193,7 +232,7 @@ export async function callOpenRouter(
     body: JSON.stringify({
       model: settings.model,
       messages,
-      max_tokens: 4000,
+      max_tokens: 8000,
       temperature: 0.7,
     }),
   });
@@ -271,7 +310,8 @@ export function summarizeAction(a: Action): OpLine {
 /**
  * Validate + dispatch a batch of model-proposed actions against the live
  * document, one at a time so each lands visibly (and each stays undoable).
- * Returns op-log lines; invalid actions are reported, not applied.
+ * Returns what applied and what was skipped (with reasons) — the caller
+ * feeds skips back to the model for a repair pass.
  */
 export async function runAgentActions(
   actions: Action[],
@@ -279,15 +319,77 @@ export async function runAgentActions(
   dispatch: (a: Action) => void,
   onOp: (op: OpLine) => void,
   delayMs = 350,
-): Promise<void> {
+): Promise<{ applied: OpLine[]; skipped: string[] }> {
+  const applied: OpLine[] = [];
+  const skipped: string[] = [];
   for (const a of actions) {
     const err = validate(getDoc(), a);
     if (err) {
-      onOp({ segments: [t(`skipped: ${err}`)] });
+      const line = `skipped: ${err}`;
+      skipped.push(describeAction(a) + ' — ' + err);
+      onOp({ segments: [t(line)] });
       continue;
     }
     dispatch(a);
-    onOp(summarizeAction(a));
+    const op = summarizeAction(a);
+    applied.push(op);
+    onOp(op);
     await new Promise((r) => setTimeout(r, delayMs));
   }
+  return { applied, skipped };
+}
+
+/** Short human description of an action for repair-prompt diagnostics. */
+function describeAction(a: Action): string {
+  switch (a.type) {
+    case 'paintCells':
+      return `paintCells(frame ${a.frame}, ${a.cells.length} cells)`;
+    case 'placeStamp':
+      return `placeStamp("${a.stampId}" frame ${a.frame} at ${a.x},${a.y})`;
+    case 'addStamp':
+      return `addStamp("${a.stamp.id}")`;
+    case 'addFrame':
+      return `addFrame(after ${a.after})`;
+    case 'duplicateFrame':
+      return `duplicateFrame(${a.index})`;
+    case 'deleteFrame':
+      return `deleteFrame(${a.index})`;
+    case 'clearFrame':
+      return `clearFrame(${a.frame})`;
+    case 'moveFrame':
+      return `moveFrame(${a.from}->${a.to})`;
+    case 'setHold':
+      return `setHold(${a.index}, ${a.holdMs}ms)`;
+    case 'setTheme':
+      return `setTheme(${a.themeId})`;
+    case 'rename':
+      return `rename("${a.name}")`;
+    case 'setActive':
+      return `setActive(${a.index})`;
+    case 'deleteStamp':
+      return `deleteStamp("${a.id}")`;
+    default:
+      return a.type;
+  }
+}
+
+/**
+ * Follow-up prompt for the repair pass: tells the model exactly which
+ * actions failed and why, with a fresh canvas, and asks for ONLY the
+ * corrected replacements.
+ */
+export function buildRepairPrompt(
+  doc: DocState,
+  mode: 'light' | 'dark',
+  applied: OpLine[],
+  skipped: string[],
+): string {
+  return `Some of your actions could not be applied. The canvas below is current — work from it.
+Applied (${applied.length}): ${applied.length > 0 ? applied.map(opText).join('; ') : '(none)'}
+Failed (${skipped.length}):
+${skipped.map((s) => `- ${s}`).join('\n')}
+
+Emit ONE more {"message","actions"} JSON object containing ONLY corrected replacement actions for the failed ones (fix the coordinates, ids, colors, or bounds the errors name). Do NOT repeat actions that already applied. If the user's request is already fully satisfied despite the failures, emit {"message":"...","actions":[]} with an empty actions array and say so.
+
+${describeDocument(doc, mode)}`;
 }

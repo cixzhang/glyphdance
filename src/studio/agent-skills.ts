@@ -35,7 +35,7 @@ export const STAMP_CATALOG: string = [
 export const STAMP_SKILL = `Stamps
 To USE a stamp from the catalog, emit a placeStamp action — never hand-draw a stamp's cells:
 {"type":"placeStamp","stampId":"crab","frame":0,"x":12,"y":7,"fg":"<invader color>","bg":""}
-x,y is the CENTER of the stamp on the 24x14 grid. bg "" keeps the background transparent. Use the theme's stamp colors given above for fg so stamps match the scene (invaders/nature: invader color; ships/play: player color; critters/space: star color).
+x,y is the CENTER of the stamp on the 24x14 grid, and the WHOLE stamp must fit inside the grid — placements that would clip at the edge are rejected, so keep the full stamp extent in bounds. bg "" keeps the background transparent. Use the theme's stamp colors given above for fg so stamps match the scene (invaders/nature: invader color; ships/play: player color; critters/space: star color).
 
 To CREATE a new stamp the user can keep and reuse from their Stamps panel, emit addStamp:
 {"type":"addStamp","stamp":{"id":"cat","fg":"#ffd75e","frames":[[" /\\\\_/\\\\ ","( o.o )"," > ^ < "],[" /\\\\_/\\\\ ","( -.- )"," > ^ < "]]}}

@@ -31,11 +31,14 @@ import {
   downloadFrameText,
 } from './export.ts';
 import {
+  buildRepairPrompt,
   buildSystemPrompt,
   callOpenRouter,
+  opText,
   parseModelReply,
   runAgentActions,
   type ChatMessage,
+  type OpLine,
   type OpTarget,
 } from './agent.ts';
 import {
@@ -297,33 +300,83 @@ function AgentBody({
         if (!panelOpenRef.current) onDone({ id: rawMsg.id, summary: raw.slice(0, 120) });
         return;
       }
-      const assistantMsg: ChatMessage = {
+      const appendOp = (id: string, op: OpLine) =>
+        setMessages((ms) =>
+          ms.map((m) =>
+            m.id === id ? { ...m, ops: [...(m.ops ?? []), op] } : m,
+          ),
+        );
+      // Dispatch one action at a time so each edit lands visibly on the
+      // canvas and stays individually undoable.
+      const runPass = (id: string, actions: Action[]) =>
+        runAgentActions(
+          actions,
+          () => docRef.current,
+          dispatch,
+          (op) => appendOp(id, op),
+        );
+
+      let assistantMsg: ChatMessage = {
         id: msgId(),
         role: 'assistant',
         text: reply.message,
         ops: [],
       };
       setMessages([...history, assistantMsg]);
-      // Dispatch one action at a time so each edit lands visibly on the
-      // canvas and stays individually undoable.
-      await runAgentActions(
-        reply.actions,
-        () => docRef.current,
-        dispatch,
-        (op) => {
-          setMessages((ms) =>
-            ms.map((m) =>
-              m === assistantMsg
-                ? { ...m, ops: [...(m.ops ?? []), op] }
-                : m,
+      let result = await runPass(assistantMsg.id, reply.actions);
+
+      // Repair pass: feed validation failures back to the model with a
+      // fresh canvas and let it correct them, once. Best-effort — the
+      // first pass's results stand if the repair call fails.
+      if (result.skipped.length > 0) {
+        try {
+          const repairRaw = await callOpenRouter(
+            settings,
+            buildSystemPrompt(docRef.current, mode),
+            [...history, assistantMsg],
+            buildRepairPrompt(
+              docRef.current,
+              mode,
+              result.applied,
+              result.skipped,
             ),
           );
-        },
-      );
+          const repair = parseModelReply(repairRaw);
+          if (repair && repair.actions.length > 0) {
+            const repairMsg: ChatMessage = {
+              id: msgId(),
+              role: 'assistant',
+              text: repair.message,
+              ops: [],
+            };
+            setMessages((ms) => [...ms, repairMsg]);
+            const r2 = await runPass(repairMsg.id, repair.actions);
+            result = {
+              applied: [...result.applied, ...r2.applied],
+              skipped: [...result.skipped, ...r2.skipped],
+            };
+            assistantMsg = repairMsg;
+          }
+        } catch {
+          // ignore — first pass results stand
+        }
+      }
+
+      // Grounded summary: describe what actually applied, not what the
+      // model claimed. This is what the done toast shows.
+      const summary =
+        result.applied.length === 0
+          ? result.skipped.length > 0
+            ? `No edits applied (${result.skipped[0]})`
+            : 'No edits made.'
+          : result.applied.map(opText).join('; ') +
+            (result.skipped.length > 0
+              ? ` (${result.skipped.length} couldn't be applied)`
+              : '');
       // Notify when done, especially if the chat isn't open — the toast
       // deep-links back to this message.
       if (!panelOpenRef.current)
-        onDone({ id: assistantMsg.id, summary: reply.message });
+        onDone({ id: assistantMsg.id, summary });
     } catch (e) {
       const errMsg: ChatMessage = {
         id: msgId(),
