@@ -13,6 +13,7 @@ import { MobileNav } from '@astryxdesign/core/MobileNav';
 import { IconCheck, IconSparkles } from './icons';
 import DocumentPanel from './DocumentPanel.tsx';
 import { ET_SPRITES, PLAYER_SPRITES } from './scene.ts';
+import { downloadFramesGif } from './gif.ts';
 import {
   downloadAllFramesText,
   downloadFramePng,
@@ -488,9 +489,18 @@ function ExportPanel({ doc }: { doc: DocState }) {
           >
             PNG · this frame
           </Button>
+          <Button
+            label="Download the animation as GIF"
+            variant="secondary"
+            size="sm"
+            onClick={() => downloadFramesGif(doc.name, doc.frames)}
+          >
+            GIF · all frames
+          </Button>
         </VStack>
         <Text type="supporting" color="disabled">
-          PNG renders at 2× for crispness. GIF export is next.
+          PNG renders at 2× for crispness. GIF loops forever at each frame's
+          hold time.
         </Text>
       </VStack>
     </Card>
