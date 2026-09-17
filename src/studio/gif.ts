@@ -30,7 +30,9 @@ function buildPalette(pixels: Uint8ClampedArray[]): RGB[] {
   }
   const colors = [...seen.values()];
   if (colors.length <= 256) return colors;
-  // Too many distinct colors (heavy agent art): quantize the union.
+  // Too many distinct colors (heavy agent art): quantize the union down to
+  // a 256-color global palette. (gifenc's quantize returns the palette
+  // array directly.)
   const total = pixels.reduce((n, p) => n + p.length, 0);
   const joined = new Uint8Array(total);
   let off = 0;
@@ -38,7 +40,7 @@ function buildPalette(pixels: Uint8ClampedArray[]): RGB[] {
     joined.set(p, off);
     off += p.length;
   }
-  return quantize(joined, 256).palette as RGB[];
+  return quantize(joined, 256) as RGB[];
 }
 
 export function exportFramesToGif(frames: Frame[], opts: GifOptions = {}): Blob {

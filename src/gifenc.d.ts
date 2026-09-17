@@ -22,7 +22,9 @@ declare module 'gifenc' {
     rgba: Uint8Array | Uint8ClampedArray,
     maxColors: number,
     opts?: object,
-  ): { palette: Array<[number, number, number]>; index: Uint8Array };
+    // gifenc 1.x returns the palette array directly (older versions
+    // returned { palette, index }).
+  ): Array<[number, number, number]>;
   export function applyPalette(
     rgba: Uint8Array | Uint8ClampedArray,
     palette: Array<[number, number, number]>,
