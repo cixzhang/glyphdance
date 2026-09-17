@@ -102,18 +102,20 @@ export function AsciiGrid({
   frameIndex,
   onionOn,
   scene,
+  mode,
 }: {
   frameIndex: number;
   onionOn: boolean;
   scene: SceneConfig;
+  mode: 'light' | 'dark';
 }) {
   const cells = useMemo(
-    () => sceneCells(frameIndex, scene),
-    [frameIndex, scene],
+    () => sceneCells(frameIndex, scene, mode),
+    [frameIndex, scene, mode],
   );
   const prev = useMemo(
-    () => (onionOn ? sceneCells((frameIndex + 3) % 4, scene) : null),
-    [frameIndex, onionOn, scene],
+    () => (onionOn ? sceneCells((frameIndex + 3) % 4, scene, mode) : null),
+    [frameIndex, onionOn, scene, mode],
   );
   return (
     <pre {...stylex.props(styles.grid, styles.gridMobile)} aria-label="Animation canvas">
@@ -151,13 +153,15 @@ export function AsciiGrid({
 export function AsciiThumb({
   frameIndex,
   scene = DEFAULT_SCENE,
+  mode = 'dark',
 }: {
   frameIndex: number;
   scene?: SceneConfig;
+  mode?: 'light' | 'dark';
 }) {
   const cells = useMemo(
-    () => sceneCells(frameIndex, scene),
-    [frameIndex, scene],
+    () => sceneCells(frameIndex, scene, mode),
+    [frameIndex, scene, mode],
   );
   return (
     <pre
@@ -184,11 +188,12 @@ interface CanvasProps {
   frameCount: number;
   onionOn: boolean;
   scene: SceneConfig;
+  mode: 'light' | 'dark';
   onOpenAgent: () => void;
 }
 
-export default function Canvas({ frameIndex, frameCount, onionOn, scene, onOpenAgent }: CanvasProps) {
-  const theme = themeById(scene.theme);
+export default function Canvas({ frameIndex, frameCount, onionOn, scene, mode, onOpenAgent }: CanvasProps) {
+  const theme = themeById(scene.theme)[mode];
   return (
     <div
       {...stylex.props(styles.wrap)}
@@ -198,7 +203,7 @@ export default function Canvas({ frameIndex, frameCount, onionOn, scene, onOpenA
           'radial-gradient(circle at 50% 40%, transparent 0%, rgba(0,0,0,0.4) 100%)',
       }}
     >
-      <AsciiGrid frameIndex={frameIndex} onionOn={onionOn} scene={scene} />
+      <AsciiGrid frameIndex={frameIndex} onionOn={onionOn} scene={scene} mode={mode} />
       <button
         {...stylex.props(styles.pill)}
         onClick={onOpenAgent}

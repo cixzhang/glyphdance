@@ -280,7 +280,7 @@ function GlyphColorPanel() {
 const TREE = '  *\n ***\n*****\n  |';
 const GHOST = ' .--.\n|o o|\n|___|';
 
-function StampsPanel() {
+function StampsPanel({ mode }: { mode: 'light' | 'dark' }) {
   const stamps: Array<{
     name: string;
     thumb: boolean;
@@ -305,7 +305,7 @@ function StampsPanel() {
               title={`Stamp: ${s.name} (soon)`}
             >
               {s.thumb ? (
-                <AsciiThumb frameIndex={0} />
+                <AsciiThumb frameIndex={0} mode={mode} />
               ) : (
                 <pre {...stylex.props(styles.stampArt)}>{s.art}</pre>
               )}
@@ -334,6 +334,7 @@ export default function Inspector({
   onDrawerOpenChange,
   scene,
   onSceneChange,
+  mode,
 }: {
   isMobile: boolean;
   agentOpen: boolean;
@@ -344,6 +345,7 @@ export default function Inspector({
   onDrawerOpenChange: (open: boolean) => void;
   scene: SceneConfig;
   onSceneChange: (patch: Partial<SceneConfig>) => void;
+  mode: 'light' | 'dark';
 }) {
   // Mobile splits the inspector by pattern: the control cards (scene, glyph
   // & color, stamps) live in an Astryx MobileNav side drawer so the canvas
@@ -358,9 +360,9 @@ export default function Inspector({
           header="Panels"
         >
           <div {...stylex.props(styles.drawerContent)}>
-            <ScenePanel scene={scene} onChange={onSceneChange} />
+            <ScenePanel scene={scene} onChange={onSceneChange} mode={mode} />
             <GlyphColorPanel />
-            <StampsPanel />
+            <StampsPanel mode={mode} />
           </div>
         </MobileNav>
         <BottomSheet
@@ -380,9 +382,9 @@ export default function Inspector({
   return (
     <div {...stylex.props(styles.col)}>
       <AgentPanel open={agentOpen} onToggle={onToggleAgent} isMobile={isMobile} />
-      <ScenePanel scene={scene} onChange={onSceneChange} />
+      <ScenePanel scene={scene} onChange={onSceneChange} mode={mode} />
       <GlyphColorPanel />
-      <StampsPanel />
+      <StampsPanel mode={mode} />
     </div>
   );
 }

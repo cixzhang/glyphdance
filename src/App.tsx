@@ -167,6 +167,7 @@ export default function App() {
           frameCount={STUB_FRAMES.length}
           onionOn={onionOn}
           scene={scene}
+          mode={mode}
           onOpenAgent={openPanels}
         />
       </div>
@@ -181,6 +182,7 @@ export default function App() {
           onDrawerOpenChange={setDrawerOpen}
           scene={scene}
           onSceneChange={patchScene}
+          mode={mode}
         />
       </div>
       <div {...stylex.props(styles.timeline)}>
@@ -189,6 +191,7 @@ export default function App() {
           playing={playing}
           onionOn={onionOn}
           scene={scene}
+          mode={mode}
           onSelectFrame={setFrameIndex}
           onJumpStart={jumpStart}
           onStepBack={stepBack}

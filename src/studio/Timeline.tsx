@@ -83,6 +83,7 @@ interface TimelineProps {
   playing: boolean;
   onionOn: boolean;
   scene: SceneConfig;
+  mode: 'light' | 'dark';
   onSelectFrame: (i: number) => void;
   onJumpStart: () => void;
   onStepBack: () => void;
@@ -93,7 +94,7 @@ interface TimelineProps {
 }
 
 export default function Timeline(props: TimelineProps) {
-  const { frameIndex, playing, onionOn, scene } = props;
+  const { frameIndex, playing, onionOn, scene, mode } = props;
   const activeThumbRef = useRef<HTMLButtonElement | null>(null);
 
   // In play mode, keep the focused frame visible as the playhead advances.

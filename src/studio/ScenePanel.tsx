@@ -15,6 +15,7 @@ import {
   type SceneConfig,
   type Sprite,
   type SyntaxTheme,
+  type ThemeSwatch,
 } from './scene.ts';
 
 const styles = stylex.create({
@@ -108,10 +109,12 @@ function SpriteOption({
 
 function ThemeOption({
   theme,
+  swatch,
   selected,
   onSelect,
 }: {
   theme: SyntaxTheme;
+  swatch: ThemeSwatch;
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -124,12 +127,12 @@ function ThemeOption({
     >
       <span
         {...stylex.props(styles.themeChip)}
-        style={{ backgroundColor: theme.bg }}
+        style={{ backgroundColor: swatch.bg }}
         aria-hidden="true"
       >
-        <span {...stylex.props(styles.dot)} style={{ backgroundColor: theme.invader }} />
-        <span {...stylex.props(styles.dot)} style={{ backgroundColor: theme.player }} />
-        <span {...stylex.props(styles.dot)} style={{ backgroundColor: theme.star }} />
+        <span {...stylex.props(styles.dot)} style={{ backgroundColor: swatch.invader }} />
+        <span {...stylex.props(styles.dot)} style={{ backgroundColor: swatch.player }} />
+        <span {...stylex.props(styles.dot)} style={{ backgroundColor: swatch.star }} />
       </span>
       <Text type="label" size="3xs" color={selected ? 'accent' : 'secondary'}>
         {theme.name}
@@ -141,11 +144,14 @@ function ThemeOption({
 export default function ScenePanel({
   scene,
   onChange,
+  mode,
 }: {
   scene: SceneConfig;
   onChange: (patch: Partial<SceneConfig>) => void;
+  mode: 'light' | 'dark';
 }) {
   const theme = themeById(scene.theme);
+  const swatch = theme[mode];
   return (
     <Card padding={3}>
       <VStack gap={2}>
@@ -159,7 +165,7 @@ export default function ScenePanel({
               <SpriteOption
                 key={s.id}
                 sprite={s}
-                fg={theme.invader}
+                fg={swatch.invader}
                 selected={scene.et === s.id}
                 onSelect={() => onChange({ et: s.id })}
               />
@@ -175,7 +181,7 @@ export default function ScenePanel({
               <SpriteOption
                 key={s.id}
                 sprite={s}
-                fg={theme.player}
+                fg={swatch.player}
                 selected={scene.player === s.id}
                 onSelect={() => onChange({ player: s.id })}
               />
@@ -188,7 +194,7 @@ export default function ScenePanel({
           </Text>
           <div {...stylex.props(styles.optionRow)} role="group" aria-label="Syntax theme">
             {SYNTAX_THEMES.map((t) => (
-              <ThemeOption
+              <ThemeOption swatch={swatch}
                 key={t.id}
                 theme={t}
                 selected={scene.theme === t.id}

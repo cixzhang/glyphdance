@@ -141,9 +141,7 @@ export const PLAYER_SPRITES: Sprite[] = [
   },
 ];
 
-export interface SyntaxTheme {
-  id: string;
-  name: string;
+export interface ThemeSwatch {
   bg: string;
   dot: string;
   invader: string;
@@ -151,61 +149,103 @@ export interface SyntaxTheme {
   star: string;
 }
 
+export interface SyntaxTheme {
+  id: string;
+  name: string;
+  /** The palette follows the studio's light/dark mode. `light` uses the
+      official light variant where one exists (Solarized Light, Tokyo Night
+      Light, One Light, Nord Snow Storm); Dracula and Monokai light are
+      crafted in-theme. */
+  dark: ThemeSwatch;
+  light: ThemeSwatch;
+}
+
+
 /** Palettes borrowed from popular editor syntax themes. */
 export const SYNTAX_THEMES: SyntaxTheme[] = [
   {
     id: 'dracula',
     name: 'Dracula',
-    bg: '#282a36',
-    dot: '#44475a',
-    invader: '#50fa7b',
-    player: '#ff79c6',
-    star: '#f8f8f2',
+    dark: { bg: '#282a36',
+      dot: '#44475a',
+      invader: '#50fa7b',
+      player: '#ff79c6',
+      star: '#f8f8f2' },
+    light: { bg: '#f7f5fb',
+      dot: '#ded9ea',
+      invader: '#1e8a4d',
+      player: '#c2145f',
+      star: '#4e4865' },
   },
   {
     id: 'monokai',
     name: 'Monokai',
-    bg: '#272822',
-    dot: '#49483e',
-    invader: '#a6e22e',
-    player: '#f92672',
-    star: '#f8f8f2',
+    dark: { bg: '#272822',
+      dot: '#49483e',
+      invader: '#a6e22e',
+      player: '#f92672',
+      star: '#f8f8f2' },
+    light: { bg: '#faf8f1',
+      dot: '#e7e1cf',
+      invader: '#7c9a06',
+      player: '#d41e5c',
+      star: '#6b6350' },
   },
   {
     id: 'nord',
     name: 'Nord',
-    bg: '#2e3440',
-    dot: '#4c566a',
-    invader: '#a3be8c',
-    player: '#ebcb8b',
-    star: '#d8dee9',
+    dark: { bg: '#2e3440',
+      dot: '#4c566a',
+      invader: '#a3be8c',
+      player: '#ebcb8b',
+      star: '#d8dee9' },
+    light: { bg: '#eceff4',
+      dot: '#d8dee9',
+      invader: '#4f7d46',
+      player: '#9d6f1e',
+      star: '#4c566a' },
   },
   {
     id: 'solarized',
     name: 'Solarized',
-    bg: '#002b36',
-    dot: '#2d4a52',
-    invader: '#859900',
-    player: '#b58900',
-    star: '#839496',
+    dark: { bg: '#002b36',
+      dot: '#2d4a52',
+      invader: '#859900',
+      player: '#b58900',
+      star: '#839496' },
+    light: { bg: '#fdf6e3',
+      dot: '#eee8d5',
+      invader: '#859900',
+      player: '#dc322f',
+      star: '#586e75' },
   },
   {
     id: 'tokyo',
     name: 'Tokyo Night',
-    bg: '#1a1b26',
-    dot: '#3b4261',
-    invader: '#9ece6a',
-    player: '#f7768e',
-    star: '#c0caf5',
+    dark: { bg: '#1a1b26',
+      dot: '#3b4261',
+      invader: '#9ece6a',
+      player: '#f7768e',
+      star: '#c0caf5' },
+    light: { bg: '#d5d6db',
+      dot: '#bfc0c9',
+      invader: '#587539',
+      player: '#8c4351',
+      star: '#343b58' },
   },
   {
     id: 'onedark',
     name: 'One Dark',
-    bg: '#282c34',
-    dot: '#3e4451',
-    invader: '#98c379',
-    player: '#e06c75',
-    star: '#abb2bf',
+    dark: { bg: '#282c34',
+      dot: '#3e4451',
+      invader: '#98c379',
+      player: '#e06c75',
+      star: '#abb2bf' },
+    light: { bg: '#fafafa',
+      dot: '#e8e8e9',
+      invader: '#50a14f',
+      player: '#e45649',
+      star: '#383a42' },
   },
 ];
 
@@ -267,8 +307,12 @@ function stamp(
 }
 
 /** Render the demo scene for `frameIndex` under the given actors + theme. */
-export function sceneCells(frameIndex: number, scene: SceneConfig): Cell[][] {
-  const theme = themeById(scene.theme);
+export function sceneCells(
+  frameIndex: number,
+  scene: SceneConfig,
+  mode: 'light' | 'dark',
+): Cell[][] {
+  const theme = themeById(scene.theme)[mode];
   const et = spriteById(ET_SPRITES, scene.et);
   const player = spriteById(PLAYER_SPRITES, scene.player);
   const legs = STUB_FRAMES[frameIndex % STUB_FRAMES.length].legs;
