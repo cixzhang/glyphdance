@@ -11,9 +11,11 @@ import { VStack } from '@astryxdesign/core/Stack';
 import { BottomSheet } from '@astryxdesign/core/BottomSheet';
 import { MobileNav } from '@astryxdesign/core/MobileNav';
 import { IconCheck, IconSparkles } from './icons';
-import ScenePanel from './ScenePanel.tsx';
-import type { SceneConfig } from './scene.ts';
-import { AsciiThumb } from './Canvas.tsx';
+import DocumentPanel from './DocumentPanel.tsx';
+import { ET_SPRITES } from './scene.ts';
+import type { DocState } from './document.ts';
+import type { Action } from './actions.ts';
+import type { Brush } from './brush.ts';
 
 const styles = stylex.create({
   col: {
@@ -205,11 +207,14 @@ function AgentPanel({
   );
 }
 
-function GlyphColorPanel() {
-  const [glyph, setGlyph] = useState('█');
-  const [fg, setFg] = useState(FG[0]);
-  const [bg, setBg] = useState(BG[0]);
-  const [transparentBg, setTransparentBg] = useState(false);
+function GlyphColorPanel({
+  brush,
+  onChange,
+}: {
+  brush: Brush;
+  onChange: (patch: Partial<Brush>) => void;
+}) {
+  const transparentBg = brush.bg === '';
   return (
     <Card padding={3}>
       <VStack gap={2}>
@@ -218,10 +223,10 @@ function GlyphColorPanel() {
           {GLYPHS.map((g) => (
             <button
               key={g}
-              {...stylex.props(styles.glyph, glyph === g && styles.glyphActive)}
-              onClick={() => setGlyph(g)}
+              {...stylex.props(styles.glyph, brush.glyph === g && styles.glyphActive)}
+              onClick={() => onChange({ glyph: g })}
               title={`Glyph ${g}`}
-              aria-pressed={glyph === g}
+              aria-pressed={brush.glyph === g}
             >
               {g}
             </button>
@@ -235,12 +240,12 @@ function GlyphColorPanel() {
             {FG.map((c) => (
               <button
                 key={c}
-                {...stylex.props(styles.swatch, fg === c && styles.swatchActive)}
+                {...stylex.props(styles.swatch, brush.fg === c && styles.swatchActive)}
                 style={{ backgroundColor: c }}
-                onClick={() => setFg(c)}
+                onClick={() => onChange({ fg: c })}
                 title={`Foreground ${c}`}
                 aria-label={`Foreground ${c}`}
-                aria-pressed={fg === c}
+                aria-pressed={brush.fg === c}
               />
             ))}
           </div>
@@ -253,22 +258,19 @@ function GlyphColorPanel() {
             {BG.map((c) => (
               <button
                 key={c}
-                {...stylex.props(styles.swatch, bg === c && styles.swatchActive)}
+                {...stylex.props(styles.swatch, brush.bg === c && styles.swatchActive)}
                 style={{ backgroundColor: c, opacity: transparentBg ? 0.35 : 1 }}
-                onClick={() => {
-                  setBg(c);
-                  setTransparentBg(false);
-                }}
+                onClick={() => onChange({ bg: c })}
                 title={`Background ${c}`}
                 aria-label={`Background ${c}`}
-                aria-pressed={bg === c && !transparentBg}
+                aria-pressed={brush.bg === c && !transparentBg}
               />
             ))}
           </div>
           <Switch
             label="Transparent background"
             value={transparentBg}
-            onChange={setTransparentBg}
+            onChange={(v) => onChange({ bg: v ? '' : BG[0] })}
             size="sm"
           />
         </VStack>
@@ -305,7 +307,9 @@ function StampsPanel({ mode }: { mode: 'light' | 'dark' }) {
               title={`Stamp: ${s.name} (soon)`}
             >
               {s.thumb ? (
-                <AsciiThumb frameIndex={0} mode={mode} />
+                <pre {...stylex.props(styles.stampArt)} aria-hidden="true">
+                  {ET_SPRITES[0].frames[0].join('\n')}
+                </pre>
               ) : (
                 <pre {...stylex.props(styles.stampArt)}>{s.art}</pre>
               )}
@@ -332,8 +336,10 @@ export default function Inspector({
   onSheetOpenChange,
   drawerOpen,
   onDrawerOpenChange,
-  scene,
-  onSceneChange,
+  doc,
+  dispatch,
+  brush,
+  onBrushChange,
   mode,
 }: {
   isMobile: boolean;
@@ -343,13 +349,16 @@ export default function Inspector({
   onSheetOpenChange: (open: boolean) => void;
   drawerOpen: boolean;
   onDrawerOpenChange: (open: boolean) => void;
-  scene: SceneConfig;
-  onSceneChange: (patch: Partial<SceneConfig>) => void;
+  doc: DocState;
+  dispatch: (a: Action) => void;
+  brush: Brush;
+  onBrushChange: (patch: Partial<Brush>) => void;
   mode: 'light' | 'dark';
 }) {
-  // Mobile splits the inspector by pattern: the control cards (scene, glyph
-  // & color, stamps) live in an Astryx MobileNav side drawer so the canvas
-  // stays visible while tweaking, and the agent chat keeps the bottom sheet.
+  // Mobile splits the inspector by pattern: the control cards (document,
+  // glyph & color, stamps) live in an Astryx MobileNav side drawer so the
+  // canvas stays visible while tweaking, and the agent chat keeps the bottom
+  // sheet.
   if (isMobile) {
     return (
       <>
@@ -360,8 +369,8 @@ export default function Inspector({
           header="Panels"
         >
           <div {...stylex.props(styles.drawerContent)}>
-            <ScenePanel scene={scene} onChange={onSceneChange} mode={mode} />
-            <GlyphColorPanel />
+            <DocumentPanel doc={doc} dispatch={dispatch} mode={mode} />
+            <GlyphColorPanel brush={brush} onChange={onBrushChange} />
             <StampsPanel mode={mode} />
           </div>
         </MobileNav>
@@ -382,8 +391,8 @@ export default function Inspector({
   return (
     <div {...stylex.props(styles.col)}>
       <AgentPanel open={agentOpen} onToggle={onToggleAgent} isMobile={isMobile} />
-      <ScenePanel scene={scene} onChange={onSceneChange} mode={mode} />
-      <GlyphColorPanel />
+      <DocumentPanel doc={doc} dispatch={dispatch} mode={mode} />
+      <GlyphColorPanel brush={brush} onChange={onBrushChange} />
       <StampsPanel mode={mode} />
     </div>
   );

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { ToggleButton, ToggleButtonGroup } from '@astryxdesign/core/ToggleButton';
@@ -61,6 +60,9 @@ const styles = stylex.create({
   },
 });
 
+// Tools that paint today; the rest are honest stubs until their actions land.
+const LIVE_TOOLS = new Set(['brush', 'erase', 'pick']);
+
 const TOOLS = [
   { id: 'select', icon: <IconSelect />, label: 'Select' },
   { id: 'brush', icon: <IconBrush />, label: 'Brush' },
@@ -76,30 +78,51 @@ const TOOLS = [
 // active, so it maps directly onto ToggleButtonGroup (vertical on desktop,
 // horizontal in the mobile strip). Undo/redo are momentary actions, not
 // toggles, so they stay as plain IconButtons outside the group.
-export default function ToolRail({ isMobile }: { isMobile: boolean }) {
-  const [active, setActive] = useState<string>('brush');
+export default function ToolRail({
+  isMobile,
+  tool,
+  onToolChange,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
+}: {
+  isMobile: boolean;
+  tool: string;
+  onToolChange: (tool: string) => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
+}) {
   return (
     <div {...stylex.props(styles.rail)} role="toolbar" aria-label="Tools">
       <ToggleButtonGroup
         label="Tools"
         type="single"
         orientation={isMobile ? 'horizontal' : 'vertical'}
-        value={active}
+        value={tool}
         onChange={(v) => {
-          if (typeof v === 'string') setActive(v);
+          if (typeof v === 'string') onToolChange(v);
         }}
         xstyle={styles.group}
       >
-        {TOOLS.map((t) => (
-          <ToggleButton
-            key={t.id}
-            value={t.id}
-            label={t.label}
-            icon={t.icon}
-            isIconOnly
-            tooltip={`${t.label} (stub — painting arrives in Phase 1)`}
-          />
-        ))}
+        {TOOLS.map((t) => {
+          const live = LIVE_TOOLS.has(t.id);
+          return (
+            <ToggleButton
+              key={t.id}
+              value={t.id}
+              label={t.label}
+              icon={t.icon}
+              isIconOnly
+              tooltip={live ? t.label : `${t.label} — soon`}
+              // Stub tools can't be selected yet; picking one would silently
+              // do nothing on the canvas.
+              isDisabled={!live}
+            />
+          );
+        })}
       </ToggleButtonGroup>
       <div {...stylex.props(styles.spacer)} />
       <IconButton
@@ -108,8 +131,9 @@ export default function ToolRail({ isMobile }: { isMobile: boolean }) {
         icon={<IconUndo />}
         variant="ghost"
         size="md"
-        tooltip="Undo — soon"
-        isDisabled
+        tooltip={canUndo ? 'Undo' : 'Nothing to undo'}
+        isDisabled={!canUndo}
+        onClick={onUndo}
       />
       <IconButton
         label="Redo"
@@ -117,8 +141,9 @@ export default function ToolRail({ isMobile }: { isMobile: boolean }) {
         icon={<IconRedo />}
         variant="ghost"
         size="md"
-        tooltip="Redo — soon"
-        isDisabled
+        tooltip={canRedo ? 'Redo' : 'Nothing to redo'}
+        isDisabled={!canRedo}
+        onClick={onRedo}
       />
     </div>
   );

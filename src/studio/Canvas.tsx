@@ -1,13 +1,17 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { IconSparkles } from './icons';
-import { GRID_W, GRID_H, type Cell } from './document.ts';
 import {
-  sceneCells,
-  themeById,
-  DEFAULT_SCENE,
-  type SceneConfig,
-} from './scene.ts';
+  GRID_W,
+  GRID_H,
+  cellIndex,
+  inBounds,
+  type Cell,
+  type DocState,
+} from './document.ts';
+import type { PaintCell } from './actions.ts';
+import { themeById } from './scene.ts';
+import type { Brush } from './brush.ts';
 
 const styles = stylex.create({
   wrap: {
@@ -26,6 +30,8 @@ const styles = stylex.create({
     margin: 0,
     userSelect: 'none',
     whiteSpace: 'pre',
+    touchAction: 'none',
+    cursor: 'crosshair',
   },
   // Phones get a much larger grid — the canvas is the whole stage on mobile.
   // (Kept separate from `grid` so thumbnails are unaffected.)
@@ -102,48 +108,133 @@ const VIGNETTE_DARK =
 const VIGNETTE_LIGHT =
   'radial-gradient(circle at 50% 40%, transparent 0%, rgba(60,50,40,0.14) 100%)';
 
-/** Full-size character grid for the canvas. */
+type Mode = 'light' | 'dark';
+
+/** Full-size character grid for the canvas. Empty cells render the theme's
+ *  dot so the grid reads as graph paper; the document only stores real marks. */
 export function AsciiGrid({
-  frameIndex,
+  doc,
+  frame,
   onionOn,
-  scene,
   mode,
+  brush,
+  onPaint,
+  onPick,
 }: {
-  frameIndex: number;
+  doc: DocState;
+  frame: number;
   onionOn: boolean;
-  scene: SceneConfig;
-  mode: 'light' | 'dark';
+  mode: Mode;
+  brush: Brush;
+  onPaint: (cells: PaintCell[], stroke: string) => void;
+  onPick: (cell: Cell) => void;
 }) {
-  const cells = useMemo(
-    () => sceneCells(frameIndex, scene, mode),
-    [frameIndex, scene, mode],
-  );
-  const prev = useMemo(
-    () => (onionOn ? sceneCells((frameIndex + 3) % 4, scene, mode) : null),
-    [frameIndex, onionOn, scene, mode],
-  );
+  const theme = themeById(doc.themeId)[mode];
+  const cells = doc.frames[frame].cells;
+  const prevCells = useMemo(() => {
+    if (!onionOn || doc.frames.length < 2) return null;
+    return doc.frames[(frame - 1 + doc.frames.length) % doc.frames.length].cells;
+  }, [doc.frames, frame, onionOn]);
+
+  // One stroke = one undo step: the store merges paintCells actions that
+  // share a stroke id into a single history entry.
+  const strokeRef = useRef<{ id: string; painted: Set<string>; last: [number, number] } | null>(null);
+  const strokeSeq = useRef(0);
+
+  const paintLine = (x0: number, y0: number, x1: number, y1: number, id: string, painted: Set<string>) => {
+    // Bresenham so fast drags don't leave dotted strokes.
+    const out: PaintCell[] = [];
+    let x = x0;
+    let y = y0;
+    const dx = Math.abs(x1 - x0);
+    const dy = -Math.abs(y1 - y0);
+    const sx = x0 < x1 ? 1 : -1;
+    const sy = y0 < y1 ? 1 : -1;
+    let err = dx + dy;
+    for (;;) {
+      const key = `${x},${y}`;
+      if (inBounds(x, y) && !painted.has(key)) {
+        painted.add(key);
+        const cell: Cell =
+          brush.tool === 'erase'
+            ? { ch: ' ', fg: brush.fg, bg: '' }
+            : { ch: brush.glyph, fg: brush.fg, bg: brush.bg };
+        out.push({ x, y, cell });
+      }
+      if (x === x1 && y === y1) break;
+      const e2 = 2 * err;
+      if (e2 >= dy) { err += dy; x += sx; }
+      if (e2 <= dx) { err += dx; y += sy; }
+    }
+    if (out.length > 0) onPaint(out, id);
+  };
+
+  const beginStroke = (x: number, y: number) => {
+    if (brush.tool === 'pick') {
+      if (inBounds(x, y)) onPick(cells[cellIndex(x, y)]);
+      return;
+    }
+    if (brush.tool !== 'brush' && brush.tool !== 'erase') return;
+    const id = `s${++strokeSeq.current}`;
+    const painted = new Set<string>();
+    strokeRef.current = { id, painted, last: [x, y] };
+    paintLine(x, y, x, y, id, painted);
+  };
+
+  const continueStroke = (x: number, y: number) => {
+    const s = strokeRef.current;
+    if (s === null) return;
+    paintLine(s.last[0], s.last[1], x, y, s.id, s.painted);
+    s.last = [x, y];
+  };
+
+  const endStroke = () => {
+    strokeRef.current = null;
+  };
+
   return (
-    <pre {...stylex.props(styles.grid, styles.gridMobile)} aria-label="Animation canvas">
-      {cells.map((row: Cell[], r: number) => (
+    <pre
+      {...stylex.props(styles.grid, styles.gridMobile)}
+      aria-label="Animation canvas"
+      onPointerUp={endStroke}
+      onPointerLeave={endStroke}
+      onDragStart={(e) => e.preventDefault()}
+    >
+      {Array.from({ length: GRID_H }, (_, r) => (
         <span key={r} {...stylex.props(styles.row)}>
-          {row.map((cell, c) => {
+          {Array.from({ length: GRID_W }, (_, c) => {
+            const cell = cells[cellIndex(c, r)];
+            const empty = cell.ch === ' ';
             const ghost =
               onionOn &&
-              cell.kind === 'bg' &&
-              prev !== null &&
-              prev[r][c].kind !== 'bg';
+              empty &&
+              prevCells !== null &&
+              prevCells[cellIndex(c, r)].ch !== ' ';
+            const ghostCell = ghost && prevCells ? prevCells[cellIndex(c, r)] : null;
             return (
               <span
                 key={c}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  beginStroke(c, r);
+                }}
+                onPointerEnter={(e) => {
+                  if (e.buttons & 1) continueStroke(c, r);
+                }}
                 style={{
-                  color: ghost ? (mode === 'dark' ? GHOST_DARK : GHOST_LIGHT) : cell.fg,
+                  color: ghost
+                    ? mode === 'dark'
+                      ? GHOST_DARK
+                      : GHOST_LIGHT
+                    : empty
+                      ? theme.dot
+                      : cell.fg,
+                  backgroundColor: !empty && cell.bg ? cell.bg : undefined,
                   textShadow:
-                    ghost || cell.kind === 'bg'
-                      ? 'none'
-                      : `0 0 10px ${cell.fg}66`,
+                    ghost || empty ? 'none' : `0 0 10px ${cell.fg}66`,
                 }}
               >
-                {ghost && prev ? prev[r][c].ch : cell.ch}
+                {ghost && ghostCell ? ghostCell.ch : empty ? '·' : cell.ch}
               </span>
             );
           })}
@@ -154,33 +245,39 @@ export function AsciiGrid({
   );
 }
 
-/** Tiny render of a frame for the timeline filmstrip and stamp cards. */
+/** Tiny render of a frame for the timeline filmstrip. */
 export function AsciiThumb({
-  frameIndex,
-  scene = DEFAULT_SCENE,
-  mode = 'dark',
+  cells,
+  dot,
+  bg,
 }: {
-  frameIndex: number;
-  scene?: SceneConfig;
-  mode?: 'light' | 'dark';
+  cells: Cell[];
+  dot: string;
+  bg: string;
 }) {
-  const cells = useMemo(
-    () => sceneCells(frameIndex, scene, mode),
-    [frameIndex, scene, mode],
-  );
   return (
     <pre
       {...stylex.props(styles.grid)}
-      style={{ fontSize: 4.5, lineHeight: 1.3 }}
+      style={{ fontSize: 4.5, lineHeight: 1.3, backgroundColor: bg }}
       aria-hidden="true"
     >
-      {cells.map((row: Cell[], r: number) => (
+      {Array.from({ length: GRID_H }, (_, r) => (
         <span key={r} {...stylex.props(styles.row)}>
-          {row.map((cell, c) => (
-            <span key={c} style={{ color: cell.fg }}>
-              {cell.ch}
-            </span>
-          ))}
+          {Array.from({ length: GRID_W }, (_, c) => {
+            const cell = cells[cellIndex(c, r)];
+            const empty = cell.ch === ' ';
+            return (
+              <span
+                key={c}
+                style={{
+                  color: empty ? dot : cell.fg,
+                  backgroundColor: !empty && cell.bg ? cell.bg : undefined,
+                }}
+              >
+                {empty ? '·' : cell.ch}
+              </span>
+            );
+          })}
           {'\n'}
         </span>
       ))}
@@ -189,16 +286,17 @@ export function AsciiThumb({
 }
 
 interface CanvasProps {
-  frameIndex: number;
-  frameCount: number;
+  doc: DocState;
   onionOn: boolean;
-  scene: SceneConfig;
-  mode: 'light' | 'dark';
+  mode: Mode;
+  brush: Brush;
+  onPaint: (cells: PaintCell[], stroke: string) => void;
+  onPick: (cell: Cell) => void;
   onOpenAgent: () => void;
 }
 
-export default function Canvas({ frameIndex, frameCount, onionOn, scene, mode, onOpenAgent }: CanvasProps) {
-  const theme = themeById(scene.theme)[mode];
+export default function Canvas({ doc, onionOn, mode, brush, onPaint, onPick, onOpenAgent }: CanvasProps) {
+  const theme = themeById(doc.themeId)[mode];
   return (
     <div
       {...stylex.props(styles.wrap)}
@@ -207,7 +305,15 @@ export default function Canvas({ frameIndex, frameCount, onionOn, scene, mode, o
         backgroundImage: mode === 'dark' ? VIGNETTE_DARK : VIGNETTE_LIGHT,
       }}
     >
-      <AsciiGrid frameIndex={frameIndex} onionOn={onionOn} scene={scene} mode={mode} />
+      <AsciiGrid
+        doc={doc}
+        frame={doc.active}
+        onionOn={onionOn}
+        mode={mode}
+        brush={brush}
+        onPaint={onPaint}
+        onPick={onPick}
+      />
       <button
         {...stylex.props(styles.pill)}
         onClick={onOpenAgent}
@@ -217,10 +323,10 @@ export default function Canvas({ frameIndex, frameCount, onionOn, scene, mode, o
         <span {...stylex.props(styles.kbd)}>⌘K</span>
       </button>
       <div {...stylex.props(styles.status)}>
-        {GRID_W} × {GRID_H} · frame {frameIndex + 1}/{frameCount}
+        {doc.name} · {GRID_W} × {GRID_H} · frame {doc.active + 1}/{doc.frames.length}
         {onionOn ? ' · onion on' : ''}
       </div>
-      <div {...stylex.props(styles.phase)}>Phase 0 shell</div>
+      <div {...stylex.props(styles.phase)}>Phase 1</div>
     </div>
   );
 }

@@ -3,11 +3,12 @@ import * as stylex from '@stylexjs/stylex';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { ToggleButton } from '@astryxdesign/core/ToggleButton';
 import { Text } from '@astryxdesign/core/Text';
-import { IconOnion, IconPlus } from './icons';
+import { IconOnion, IconPlus, IconDuplicate, IconTrash } from './icons';
 import Transport from './Transport.tsx';
 import { AsciiThumb } from './Canvas.tsx';
-import { STUB_FRAMES } from './document.ts';
-import type { SceneConfig } from './scene.ts';
+import type { DocState } from './document.ts';
+import { themeById } from './scene.ts';
+import type { Action } from './actions.ts';
 
 const styles = stylex.create({
   bar: {
@@ -79,12 +80,11 @@ const styles = stylex.create({
 });
 
 interface TimelineProps {
-  frameIndex: number;
+  doc: DocState;
+  dispatch: (a: Action) => void;
   playing: boolean;
   onionOn: boolean;
-  scene: SceneConfig;
   mode: 'light' | 'dark';
-  onSelectFrame: (i: number) => void;
   onJumpStart: () => void;
   onStepBack: () => void;
   onTogglePlay: () => void;
@@ -94,8 +94,10 @@ interface TimelineProps {
 }
 
 export default function Timeline(props: TimelineProps) {
-  const { frameIndex, playing, onionOn, scene, mode } = props;
+  const { doc, dispatch, playing, onionOn, mode } = props;
+  const active = doc.active;
   const activeThumbRef = useRef<HTMLButtonElement | null>(null);
+  const swatch = themeById(doc.themeId)[mode];
 
   // In play mode, keep the focused frame visible as the playhead advances.
   // `nearest` is a no-op when the frame is already fully in view.
@@ -107,7 +109,7 @@ export default function Timeline(props: TimelineProps) {
         block: 'nearest',
       });
     }
-  }, [frameIndex, playing]);
+  }, [active, playing]);
 
   return (
     <div {...stylex.props(styles.bar)} aria-label="Frame timeline">
@@ -123,23 +125,23 @@ export default function Timeline(props: TimelineProps) {
       </div>
       <div {...stylex.props(styles.playhead)} aria-hidden="true" />
       <div {...stylex.props(styles.filmstrip)} role="listbox" aria-label="Frames">
-        {STUB_FRAMES.map((f, i) => (
+        {doc.frames.map((f, i) => (
           <button
             key={f.id}
-            ref={i === frameIndex ? activeThumbRef : undefined}
-            {...stylex.props(styles.thumb, i === frameIndex && styles.thumbActive)}
-            onClick={() => props.onSelectFrame(i)}
+            ref={i === active ? activeThumbRef : undefined}
+            {...stylex.props(styles.thumb, i === active && styles.thumbActive)}
+            onClick={() => dispatch({ type: 'setActive', index: i })}
             role="option"
-            aria-selected={i === frameIndex}
-            title={`Frame ${f.id} · hold ${f.holdMs}ms`}
+            aria-selected={i === active}
+            title={`Frame ${i + 1} · hold ${f.holdMs}ms`}
           >
-            <AsciiThumb frameIndex={i} scene={scene} />
+            <AsciiThumb cells={f.cells} dot={swatch.dot} bg={swatch.bg} />
             <Text
               type="code"
               size="3xs"
-              color={i === frameIndex ? 'accent' : 'secondary'}
+              color={i === active ? 'accent' : 'secondary'}
             >
-              {f.id} · {f.holdMs}ms
+              {i + 1} · {f.holdMs}ms
             </Text>
           </button>
         ))}
@@ -148,8 +150,29 @@ export default function Timeline(props: TimelineProps) {
           icon={<IconPlus />}
           variant="ghost"
           size="md"
-          tooltip="Add frame — soon"
-          isDisabled
+          tooltip="Add frame after the current one"
+          onClick={() => dispatch({ type: 'addFrame', after: active })}
+        />
+        <IconButton
+          label="Duplicate frame"
+          icon={<IconDuplicate />}
+          variant="ghost"
+          size="md"
+          tooltip="Duplicate the current frame"
+          onClick={() => dispatch({ type: 'duplicateFrame', index: active })}
+        />
+        <IconButton
+          label="Delete frame"
+          icon={<IconTrash />}
+          variant="ghost"
+          size="md"
+          tooltip={
+            doc.frames.length > 1
+              ? 'Delete the current frame'
+              : 'Cannot delete the last frame'
+          }
+          isDisabled={doc.frames.length <= 1}
+          onClick={() => dispatch({ type: 'deleteFrame', index: active })}
         />
       </div>
       <div {...stylex.props(styles.cluster)}>
@@ -168,7 +191,7 @@ export default function Timeline(props: TimelineProps) {
             12 fps
           </Text>
           <Text type="code" size="3xs" color="disabled">
-            1–{STUB_FRAMES.length}
+            1–{doc.frames.length}
           </Text>
         </div>
       </div>

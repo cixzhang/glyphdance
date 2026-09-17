@@ -6,6 +6,7 @@ import {
   ArrowRight,
   Brush,
   Check,
+  Clipboard,
   Copy,
   Eraser,
   Image,
@@ -22,6 +23,7 @@ import {
   Sparkles,
   Sun,
   Moon,
+  Trash,
   Undo,
 } from 'pixelarticons/react';
 
@@ -67,5 +69,7 @@ export const IconPlus = px(Plus);
 export const IconSparkles = px(Sparkles);
 export const IconPanels = px(Layout);
 export const IconOnion = px(Copy);
+export const IconDuplicate = px(Clipboard);
+export const IconTrash = px(Trash);
 export const IconSun = px(Sun);
 export const IconMoon = px(Moon);

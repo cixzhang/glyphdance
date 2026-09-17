@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { Theme } from '@astryxdesign/core/theme';
 import { glyphdanceTheme } from './studio/glyphdance.js';
@@ -8,8 +8,11 @@ import Canvas from './studio/Canvas.tsx';
 import Inspector from './studio/Inspector.tsx';
 import Timeline from './studio/Timeline.tsx';
 import { useIsMobile } from './studio/responsive.ts';
-import { STUB_FRAMES } from './studio/document.ts';
-import { DEFAULT_SCENE, type SceneConfig } from './studio/scene.ts';
+import { useDocument } from './studio/store.ts';
+import { seedDocument } from './studio/seed.ts';
+import { DEFAULT_BRUSH, type Brush } from './studio/brush.ts';
+import type { Cell } from './studio/document.ts';
+import type { PaintCell } from './studio/actions.ts';
 
 const styles = stylex.create({
   root: {
@@ -47,8 +50,6 @@ const styles = stylex.create({
   timeline: { gridArea: 'timeline', minWidth: 0 },
 });
 
-const LAST = STUB_FRAMES.length - 1;
-
 type ThemeMode = 'light' | 'dark';
 
 const MODE_KEY = 'glyphdance:mode';
@@ -76,35 +77,65 @@ export default function App() {
       return next;
     });
   }, []);
-  const [frameIndex, setFrameIndex] = useState(1);
+
+  // The document: every mutation goes through typed actions (store.dispatch),
+  // so painting, the timeline, and eventually the agent share one validated,
+  // undoable path.
+  const [seedDoc] = useState(() => seedDocument(initialMode()));
+  const { doc, dispatch, undo, redo, canUndo, canRedo } = useDocument(seedDoc);
+
   const [playing, setPlaying] = useState(false);
   const [onionOn, setOnionOn] = useState(true);
   const [agentOpen, setAgentOpen] = useState(true);
   // Mobile only: the agent chat lives in a bottom sheet, and the control
-  // cards (scene, glyph/color, stamps) live in a side drawer.
+  // cards (document, glyph/color, stamps) live in a side drawer.
   const [sheetOpen, setSheetOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  // Demo scene: ET's sprite, the player's sprite, and the syntax-theme palette.
-  const [scene, setScene] = useState<SceneConfig>(DEFAULT_SCENE);
-  const patchScene = useCallback(
-    (patch: Partial<SceneConfig>) => setScene((s) => ({ ...s, ...patch })),
+  // The brush: active tool plus the glyph and colors it paints with.
+  const [brush, setBrush] = useState<Brush>(DEFAULT_BRUSH);
+  const patchBrush = useCallback(
+    (patch: Partial<Brush>) => setBrush((b) => ({ ...b, ...patch })),
     [],
   );
   const timer = useRef<number | null>(null);
 
-  const jumpStart = useCallback(() => setFrameIndex(0), []);
-  const jumpEnd = useCallback(() => setFrameIndex(LAST), []);
+  const frameCount = doc.frames.length;
+  const jumpStart = useCallback(() => dispatch({ type: 'setActive', index: 0 }), [dispatch]);
+  const jumpEnd = useCallback(
+    () => dispatch({ type: 'setActive', index: frameCount - 1 }),
+    [dispatch, frameCount],
+  );
   const stepBack = useCallback(
-    () => setFrameIndex((i) => (i - 1 + STUB_FRAMES.length) % STUB_FRAMES.length),
-    [],
+    () => dispatch({ type: 'setActive', index: (doc.active - 1 + frameCount) % frameCount }),
+    [dispatch, doc.active, frameCount],
   );
   const stepFwd = useCallback(
-    () => setFrameIndex((i) => (i + 1) % STUB_FRAMES.length),
-    [],
+    () => dispatch({ type: 'setActive', index: (doc.active + 1) % frameCount }),
+    [dispatch, doc.active, frameCount],
   );
   const togglePlay = useCallback(() => setPlaying((p) => !p), []);
   const toggleOnion = useCallback(() => setOnionOn((o) => !o), []);
   const toggleAgent = useCallback(() => setAgentOpen((o) => !o), []);
+
+  // Canvas painting: one paintCells action per pointer event; the store
+  // merges a stroke's actions into a single undo step.
+  const onPaint = useCallback(
+    (cells: PaintCell[], stroke: string) =>
+      dispatch({ type: 'paintCells', frame: doc.active, cells, stroke }),
+    [dispatch, doc.active],
+  );
+  // Eyedropper: lift the cell's glyph and colors into the brush, then go
+  // back to the brush so the next touch paints.
+  const onPick = useCallback(
+    (cell: Cell) =>
+      setBrush((b) => ({
+        tool: 'brush',
+        glyph: cell.ch === ' ' ? b.glyph : cell.ch,
+        fg: cell.fg,
+        bg: cell.bg,
+      })),
+    [],
+  );
 
   // The top bar's Agent button and the canvas "Ask the agent" pill share one
   // entry point. On desktop they toggle the agent card; on mobile they open
@@ -125,18 +156,21 @@ export default function App() {
     }
   }, [isMobile]);
 
-  // Playback honors each frame's hold time (the stub's stand-in for real timing).
+  // Playback honors each frame's hold time.
   useEffect(() => {
     if (!playing) return;
     timer.current = window.setTimeout(() => {
-      setFrameIndex((i) => (i + 1) % STUB_FRAMES.length);
-    }, STUB_FRAMES[frameIndex].holdMs);
+      dispatch({ type: 'setActive', index: (doc.active + 1) % frameCount });
+    }, doc.frames[doc.active].holdMs);
     return () => {
       if (timer.current !== null) window.clearTimeout(timer.current);
     };
-  }, [playing, frameIndex]);
+  }, [playing, doc.active, frameCount, dispatch, doc.frames]);
 
-  const frameLabel = `${frameIndex + 1} / ${STUB_FRAMES.length}`;
+  const frameLabel = useMemo(
+    () => `${doc.active + 1} / ${frameCount}`,
+    [doc.active, frameCount],
+  );
 
   return (
     <Theme theme={glyphdanceTheme} mode={mode}>
@@ -159,15 +193,24 @@ export default function App() {
         />
       </div>
       <div {...stylex.props(styles.rail)}>
-        <ToolRail isMobile={isMobile} />
+        <ToolRail
+          isMobile={isMobile}
+          tool={brush.tool}
+          onToolChange={(tool) => patchBrush({ tool })}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={undo}
+          onRedo={redo}
+        />
       </div>
       <div {...stylex.props(styles.canvas)}>
         <Canvas
-          frameIndex={frameIndex}
-          frameCount={STUB_FRAMES.length}
+          doc={doc}
           onionOn={onionOn}
-          scene={scene}
           mode={mode}
+          brush={brush}
+          onPaint={onPaint}
+          onPick={onPick}
           onOpenAgent={openPanels}
         />
       </div>
@@ -180,19 +223,20 @@ export default function App() {
           onSheetOpenChange={setSheetOpen}
           drawerOpen={drawerOpen}
           onDrawerOpenChange={setDrawerOpen}
-          scene={scene}
-          onSceneChange={patchScene}
+          doc={doc}
+          dispatch={dispatch}
+          brush={brush}
+          onBrushChange={patchBrush}
           mode={mode}
         />
       </div>
       <div {...stylex.props(styles.timeline)}>
         <Timeline
-          frameIndex={frameIndex}
+          doc={doc}
+          dispatch={dispatch}
           playing={playing}
           onionOn={onionOn}
-          scene={scene}
           mode={mode}
-          onSelectFrame={setFrameIndex}
           onJumpStart={jumpStart}
           onStepBack={stepBack}
           onTogglePlay={togglePlay}
