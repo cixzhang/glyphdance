@@ -48,6 +48,9 @@ const styles = stylex.create({
     fontSize: 12,
     padding: '7px 14px',
     cursor: 'pointer',
+    // On mobile the top bar's Agent button is the entry point — the pill
+    // would just eat canvas space.
+    '@media (max-width: 760px)': { display: 'none' },
     display: 'flex',
     alignItems: 'center',
     gap: 8,

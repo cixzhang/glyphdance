@@ -59,6 +59,10 @@ const styles = stylex.create({
     flexDirection: 'column',
     alignItems: 'center',
     gap: 3,
+    // Breathing room for the active outline: without it, scrollIntoView with
+    // `inline: nearest` parks the thumb flush against the strip's edge and
+    // the focus ring gets clipped.
+    scrollMarginInline: 12,
     ':hover': { borderColor: 'var(--gd-faint)' },
   },
   thumbActive: {
