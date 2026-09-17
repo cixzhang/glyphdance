@@ -2,7 +2,7 @@ import * as stylex from '@stylexjs/stylex';
 import { TopNav, TopNavHeading, TopNavRenderContext } from '@astryxdesign/core/TopNav';
 import { Button } from '@astryxdesign/core/Button';
 import { IconButton } from '@astryxdesign/core/IconButton';
-import { PanelRight, Sparkles } from 'lucide-react';
+import { IconPanels, IconSparkles } from './icons';
 import { Text } from '@astryxdesign/core/Text';
 import Transport from './Transport.tsx';
 import { DOC_NAME } from './document.ts';
@@ -141,7 +141,7 @@ export default function TopBar(props: TopBarProps) {
           <div {...stylex.props(styles.mobileOnly)}>
             <IconButton
               label="Control panels"
-              icon={<PanelRight size={15} />}
+              icon={<IconPanels />}
               variant="ghost"
               size="sm"
               tooltip="Open the control panels"
@@ -150,7 +150,7 @@ export default function TopBar(props: TopBarProps) {
           </div>
           <Button
             label="Agent"
-            icon={<Sparkles size={15} />}
+            icon={<IconSparkles />}
             variant={agentOpen ? 'primary' : 'ghost'}
             size="sm"
             tooltip={isMobile ? 'Open the agent' : 'Toggle the agent panel'}

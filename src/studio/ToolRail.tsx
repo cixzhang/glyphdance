@@ -3,17 +3,17 @@ import * as stylex from '@stylexjs/stylex';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { ToggleButton, ToggleButtonGroup } from '@astryxdesign/core/ToggleButton';
 import {
-  Brush,
-  Eraser,
-  MousePointer2,
-  PaintBucket,
-  Pipette,
-  Redo2,
-  Slash,
-  Stamp,
-  Type,
-  Undo2,
-} from 'lucide-react';
+  IconBrush,
+  IconEraser,
+  IconEyedropper,
+  IconFill,
+  IconLine,
+  IconRedo,
+  IconSelect,
+  IconStamp,
+  IconText,
+  IconUndo,
+} from './icons';
 
 const styles = stylex.create({
   rail: {
@@ -62,14 +62,14 @@ const styles = stylex.create({
 });
 
 const TOOLS = [
-  { id: 'select', icon: <MousePointer2 size={16} />, label: 'Select' },
-  { id: 'brush', icon: <Brush size={16} />, label: 'Brush' },
-  { id: 'erase', icon: <Eraser size={16} />, label: 'Eraser' },
-  { id: 'fill', icon: <PaintBucket size={16} />, label: 'Fill' },
-  { id: 'line', icon: <Slash size={16} />, label: 'Line' },
-  { id: 'text', icon: <Type size={16} />, label: 'Text' },
-  { id: 'stamp', icon: <Stamp size={16} />, label: 'Stamp' },
-  { id: 'pick', icon: <Pipette size={16} />, label: 'Eyedropper' },
+  { id: 'select', icon: <IconSelect />, label: 'Select' },
+  { id: 'brush', icon: <IconBrush />, label: 'Brush' },
+  { id: 'erase', icon: <IconEraser />, label: 'Eraser' },
+  { id: 'fill', icon: <IconFill />, label: 'Fill' },
+  { id: 'line', icon: <IconLine />, label: 'Line' },
+  { id: 'text', icon: <IconText />, label: 'Text' },
+  { id: 'stamp', icon: <IconStamp />, label: 'Stamp' },
+  { id: 'pick', icon: <IconEyedropper />, label: 'Eyedropper' },
 ] as const;
 
 // The tool rail is a textbook single-select toolbar: exactly one tool is
@@ -105,7 +105,7 @@ export default function ToolRail({ isMobile }: { isMobile: boolean }) {
       <IconButton
         label="Undo"
         xstyle={styles.tool}
-        icon={<Undo2 size={18} />}
+        icon={<IconUndo />}
         variant="ghost"
         size="md"
         tooltip="Undo — soon"
@@ -114,7 +114,7 @@ export default function ToolRail({ isMobile }: { isMobile: boolean }) {
       <IconButton
         label="Redo"
         xstyle={styles.tool}
-        icon={<Redo2 size={18} />}
+        icon={<IconRedo />}
         variant="ghost"
         size="md"
         tooltip="Redo — soon"

@@ -3,7 +3,7 @@ import * as stylex from '@stylexjs/stylex';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { ToggleButton } from '@astryxdesign/core/ToggleButton';
 import { Text } from '@astryxdesign/core/Text';
-import { Layers, Plus } from 'lucide-react';
+import { IconOnion, IconPlus } from './icons';
 import Transport from './Transport.tsx';
 import { AsciiThumb } from './Canvas.tsx';
 import { STUB_FRAMES } from './document.ts';
@@ -144,7 +144,7 @@ export default function Timeline(props: TimelineProps) {
         ))}
         <IconButton
           label="Add frame"
-          icon={<Plus size={16} />}
+          icon={<IconPlus />}
           variant="ghost"
           size="md"
           tooltip="Add frame — soon"
@@ -155,7 +155,7 @@ export default function Timeline(props: TimelineProps) {
         {/* Onion skinning is persistent binary state — a ToggleButton. */}
         <ToggleButton
           label="Toggle onion skinning"
-          icon={<Layers size={14} />}
+          icon={<IconOnion />}
           isPressed={onionOn}
           onPressedChange={() => props.onToggleOnion()}
           size="sm"

@@ -2,13 +2,13 @@ import * as stylex from '@stylexjs/stylex';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { ToggleButton } from '@astryxdesign/core/ToggleButton';
 import {
-  Pause,
-  Play,
-  SkipBack,
-  SkipForward,
-  StepBack,
-  StepForward,
-} from 'lucide-react';
+  IconPause,
+  IconPlay,
+  IconSkipBack,
+  IconSkipForward,
+  IconStepBack,
+  IconStepForward,
+} from './icons';
 
 const styles = stylex.create({
   row: {
@@ -40,7 +40,7 @@ export default function Transport({
     <div {...stylex.props(styles.row)} role="group" aria-label="Playback transport">
       <IconButton
         label="Jump to first frame"
-        icon={<SkipBack size={14} />}
+        icon={<IconSkipBack />}
         variant="ghost"
         size="sm"
         tooltip="Jump to first frame"
@@ -48,7 +48,7 @@ export default function Transport({
       />
       <IconButton
         label="Previous frame"
-        icon={<StepBack size={14} />}
+        icon={<IconStepBack />}
         variant="ghost"
         size="sm"
         tooltip="Previous frame"
@@ -58,8 +58,8 @@ export default function Transport({
           icon swap, not a momentary IconButton. */}
       <ToggleButton
         label={playing ? 'Pause' : 'Play'}
-        icon={<Play size={14} />}
-        pressedIcon={<Pause size={14} />}
+        icon={<IconPlay />}
+        pressedIcon={<IconPause />}
         isPressed={playing}
         onPressedChange={() => onTogglePlay()}
         size="sm"
@@ -68,7 +68,7 @@ export default function Transport({
       />
       <IconButton
         label="Next frame"
-        icon={<StepForward size={14} />}
+        icon={<IconStepForward />}
         variant="ghost"
         size="sm"
         tooltip="Next frame"
@@ -76,7 +76,7 @@ export default function Transport({
       />
       <IconButton
         label="Jump to last frame"
-        icon={<SkipForward size={14} />}
+        icon={<IconSkipForward />}
         variant="ghost"
         size="sm"
         tooltip="Jump to last frame"
