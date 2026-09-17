@@ -120,14 +120,16 @@ export default function ToolRail({
           />
         ))}
       </ToggleButtonGroup>
-      {/* Select is an honest stub until region selection lands. It renders
-          outside the group because ToggleButtonGroup's context overrides
-          individual isDisabled props (the group's false wins), which made
-          the stub look pressable while doing nothing. */}
-      <ToggleButton
+      {/* Select is an honest stub until region selection lands. It's a plain
+          IconButton (not a ToggleButton): Astryx renders isDisabled as
+          aria-disabled when a tooltip is present, and a ToggleButton's
+          optimistic pressed state still flips on mouse click in that mode.
+          With no onClick at all, this is a true no-op. */}
+      <IconButton
         label="Select"
         icon={<IconSelect />}
-        isIconOnly
+        variant="ghost"
+        size="md"
         tooltip="Select — soon"
         isDisabled
         xstyle={styles.tool}
