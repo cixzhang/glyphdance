@@ -1,0 +1,26 @@
+/**
+ * glyphdance app-owned animations (plain CSS — the Astryx build wrapper
+ * drops stylex.keyframes, so keyframes live here instead).
+ */
+
+/* Slow turn for the agent button icon while a turn is in flight: one full
+ * revolution every 3s, calm rather than frantic. */
+@keyframes gd-agent-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.gd-agent-spin {
+  display: inline-flex;
+  animation: gd-agent-spin 3s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gd-agent-spin {
+    animation: none;
+  }
+}

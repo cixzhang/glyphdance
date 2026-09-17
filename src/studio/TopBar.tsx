@@ -8,25 +8,11 @@ import { Text } from '@astryxdesign/core/Text';
 import Transport from './Transport.tsx';
 import { DOC_NAME } from './document.ts';
 
-// Slow turn for the agent icon while a turn is in flight — one full
-// revolution every 3s, calm rather than frantic. Disabled entirely for
-// users who prefer reduced motion.
-const agentSpin = stylex.keyframes({
-  from: { transform: 'rotate(0deg)' },
-  to: { transform: 'rotate(360deg)' },
-});
+// NOTE: the slow spin for the agent icon lives in ./animations.css as the
+// plain .gd-agent-spin class — the Astryx build wrapper drops
+// stylex.keyframes, so keyframes are defined in CSS instead.
 
 const styles = stylex.create({
-  agentSpin: {
-    display: 'inline-flex',
-    animationName: agentSpin,
-    animationDuration: '3s',
-    animationTimingFunction: 'linear',
-    animationIterationCount: 'infinite',
-    '@media (prefers-reduced-motion: reduce)': {
-      animation: 'none',
-    },
-  },
   topNav: {
     backgroundColor: 'var(--color-background-surface)',
     borderBottom: '1px solid var(--color-border)',
@@ -153,7 +139,7 @@ export default function TopBar(props: TopBarProps) {
             <Button
               label="Agent"
               icon={
-                <span {...stylex.props(props.agentWorking && styles.agentSpin)}>
+                <span className={props.agentWorking ? 'gd-agent-spin' : undefined}>
                   <IconSparkles />
                 </span>
               }
