@@ -68,6 +68,18 @@ const styles = stylex.create({
     backgroundSize: '1ch 1.35em',
   },
   row: { display: 'block', height: '1.35em' },
+  // Each cell is an inline-block tile exactly 1ch × 1.35em — the same tile
+  // the grid-lines background and rows use — so painted backgrounds tile
+  // seamlessly: no vertical gaps between rows, fills connect.
+  cell: {
+    display: 'inline-block',
+    width: '1ch',
+    height: '1.35em',
+    lineHeight: '1.35',
+    textAlign: 'center',
+    verticalAlign: 'top',
+    overflow: 'hidden',
+  },
   fab: {
     position: 'absolute',
     top: 10,
@@ -548,6 +560,7 @@ export function AsciiGrid({
               return (
                 <span
                   key={c}
+                  {...stylex.props(styles.cell)}
                   onPointerDown={(e) => {
                     e.preventDefault();
                     beginStroke(c, r);
@@ -743,6 +756,7 @@ export function AsciiThumb({
             return (
               <span
                 key={c}
+                {...stylex.props(styles.cell)}
                 style={{
                   color: empty ? dot : cell.fg,
                   backgroundColor: !empty && cell.bg ? cell.bg : undefined,
