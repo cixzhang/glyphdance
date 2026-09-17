@@ -2,6 +2,7 @@ import { useRef, useState, type ReactNode, type Ref, type RefObject } from 'reac
 import * as stylex from '@stylexjs/stylex';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { Popover } from '@astryxdesign/core/Popover';
+import { BottomSheet } from '@astryxdesign/core/BottomSheet';
 import { ToggleButton, ToggleButtonGroup } from '@astryxdesign/core/ToggleButton';
 import {
   IconBrush,
@@ -79,7 +80,9 @@ const styles = stylex.create({
     position: 'absolute',
     inset: 0,
     borderRadius: 3,
-    border: '1px solid var(--color-border)',
+    // The BG tile is usually near-black: a fixed light hairline keeps it
+    // readable against the toolbar in both color modes.
+    border: '1px solid rgba(255, 255, 255, 0.45)',
   },
   colorFg: {
     position: 'absolute',
@@ -128,11 +131,13 @@ function ColorSwatchIcon({ fg, bg }: { fg: string; bg: string }) {
 // horizontal in the mobile strip). Undo/redo are momentary actions, not
 // toggles, so they stay as plain IconButtons outside the group.
 //
-// Brush, stamp, and colors carry popovers anchored to their toolbar
+// Brush, stamp, and colors carry their option menus on their toolbar
 // buttons: the glyph picker, the stamp library, and the FG/BG swatches all
-// live where the tools live instead of the side panel. The popovers use
-// anchorRef mode so the toggle buttons stay direct flex items of the
-// group (the auto-mode wrapper would break the group's stretch layout).
+// live where the tools live instead of the side panel. On desktop the menus
+// are popovers (anchorRef mode so the toggle buttons stay direct flex items
+// of the group — the auto-mode wrapper would break the group's stretch
+// layout); on mobile they share one bottom sheet, which fits the thumb
+// strip better than a floating popover.
 export default function ToolRail({
   isMobile,
   brush,
@@ -168,11 +173,21 @@ export default function ToolRail({
   const placement = isMobile ? 'above' : 'end';
 
   const handleGroupChange = (v: string | null) => {
-    if (typeof v !== 'string') return;
+    if (v === null) {
+      // Re-tapped the active tool: toggle its menu. (On mobile the bottom
+      // sheet has no anchor toggle of its own, so this is the only way
+      // back out via the toolbar.)
+      if (brush.tool === 'brush') setOpen(open === 'glyph' ? null : 'glyph');
+      else if (brush.tool === 'stamp') setOpen(open === 'stamp' ? null : 'stamp');
+      return;
+    }
     onBrushChange({ tool: v as ToolId });
-    // Brush/stamp popovers toggle through their own triggers; switching to
-    // any other tool closes whatever is open.
-    if (v !== 'brush' && v !== 'stamp') setOpen(null);
+    // Opening a menu straight from the tool switch: tapping another menu
+    // button while one menu is open swaps to it instead of needing a
+    // second tap (the open menu's light-dismiss eats the first click).
+    if (v === 'brush') setOpen('glyph');
+    else if (v === 'stamp') setOpen('stamp');
+    else setOpen(null);
   };
 
   const toolButton = (
@@ -210,50 +225,102 @@ export default function ToolRail({
           return toolButton(id, t.label, t.icon);
         })}
       </ToggleButtonGroup>
-      {/* Tool option popovers, anchored to their toolbar buttons. */}
-      <Popover
-        anchorRef={brushAnchor}
-        isOpen={open === 'glyph'}
-        onOpenChange={(o) => setOpen(o ? 'glyph' : null)}
-        placement={placement}
-        alignment="start"
-        label="Brush glyph"
-        content={<GlyphPopoverContent brush={brush} onChange={onBrushChange} />}
-      />
-      <Popover
-        anchorRef={stampAnchor}
-        isOpen={open === 'stamp'}
-        onOpenChange={(o) => setOpen(o ? 'stamp' : null)}
-        placement={placement}
-        alignment="start"
-        label="Stamps"
-        content={
-          <StampPopoverContent
-            brush={brush}
-            onBrushChange={onBrushChange}
-            doc={doc}
-            dispatch={dispatch}
-            mode={mode}
+      {/* Tool option menus: popovers anchored to their toolbar buttons on
+          desktop, a bottom sheet on mobile. */}
+      {isMobile ? (
+        <>
+          <IconButton
+            label="Colors"
+            icon={<ColorSwatchIcon fg={brush.fg} bg={brush.bg} />}
+            variant="ghost"
+            size="md"
+            tooltip={`Colors — FG ${brush.fg}, BG ${brush.bg === '' ? 'transparent' : brush.bg}`}
+            xstyle={styles.tool}
+            onClick={() => setOpen('color')}
           />
-        }
-      />
-      <Popover
-        isOpen={open === 'color'}
-        onOpenChange={(o) => setOpen(o ? 'color' : null)}
-        placement={placement}
-        alignment="start"
-        label="Colors"
-        content={<ColorPopoverContent brush={brush} onChange={onBrushChange} />}
-      >
-        <IconButton
-          label="Colors"
-          icon={<ColorSwatchIcon fg={brush.fg} bg={brush.bg} />}
-          variant="ghost"
-          size="md"
-          tooltip={`Colors — FG ${brush.fg}, BG ${brush.bg === '' ? 'transparent' : brush.bg}`}
-          xstyle={styles.tool}
-        />
-      </Popover>
+          <BottomSheet
+            isOpen={open !== null}
+            onOpenChange={(o) => {
+              if (!o) setOpen(null);
+            }}
+            label={
+              open === 'glyph'
+                ? 'Brush glyph'
+                : open === 'color'
+                  ? 'Colors'
+                  : 'Stamp library'
+            }
+            height="hug"
+          >
+            {open === 'glyph' && (
+              <GlyphPopoverContent brush={brush} onChange={onBrushChange} />
+            )}
+            {open === 'color' && (
+              <ColorPopoverContent brush={brush} onChange={onBrushChange} />
+            )}
+            {open === 'stamp' && (
+              <StampPopoverContent
+                brush={brush}
+                onBrushChange={onBrushChange}
+                doc={doc}
+                dispatch={dispatch}
+                mode={mode}
+              />
+            )}
+          </BottomSheet>
+        </>
+      ) : (
+        <>
+          <Popover
+            anchorRef={brushAnchor}
+            isOpen={open === 'glyph'}
+            onOpenChange={(o) => setOpen(o ? 'glyph' : null)}
+            placement={placement}
+            alignment="start"
+            label="Brush glyph"
+            content={
+              <GlyphPopoverContent brush={brush} onChange={onBrushChange} />
+            }
+          />
+          <Popover
+            anchorRef={stampAnchor}
+            isOpen={open === 'stamp'}
+            onOpenChange={(o) => setOpen(o ? 'stamp' : null)}
+            placement={placement}
+            alignment="start"
+            label="Stamps"
+            content={
+              <StampPopoverContent
+                brush={brush}
+                onBrushChange={onBrushChange}
+                doc={doc}
+                dispatch={dispatch}
+                mode={mode}
+              />
+            }
+          />
+          <Popover
+            isOpen={open === 'color'}
+            onOpenChange={(o) => setOpen(o ? 'color' : null)}
+            placement={placement}
+            alignment="start"
+            label="Colors"
+            content={
+              <ColorPopoverContent brush={brush} onChange={onBrushChange} />
+            }
+          >
+            <IconButton
+              label="Colors"
+              icon={<ColorSwatchIcon fg={brush.fg} bg={brush.bg} />}
+              variant="ghost"
+              size="md"
+              tooltip={`Colors — FG ${brush.fg}, BG ${brush.bg === '' ? 'transparent' : brush.bg}`}
+              xstyle={styles.tool}
+              onClick={() => setOpen('color')}
+            />
+          </Popover>
+        </>
+      )}
       {/* Select is an honest stub until region selection lands. It's a plain
           IconButton (not a ToggleButton): Astryx renders isDisabled as
           aria-disabled when a tooltip is present, and a ToggleButton's
