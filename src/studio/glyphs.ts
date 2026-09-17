@@ -1,22 +1,53 @@
-// glyphs.ts — the canvas font's actual repertoire.
+// glyphs.ts — what the canvas font can actually draw.
 //
-// Cozette only draws these characters; anything else renders as an empty
-// box (tofu). This list is the single source of truth: the agent's prompt
-// (agent-skills.ts) renders it into GLYPH_ADVICE, and the action layer
-// (actions.ts) rejects addStamp/paintCells payloads that use anything else
-// — so the agent can never emit a missing character, and instead has to
-// design a stamp out of glyphs that exist.
+// SUPPORTED_GLYPHS is generated from the real Cozette cmap
+// (src/assets/fonts/cozette.ttf): every printable ASCII character (U+0020–
+// U+007E) plus every non-ASCII codepoint the font covers. To regenerate:
+//   python3 -c "from fontTools.ttLib import TTFont; ..."  (see commit history)
+// Anything NOT in this string renders as an empty box (tofu) on the canvas.
+//
+// The action layer (actions.ts) rejects addStamp/paintCells payloads using
+// characters outside this set, and the text tool filters them out of the
+// input so the field and the grid never disagree.
 
-/** Every non-space character the canvas font can draw, in display order. */
+/** Every character the canvas font can draw (space included). */
 export const SUPPORTED_GLYPHS =
-  '█▓▒░·●◆✦◉❄♥♦♣♠▲▼◀▶✚♪♫+×*/\\|-_^~=:;!?%$()[]<>oO#@';
+  ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķĸĹĺĻļĽľĿŀŁłŃńŅņŇňŉŊŋŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŦŧŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽžſƀƁƂƃƄƅƆƇƈƉƊƋƌƍƎƏƐƑƒƓƔƕƖƗƘƙƚƛƜƝƞƟƠơƢƣƤƥƦƧƨƩƪƫƬƭƮƯưƱƲƳƴƵƶƷƸƹƺƻƼƽƾƿǀǁǂǃǍǎǏǐǑǒǓǔǕǖǗǘǙǚǛǜǝǞǟǠǡǢǣǤǥǦǧǨǩǪǫǬǭǮǯǰǴǵǶǷǸǹǺǻǼǽǾǿȀȁȂȃȄȅȆȇȈȉȊȋȌȍȎȏȐȑȒȓȔȕȖȗȘșȚțȜȝȞȟȠȤȥȦȧȨȩȫȭȮȯȱȲȳɁɂɆɇɐɑɒɓɔɕɖɗɘəɚɛɜɝɞɟɠɡɢɣɤɥɦɧɨɩɪɫɬɭɮɯɰɱɲɳɴɵɶɷɸɹɺɻɼɽɾɿʀʁʂʃʄʅʆʇʈʉʊʋʌʍʎʏʐʑʒʓʔʕʖʗʘʙʚʛʜʝʞʟʠʡʢʹʺʻʼʽ˂˃˄˅ˆˇˈˉˊˋˌˍˎˏːˑ˒˓˔˕˖˗˘˙˚˛˜˝˟ˠˡˢˣˤˬ˭˯˰˱˲˳˴˵˶˷˹˺˻˼˽˾̧̨̛̖̗̘̙̜̝̞̟̠̣̤̥̦̩̪̫̬̭̮̯̰̱̲̳̺̻̼͇͈̀́̂̃̄̅̆̇̈̉̊̋̌̍̎̏̐̑̒̓̔̽̾̿̀́͂̓͆̕̚ΆΈΉΊΌΎΏΐΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩΪΫάέήίΰαβγδεζηθικλμνξοπρςστυφχψωϊϋόύώϕϚϛϜϝϴϷϸϹЀЁЂЃЄЅІЇЈЉЊЋЌЍЎЏАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяѐёђѓєѕіїјљњћќѝўџѠѡѢѣѤѥѦѧѨѩѪѫѬѭѮѯѰѱѲѳѴѵѶѷѸѹѺѻѼѽѾѿҀҁ҂ҊҋҌҍҎҏҐґҒғҔҕҖҗҘҙҚқҜҝҞҟҠҡҢңҤҥҦҧҨҩҪҫҬҭҮүҰұҲҳҴҵҶҷҸҹҺһҼҽҾҿӀӁӂӃӄӅӆӇӈӉӊӋӌӍӎӏӐӑӒӓӔӕӖӗӘәӚӛӜӝӞӟӠӡӢӣӤӥӦӧӨөӪӫӬӭӮӯӰӱӲӳӴӵӶӷӸӹӺӻӼӽӾӿԀԁԂԃԄԅԆԇԈԉԊԋԌԍԎԏԐԑԒԓԔԕԖԗԘԙԚԛԜԝԞԟԠԡԢԣԤԥԦԧԨԩԪԫԬԭԮԯᚠᚢᚣᚤᚥᚦᚨᚩᚪᚫᚬḀḁḂḃḄḅḆḇḈḉḊḋḌḍḎḏḐḑḒḓḔḕḖḗḘḙḚḛḜḝḞḟḠḡḢḣḤḥḦḧḨḩḪḫḬḭḮḯḰḱḲḳḴḵḶḷḸḹḺḻḼḽḾḿṀṁṂṃṄṅṆṇṈṉṊṋṌṍṎṏṐṑṒṓṔṕṖṗṘṙṚṛṜṝṞṟṠṡṢṣṤṥṦṧṨṩṪṫṬṭṮṯṰṱṲṳṴṵṶṷṸṹṺṻṼṽṾṿẀẁẂẃẄẅẆẇẈẉẊẋẌẍẎẏẐẑẒẓẔẕẖẗẘẙẚẛẜẝẞẟẠạẢảẤấẦầẪẫẬậẮắẰằẲẳẴẵẶặẸẹẺẻẼẽẾếỀềỄễỆệỈỉỊịỌọỎỏỐốỒồỖỗỘộỚớỜờỞởỠỡỢợỤụỦủỨứỪừỬửỮữỰựỲỳỴỵỶỷỸỹἀἁἂἃἄἅἈἉἊἋἌἍἐἑἒἓἔἕἘἙἚἛἜἝἠἡἢἣἤἥἨἩἪἫἬἭἰἱἲἳἴἵἸἹἺἻἼἽὀὁὂὃὄὅὈὉὊὋὌὍὐὑὒὓὔὕὙὛὝὠὡὢὣὤὥὨὩὪὫὬὭὰάὲέὴήὶίὸόὺύὼώᾀᾁᾂᾃᾄᾅᾈᾉᾊᾋᾌᾍᾐᾑᾒᾓᾔᾕᾘᾙᾚᾛᾜᾝᾠᾡᾢᾣᾤᾥᾨᾩᾪᾫᾬᾭᾰᾱᾲᾳᾴᾶᾷᾸᾹᾺΆᾼῂῃῄῆῇῈΈῊΉῌῐῑῒΐῖῗῘῙῚΊῠῡῢΰῤῥῦῨῩῪΎῬῲῳῴῶῷῸΌῺΏῼ           ‐‑‒–—―‖‗‘’‚‛“”„‟†‡•‣․‥…‧ ‰′″‴‵‶‷‸‹›※‼‽‾⁃⁄⁅⁆⁖⁘⁙⁚⁛⁜⁝⁞⁰ⁱ⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁿ₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎ₐₑₒₓₔₕₖₗₘₙₚₛₜ₤₪€₽₿№™ⅠⅡⅢⅣⅤⅥⅨⅩⅪⅰⅱⅲⅳⅴⅵⅶⅷⅸⅹⅺⅻ←↑→↓↔↕↖↗↘↙↚↛↢↣↤↥↦↧↩↪↫↬↰↱↲↳↴↵↶↷↸↺↻↼↽↾↿⇀⇁⇂⇃⇋⇌⇐⇑⇒⇓⇔⇕⇠⇡⇢⇣⇱⇲∀∃∄∅∆∇∈∉∊∋∌∍∎∏∐∑−∓∗∘∙√∞∥∦∫∬∭≈≉≠≡≤≥⊝⊞⊟⊡⊲⊳⊴⊵⋄⋅⋆⋮⋯⋰⋱⌀⌂⌈⌉⌊⌋⌌⌍⌎⌏⌘⌜⌝⌞⌟⌠⌡〈〉⍟⍿⎇⎈⏎⏏⏨⏳⏴⏵⏶⏷⏸⏹⏺⏻⏼␀␈␊␋␌␍␎␤─━│┃┄┅┆┇┈┉┊┋┌┍┎┏┐┑┒┓└┕┖┗┘┙┚┛├┝┞┟┠┡┢┣┤┥┦┧┨┩┪┫┬┭┮┯┰┱┲┳┴┵┶┷┸┹┺┻┼┽┾┿╀╁╂╃╄╅╆╇╈╉╊╋╌╍╎╏═║╒╓╔╕╖╗╘╙╚╛╜╝╞╟╠╡╢╣╤╥╦╧╨╩╪╫╬╭╮╯╰╱╲╳╴╵╶╷╸╹╺╻╼╽╾╿▀▁▂▃▄▅▆▇█▉▊▋▌▍▎▏▐░▒▓▖▗▘▙▚▛▜▝▞▟■□▢▣▪▫▲▶▼◀◆◇◈◉○◎●◐◑◒◓◔◕◰◱◲◳◴◵◶◷☁☃☐☑☒☕☰☱☲☳☴☵☶☷☸☺☻☿♠♡♢♣♤♥♦♧♩♪♫♬♭♮♯⚐⚑⚙⚠⚡⚸✓✔✕✖✗✘✙✚✛✜✦✭✮✹❄❎❬❭❮❯➜⟦⟧⟨⟩⟪⟫⠁⠂⠃⠄⠅⠆⠇⠈⠉⠊⠋⠌⠍⠎⠏⠐⠑⠒⠓⠔⠕⠖⠗⠘⠙⠚⠛⠜⠝⠞⠟⠠⠡⠢⠣⠤⠥⠦⠧⠨⠩⠪⠫⠬⠭⠮⠯⠰⠱⠲⠳⠴⠵⠶⠷⠸⠹⠺⠻⠼⠽⠾⠿⡀⡁⡂⡃⡄⡅⡆⡇⡈⡉⡊⡋⡌⡍⡎⡏⡐⡑⡒⡓⡔⡕⡖⡗⡘⡙⡚⡛⡜⡝⡞⡟⡠⡡⡢⡣⡤⡥⡦⡧⡨⡩⡪⡫⡬⡭⡮⡯⡰⡱⡲⡳⡴⡵⡶⡷⡸⡹⡺⡻⡼⡽⡾⡿⢀⢁⢂⢃⢄⢅⢆⢇⢈⢉⢊⢋⢌⢍⢎⢏⢐⢑⢒⢓⢔⢕⢖⢗⢘⢙⢚⢛⢜⢝⢞⢟⢠⢡⢢⢣⢤⢥⢦⢧⢨⢩⢪⢫⢬⢭⢮⢯⢰⢱⢲⢳⢴⢵⢶⢷⢸⢹⢺⢻⢼⢽⢾⢿⣀⣁⣂⣃⣄⣅⣆⣇⣈⣉⣊⣋⣌⣍⣎⣏⣐⣑⣒⣓⣔⣕⣖⣗⣘⣙⣚⣛⣜⣝⣞⣟⣠⣡⣢⣣⣤⣥⣦⣧⣨⣩⣪⣫⣬⣭⣮⣯⣰⣱⣲⣳⣴⣵⣶⣷⣸⣹⣺⣻⣼⣽⣾⣿⬢⭐⭠⭡⭢⭣⭤⭥⭦⭧⭨⭩⮀⮁⮂⮃⸽㏑Ꞩ墳奄奔婢直睊襁謹ﯱﰮﱛﱜﱝﳌﳤﴃﴅﴆﴇﴈﴉﴊﴋﴌﴍﴎﴏﴐﴲ﵂﹔﹕﹖﹗﹘﹙﹚﹛﹜﹝﹞﹟﹠﹡﹢﹣﹤﹥﹦﹨﹩﹪﹫';
 
-/** True for space (transparent) and every glyph in SUPPORTED_GLYPHS. */
+/** True for every character the canvas font can draw. */
 export function isSupportedGlyph(ch: string): boolean {
-  return ch === ' ' || SUPPORTED_GLYPHS.includes(ch);
+  return SUPPORTED_GLYPHS.includes(ch);
 }
 
-/** Space-separated repertoire line, for prompt text. */
-export function repertoireLine(): string {
-  return [...SUPPORTED_GLYPHS].join(' ');
+/**
+ * The agent's working palette: a curated, readable subset of
+ * SUPPORTED_GLYPHS shown in the prompt. The font also draws all standard
+ * ASCII letters, digits, and punctuation — the palette is guidance, not
+ * the limit.
+ */
+export const PALETTE =
+  '█ ▓ ▒ ░ · ● ◆ ✦ ◉ ❄ ♥ ♦ ♣ ♠ ▲ ▼ ◀ ▶ ✚ ♪ ♫ + × * / \\ | - _ ^ ~ = : ; ! ? % $ ( ) [ ] < > o O # @';
+
+/**
+ * Map free text to drawable text: drop characters the font can't draw.
+ * Returns the filtered text plus the caret (a UTF-16 offset, as from
+ * selectionStart) mapped through the filtering so it still points at the
+ * same logical position.
+ */
+export function toSupportedText(
+  value: string,
+  caret: number,
+): { text: string; caret: number } {
+  const cps = [...value];
+  const caretCp = [...value.slice(0, caret)].length;
+  let text = '';
+  let keptBeforeCaret = 0;
+  cps.forEach((ch, i) => {
+    if (isSupportedGlyph(ch)) {
+      text += ch;
+      if (i < caretCp) keptBeforeCaret += 1;
+    }
+  });
+  const caret16 = [...text].slice(0, keptBeforeCaret).join('').length;
+  return { text, caret: caret16 };
 }

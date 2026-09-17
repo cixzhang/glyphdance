@@ -17,6 +17,7 @@ import {
   type DocState,
 } from './document.ts';
 import type { PaintCell } from './actions.ts';
+import { toSupportedText } from './glyphs.ts';
 import { themeById } from './scene.ts';
 import { resolveStamp, kindSwatchKey } from './stamps.ts';
 import type { Brush, ToolId } from './brush.ts';
@@ -334,7 +335,11 @@ export function AsciiGrid({
     const id = textStroke.current;
     if (!id) return;
     const [ax, ay] = anchor;
-    const str = v.slice(0, GRID_W - ax);
+    // The font can't draw everything (emoji, ★, …) — filter the input so
+    // the field and the grid never disagree, and a rejected paintCells
+    // batch can never swallow the whole keystroke.
+    const clean = toSupportedText(v, caret);
+    const str = clean.text.slice(0, GRID_W - ax);
     const restore: PaintCell[] = [];
     textOrig.current.forEach((orig, key) => {
       const [x, y] = key.split(',').map(Number);
@@ -353,7 +358,7 @@ export function AsciiGrid({
     if (restore.length > 0 || paint.length > 0) {
       onPaint([...restore, ...paint], id);
     }
-    const c = Math.max(0, Math.min(caret, str.length));
+    const c = Math.max(0, Math.min(clean.caret, [...str].length));
     setTextValue(str);
     setTextCaret(c);
     requestAnimationFrame(() => {

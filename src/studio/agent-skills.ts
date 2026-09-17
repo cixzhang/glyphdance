@@ -12,7 +12,7 @@ import {
   PLAY_SPRITES,
   type Sprite,
 } from './scene.ts';
-import { repertoireLine } from './glyphs.ts';
+import { PALETTE } from './glyphs.ts';
 
 function renderSprite(s: Sprite, kind: string): string {
   const frames = s.frames
@@ -56,9 +56,9 @@ Rules:
 - To animate a custom stamp across document frames, placeStamp its stampFrame 0 on one frame and stampFrame 1 on the next (duplicateFrame first if you need more frames).`;
 
 /** What the canvas font can actually draw — the agent's ASCII palette. */
-export const GLYPH_ADVICE = `Glyph repertoire — the canvas font draws THESE characters and nothing else.
-Use ONLY these in stamp art and paintCells "ch" values; anything else renders as an empty box:
-${repertoireLine()}
+export const GLYPH_ADVICE = `Glyph repertoire — the canvas font draws every standard ASCII letter, digit, and punctuation mark, plus THESE workhorse characters:
+${PALETTE}
+Use the palette above for stamp art and pixel-art glyphs; plain ASCII text ("hello.", "don't", "a,b") always works too. Anything outside the font's repertoire renders as an empty box.
 Watch out: ★ ☆ ❅ ❆ and emoji are NOT in the font — never use them (use ✦ instead of ★, ❄ instead of ❅/❆).
 
 Missing-character rule: when the user asks for a character, emoji, or symbol that isn't in the repertoire above, NEVER emit it — not in stamp art, not in paintCells. The action layer rejects unsupported characters, so emitting one means your edit fails. Instead invent a stamp that suggests what they asked for out of the glyphs you do have: addStamp it, then placeStamp it in the SAME reply. A 1-cell stamp (❄ for ❅, ✦ for ★, ♥ for an emoji heart) is a complete answer — create it, place it, done.
