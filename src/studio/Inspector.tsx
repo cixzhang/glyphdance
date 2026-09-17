@@ -114,7 +114,7 @@ const styles = stylex.create({
     width: 22,
     height: 22,
     borderRadius: 6,
-    border: '1px solid rgba(255,255,255,0.14)',
+    border: '1px solid var(--gd-border)',
     cursor: 'pointer',
     padding: 0,
   },
