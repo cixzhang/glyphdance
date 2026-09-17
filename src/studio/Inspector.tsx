@@ -9,6 +9,7 @@ import { Switch } from '@astryxdesign/core/Switch';
 import { Badge } from '@astryxdesign/core/Badge';
 import { VStack } from '@astryxdesign/core/Stack';
 import { BottomSheet } from '@astryxdesign/core/BottomSheet';
+import { MobileNav } from '@astryxdesign/core/MobileNav';
 import ScenePanel from './ScenePanel.tsx';
 import type { SceneConfig } from './scene.ts';
 import { AsciiThumb } from './Canvas.tsx';
@@ -27,6 +28,14 @@ const styles = stylex.create({
   // The BottomSheet owns the panel, handle, scrim, swipe-to-dismiss, and
   // focus trap — this just stacks the cards inside its scrollable area.
   sheetContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
+    paddingBottom: 8,
+  },
+  // The MobileNav drawer's content area scrolls on its own — this stacks the
+  // control cards inside it.
+  drawerContent: {
     display: 'flex',
     flexDirection: 'column',
     gap: 10,
@@ -317,6 +326,8 @@ export default function Inspector({
   onToggleAgent,
   sheetOpen,
   onSheetOpenChange,
+  drawerOpen,
+  onDrawerOpenChange,
   scene,
   onSceneChange,
 }: {
@@ -325,27 +336,41 @@ export default function Inspector({
   onToggleAgent: () => void;
   sheetOpen: boolean;
   onSheetOpenChange: (open: boolean) => void;
+  drawerOpen: boolean;
+  onDrawerOpenChange: (open: boolean) => void;
   scene: SceneConfig;
   onSceneChange: (patch: Partial<SceneConfig>) => void;
 }) {
-  // Mobile: the inspector lives in an Astryx BottomSheet — swipe-to-dismiss,
-  // scrim, Escape, and focus trap come with it.
+  // Mobile splits the inspector by pattern: the control cards (scene, glyph
+  // & color, stamps) live in an Astryx MobileNav side drawer so the canvas
+  // stays visible while tweaking, and the agent chat keeps the bottom sheet.
   if (isMobile) {
     return (
-      <BottomSheet
-        isOpen={sheetOpen}
-        onOpenChange={onSheetOpenChange}
-        label="Panels"
-        height="72dvh"
-        snapPoints={[0.45]}
-      >
-        <div {...stylex.props(styles.sheetContent)}>
-          <AgentPanel open={agentOpen} onToggle={onToggleAgent} isMobile={isMobile} />
-          <ScenePanel scene={scene} onChange={onSceneChange} />
-          <GlyphColorPanel />
-          <StampsPanel />
-        </div>
-      </BottomSheet>
+      <>
+        <MobileNav
+          isOpen={drawerOpen}
+          onOpenChange={onDrawerOpenChange}
+          side="end"
+          header="Panels"
+        >
+          <div {...stylex.props(styles.drawerContent)}>
+            <ScenePanel scene={scene} onChange={onSceneChange} />
+            <GlyphColorPanel />
+            <StampsPanel />
+          </div>
+        </MobileNav>
+        <BottomSheet
+          isOpen={sheetOpen}
+          onOpenChange={onSheetOpenChange}
+          label="Agent"
+          height="72dvh"
+          snapPoints={[0.45]}
+        >
+          <div {...stylex.props(styles.sheetContent)}>
+            <AgentPanel open={agentOpen} onToggle={onToggleAgent} isMobile={isMobile} />
+          </div>
+        </BottomSheet>
+      </>
     );
   }
   return (

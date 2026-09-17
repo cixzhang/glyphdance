@@ -1,6 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
 import { TopNav, TopNavHeading, TopNavRenderContext } from '@astryxdesign/core/TopNav';
 import { Button } from '@astryxdesign/core/Button';
+import { IconButton } from '@astryxdesign/core/IconButton';
 import { Text } from '@astryxdesign/core/Text';
 import Transport from './Transport.tsx';
 import { DOC_NAME } from './document.ts';
@@ -46,6 +47,15 @@ const styles = stylex.create({
     gap: 6,
     '@media (max-width: 760px)': { display: 'none' },
   },
+  // Desktop-only controls.
+  desktopOnly: {
+    '@media (max-width: 760px)': { display: 'none' },
+  },
+  // Mobile-only controls.
+  mobileOnly: {
+    display: 'none',
+    '@media (max-width: 760px)': { display: 'flex' },
+  },
 });
 
 interface TopBarProps {
@@ -59,6 +69,7 @@ interface TopBarProps {
   onStepFwd: () => void;
   onJumpEnd: () => void;
   onToggleAgent: () => void;
+  onOpenControls: () => void;
 }
 
 export default function TopBar(props: TopBarProps) {
@@ -117,19 +128,31 @@ export default function TopBar(props: TopBarProps) {
               isDisabled
             />
           </div>
-          <Button
-            label="Export"
-            variant="primary"
-            size="sm"
-            tooltip="Export GIF / PNG / TXT — coming in Phase 1"
-            isDisabled
-          />
+          <div {...stylex.props(styles.desktopOnly)}>
+            <Button
+              label="Export"
+              variant="primary"
+              size="sm"
+              tooltip="Export GIF / PNG / TXT — coming in Phase 1"
+              isDisabled
+            />
+          </div>
+          <div {...stylex.props(styles.mobileOnly)}>
+            <IconButton
+              label="Control panels"
+              icon={<span aria-hidden="true">◧</span>}
+              variant="ghost"
+              size="sm"
+              tooltip="Open the control panels"
+              onClick={props.onOpenControls}
+            />
+          </div>
           <Button
             label="Agent"
             icon={<span>✦</span>}
             variant={agentOpen ? 'primary' : 'ghost'}
             size="sm"
-            tooltip={isMobile ? 'Open the panels sheet' : 'Toggle the agent panel'}
+            tooltip={isMobile ? 'Open the agent' : 'Toggle the agent panel'}
             onClick={props.onToggleAgent}
           />
         </div>

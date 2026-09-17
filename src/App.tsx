@@ -53,9 +53,10 @@ export default function App() {
   const [playing, setPlaying] = useState(false);
   const [onionOn, setOnionOn] = useState(true);
   const [agentOpen, setAgentOpen] = useState(true);
-  // Mobile only: the inspector (agent + scene + glyph/color + stamps) lives
-  // in a bottom sheet instead of a side column.
+  // Mobile only: the agent chat lives in a bottom sheet, and the control
+  // cards (scene, glyph/color, stamps) live in a side drawer.
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   // Demo scene: ET's sprite, the player's sprite, and the syntax-theme palette.
   const [scene, setScene] = useState<SceneConfig>(DEFAULT_SCENE);
   const patchScene = useCallback(
@@ -80,7 +81,8 @@ export default function App() {
 
   // The top bar's Agent button and the canvas "Ask the agent" pill share one
   // entry point. On desktop they toggle the agent card; on mobile they open
-  // or close the inspector bottom sheet.
+  // the agent bottom sheet. The mobile control-panels button opens the side
+  // drawer instead.
   const togglePanels = useCallback(() => {
     if (isMobile) {
       setSheetOpen((v) => !v);
@@ -123,6 +125,7 @@ export default function App() {
           onStepFwd={stepFwd}
           onJumpEnd={jumpEnd}
           onToggleAgent={togglePanels}
+          onOpenControls={() => setDrawerOpen(true)}
         />
       </div>
       <div {...stylex.props(styles.rail)}>
@@ -144,6 +147,8 @@ export default function App() {
           onToggleAgent={toggleAgent}
           sheetOpen={sheetOpen}
           onSheetOpenChange={setSheetOpen}
+          drawerOpen={drawerOpen}
+          onDrawerOpenChange={setDrawerOpen}
           scene={scene}
           onSceneChange={patchScene}
         />
