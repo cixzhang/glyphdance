@@ -81,8 +81,12 @@ const styles = stylex.create({
     inset: 0,
     borderRadius: 3,
     // The BG tile is usually near-black: a fixed light hairline keeps it
-    // readable against the toolbar in both color modes.
-    border: '1px solid rgba(255, 255, 255, 0.45)',
+    // readable against the toolbar in both color modes. Longhands, not the
+    // `border` shorthand: StyleX drops shorthand colors with comma
+    // functions like rgba().
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: 'rgba(255, 255, 255, 0.45)',
   },
   colorFg: {
     position: 'absolute',
