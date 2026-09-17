@@ -25,11 +25,13 @@ import type { PaintCell } from './studio/actions.ts';
 
 const styles = stylex.create({
   root: {
-    // 100dvh keeps the app clear of the iOS Safari toolbar; the
-    // -webkit-fill-available fallback is for iOS standalone PWAs, where
-    // vh/dvh resolve shorter than the real visible viewport and left a
-    // dead band below the app. (Later valid declaration wins.)
-    height: ['100dvh', '-webkit-fill-available'],
+    // Full-viewport app shell. position:fixed + inset:0 sizes directly to
+    // the real visible viewport: iOS standalone PWAs misreport 100dvh
+    // (leaving a dead band below the app), and -webkit-fill-available
+    // needs a definite-height parent chain that Astryx's Theme /
+    // ToastViewport wrappers don't provide.
+    position: 'fixed',
+    inset: 0,
     // In the installed PWA there is no browser chrome: pad for the notch /
     // status bar and the home indicator. Zero elsewhere.
     paddingTop: 'env(safe-area-inset-top)',
@@ -153,12 +155,27 @@ export default function App() {
     },
     [patchBrush, isMobile],
   );
-  // Canvas view: grid overlay + zoom.
+  // Canvas view: grid overlay + zoom. Fit mode is the default: the frame
+  // auto-scales to fill the canvas area; any manual zoom switches to the
+  // manual zoom level instead.
   const [gridOn, setGridOn] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [fitMode, setFitMode] = useState(true);
+  const [fitZoom, setFitZoom] = useState(1);
   const toggleGrid = useCallback(() => setGridOn((g) => !g), []);
-  const zoomIn = useCallback(() => setZoom((z) => Math.min(3, +(z + 0.25).toFixed(2))), []);
-  const zoomOut = useCallback(() => setZoom((z) => Math.max(0.5, +(z - 0.25).toFixed(2))), []);
+  const zoomIn = useCallback(() => {
+    setZoom((z) => Math.min(3, +(((fitMode ? fitZoom : z) + 0.25).toFixed(2))));
+    setFitMode(false);
+  }, [fitMode, fitZoom]);
+  const zoomOut = useCallback(() => {
+    setZoom((z) => Math.max(0.5, +(((fitMode ? fitZoom : z) - 0.25).toFixed(2))));
+    setFitMode(false);
+  }, [fitMode, fitZoom]);
+  const zoomFit = useCallback(() => setFitMode(true), []);
+  const handleFitZoom = useCallback(
+    (z: number) => setFitZoom((f) => (f === z ? f : z)),
+    [],
+  );
   const timer = useRef<number | null>(null);
 
   const frameCount = doc.frames.length;
@@ -372,9 +389,13 @@ export default function App() {
           brush={brush}
           gridOn={gridOn}
           zoom={zoom}
+          fitMode={fitMode}
+          fitZoom={fitZoom}
           onToggleGrid={toggleGrid}
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
+          onZoomFit={zoomFit}
+          onFitZoom={handleFitZoom}
           onPaint={onPaint}
           onPick={onPick}
           onPlaceStamp={onPlaceStamp}

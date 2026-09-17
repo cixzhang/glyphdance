@@ -11,6 +11,7 @@ import {
   Copy,
   Download,
   Eraser,
+  Expand,
   Grid3x3,
   Image,
   Layout,
@@ -80,6 +81,7 @@ export const IconTrash = px(Trash);
 export const IconGrid = px(Grid3x3);
 export const IconZoomIn = px(ZoomIn);
 export const IconZoomOut = px(ZoomOut);
+export const IconFit = px(Expand);
 export const IconDownload = px(Download);
 export const IconSun = px(Sun);
 export const IconMoon = px(Moon);

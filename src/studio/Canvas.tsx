@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type Ref } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { Button } from '@astryxdesign/core/Button';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { Text } from '@astryxdesign/core/Text';
 import { Kbd } from '@astryxdesign/core/Kbd';
-import { IconSparkles, IconGrid, IconZoomIn, IconZoomOut, IconPanels, IconClose } from './icons';
+import { IconSparkles, IconGrid, IconZoomIn, IconZoomOut, IconFit, IconPanels, IconClose } from './icons';
 import Transport from './Transport.tsx';
 import { TOOLS } from './ToolRail.tsx';
 import {
@@ -266,6 +266,7 @@ export function AsciiGrid({
   brush,
   gridOn,
   zoom,
+  gridRef,
   onPaint,
   onPick,
   onPlaceStamp,
@@ -279,6 +280,8 @@ export function AsciiGrid({
   brush: Brush;
   gridOn: boolean;
   zoom: number;
+  /** Lets the parent measure the rendered grid for fit-to-space zoom. */
+  gridRef?: Ref<HTMLPreElement>;
   onPaint: (cells: PaintCell[], stroke: string) => void;
   onPick: (cell: Cell) => void;
   /** Stamp tap: the App spreads the stamp's frames across document frames. */
@@ -516,6 +519,7 @@ export function AsciiGrid({
   return (
     <>
       <pre
+        ref={gridRef}
         {...stylex.props(styles.grid, gridOn && styles.gridLines, zoom > 1 && styles.gridZoomed)}
         style={{ '--gd-zoom': zoom, cursor } as CSSProperties}
         aria-label="Animation canvas"
@@ -783,9 +787,16 @@ interface CanvasProps {
   brush: Brush;
   gridOn: boolean;
   zoom: number;
+  /** When true the frame auto-fits the canvas area (fitZoom); any manual
+   *  zoom switches this off. */
+  fitMode: boolean;
+  fitZoom: number;
   onToggleGrid: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
+  onZoomFit: () => void;
+  /** Reports the measured fit-to-space zoom (clamped to the 0.5–3 range). */
+  onFitZoom: (z: number) => void;
   onPaint: (cells: PaintCell[], stroke: string) => void;
   onPick: (cell: Cell) => void;
   /** Stamp tap: the App spreads the stamp's frames across document frames. */
@@ -809,9 +820,13 @@ export default function Canvas({
   brush,
   gridOn,
   zoom,
+  fitMode,
+  fitZoom,
   onToggleGrid,
   onZoomIn,
   onZoomOut,
+  onZoomFit,
+  onFitZoom,
   onPaint,
   onPick,
   onPlaceStamp,
@@ -826,9 +841,43 @@ export default function Canvas({
 }: CanvasProps) {
   const theme = themeById(doc.themeId)[mode];
   const activeTool = TOOLS.find((t) => t.id === brush.tool) ?? TOOLS[1];
+  const effZoom = fitMode ? fitZoom : zoom;
+  // Fit-to-space: measure the wrap and the rendered grid, then scale the
+  // frame to fill the wrap (letterboxed). The grid is measured at the
+  // currently applied zoom and divided back out, so the result doesn't
+  // depend on which zoom is active — no feedback loop.
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const gridRef = useRef<HTMLPreElement | null>(null);
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    const grid = gridRef.current;
+    if (!wrap || !grid) return;
+    const compute = () => {
+      const w1 = grid.offsetWidth / effZoom;
+      const h1 = grid.offsetHeight / effZoom;
+      if (!(w1 > 0 && h1 > 0)) return;
+      const r = wrap.getBoundingClientRect();
+      const fit = Math.min((r.width - 16) / w1, (r.height - 16) / h1);
+      onFitZoom(Math.min(3, Math.max(0.5, +fit.toFixed(2))));
+    };
+    compute();
+    const ro = new ResizeObserver(compute);
+    ro.observe(wrap);
+    // The grid's cell metrics change when Cozette finishes loading; the
+    // wrap size doesn't, so re-measure then too.
+    let live = true;
+    document.fonts?.ready.then(() => {
+      if (live) compute();
+    });
+    return () => {
+      live = false;
+      ro.disconnect();
+    };
+  }, [doc.width, doc.height, effZoom, onFitZoom]);
   return (
     <div
-      {...stylex.props(styles.wrap, zoom > 1 && styles.wrapZoomed)}
+      ref={wrapRef}
+      {...stylex.props(styles.wrap, !fitMode && effZoom > 1 && styles.wrapZoomed)}
       style={{
         backgroundColor: theme.bg,
         backgroundImage: mode === 'dark' ? VIGNETTE_DARK : VIGNETTE_LIGHT,
@@ -842,7 +891,8 @@ export default function Canvas({
         mode={mode}
         brush={brush}
         gridOn={gridOn}
-        zoom={zoom}
+        zoom={effZoom}
+        gridRef={gridRef}
         onPaint={onPaint}
         onPick={onPick}
         onPlaceStamp={onPlaceStamp}
@@ -864,7 +914,7 @@ export default function Canvas({
           variant="ghost"
           size="sm"
           tooltip="Zoom out"
-          isDisabled={zoom <= 0.5}
+          isDisabled={effZoom <= 0.5}
           onClick={onZoomOut}
         />
         <IconButton
@@ -873,8 +923,16 @@ export default function Canvas({
           variant="ghost"
           size="sm"
           tooltip="Zoom in"
-          isDisabled={zoom >= 3}
+          isDisabled={effZoom >= 3}
           onClick={onZoomIn}
+        />
+        <IconButton
+          label="Fit frame to space"
+          icon={<IconFit />}
+          variant={fitMode ? 'primary' : 'ghost'}
+          size="sm"
+          tooltip="Fit the frame to the available space"
+          onClick={onZoomFit}
         />
         {/* Mobile: the control-panels entry lives here, right of the view
             controls, instead of crowding the top bar. */}
@@ -923,7 +981,7 @@ export default function Canvas({
       <div {...stylex.props(styles.status)}>
         {doc.name} · {doc.width} × {doc.height} · frame {doc.active + 1}/{doc.frames.length}
         {onionOn ? ' · onion on' : ''}
-        {zoom !== 1 ? ` · ${Math.round(zoom * 100)}%` : ''}
+        {fitMode ? ' · fit' : zoom !== 1 ? ` · ${Math.round(zoom * 100)}%` : ''}
       </div>
       <div {...stylex.props(styles.phase)}>Phase 1</div>
     </div>
