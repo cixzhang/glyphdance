@@ -1,6 +1,12 @@
 import { useMemo } from 'react';
 import * as stylex from '@stylexjs/stylex';
-import { frameCells, GRID_W, GRID_H, type Cell } from './document.ts';
+import { GRID_W, GRID_H, type Cell } from './document.ts';
+import {
+  sceneCells,
+  themeById,
+  DEFAULT_SCENE,
+  type SceneConfig,
+} from './scene.ts';
 
 const styles = stylex.create({
   wrap: {
@@ -9,8 +15,6 @@ const styles = stylex.create({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0d0f12',
-    backgroundImage: 'radial-gradient(circle at 50% 40%, #131720 0%, #0d0f12 70%)',
     overflow: 'hidden',
   },
   grid: {
@@ -30,10 +34,6 @@ const styles = stylex.create({
     },
   },
   row: { display: 'block', height: '1.35em' },
-  bg: { color: '#232a33' },
-  inv: { color: 'var(--gd-invader)', textShadow: '0 0 12px rgba(74,222,128,0.35)' },
-  star: { color: 'var(--gd-star)', textShadow: '0 0 10px rgba(255,215,94,0.5)' },
-  onion: { color: 'rgba(180,140,232,0.4)' },
   pill: {
     position: 'absolute',
     top: 14,
@@ -91,25 +91,25 @@ const styles = stylex.create({
   },
 });
 
-const kindStyle = { bg: styles.bg, inv: styles.inv, star: styles.star } as const;
-
-function cellStyle(kind: string, onionGhost: boolean) {
-  if (onionGhost) return styles.onion;
-  return kindStyle[kind as keyof typeof kindStyle] ?? styles.bg;
-}
+const GHOST = 'rgba(180,140,232,0.4)';
 
 /** Full-size character grid for the canvas. */
 export function AsciiGrid({
   frameIndex,
   onionOn,
+  scene,
 }: {
   frameIndex: number;
   onionOn: boolean;
+  scene: SceneConfig;
 }) {
-  const cells = useMemo(() => frameCells(frameIndex), [frameIndex]);
+  const cells = useMemo(
+    () => sceneCells(frameIndex, scene),
+    [frameIndex, scene],
+  );
   const prev = useMemo(
-    () => (onionOn ? frameCells((frameIndex + 3) % 4) : null),
-    [frameIndex, onionOn],
+    () => (onionOn ? sceneCells((frameIndex + 3) % 4, scene) : null),
+    [frameIndex, onionOn, scene],
   );
   return (
     <pre {...stylex.props(styles.grid, styles.gridMobile)} aria-label="Animation canvas">
@@ -122,7 +122,16 @@ export function AsciiGrid({
               prev !== null &&
               prev[r][c].kind !== 'bg';
             return (
-              <span key={c} {...stylex.props(cellStyle(cell.kind, ghost))}>
+              <span
+                key={c}
+                style={{
+                  color: ghost ? GHOST : cell.fg,
+                  textShadow:
+                    ghost || cell.kind === 'bg'
+                      ? 'none'
+                      : `0 0 10px ${cell.fg}66`,
+                }}
+              >
                 {ghost && prev ? prev[r][c].ch : cell.ch}
               </span>
             );
@@ -135,8 +144,17 @@ export function AsciiGrid({
 }
 
 /** Tiny render of a frame for the timeline filmstrip and stamp cards. */
-export function AsciiThumb({ frameIndex }: { frameIndex: number }) {
-  const cells = useMemo(() => frameCells(frameIndex), [frameIndex]);
+export function AsciiThumb({
+  frameIndex,
+  scene = DEFAULT_SCENE,
+}: {
+  frameIndex: number;
+  scene?: SceneConfig;
+}) {
+  const cells = useMemo(
+    () => sceneCells(frameIndex, scene),
+    [frameIndex, scene],
+  );
   return (
     <pre
       {...stylex.props(styles.grid)}
@@ -146,7 +164,7 @@ export function AsciiThumb({ frameIndex }: { frameIndex: number }) {
       {cells.map((row: Cell[], r: number) => (
         <span key={r} {...stylex.props(styles.row)}>
           {row.map((cell, c) => (
-            <span key={c} {...stylex.props(cellStyle(cell.kind, false))}>
+            <span key={c} style={{ color: cell.fg }}>
               {cell.ch}
             </span>
           ))}
@@ -161,13 +179,22 @@ interface CanvasProps {
   frameIndex: number;
   frameCount: number;
   onionOn: boolean;
+  scene: SceneConfig;
   onOpenAgent: () => void;
 }
 
-export default function Canvas({ frameIndex, frameCount, onionOn, onOpenAgent }: CanvasProps) {
+export default function Canvas({ frameIndex, frameCount, onionOn, scene, onOpenAgent }: CanvasProps) {
+  const theme = themeById(scene.theme);
   return (
-    <div {...stylex.props(styles.wrap)}>
-      <AsciiGrid frameIndex={frameIndex} onionOn={onionOn} />
+    <div
+      {...stylex.props(styles.wrap)}
+      style={{
+        backgroundColor: theme.bg,
+        backgroundImage:
+          'radial-gradient(circle at 50% 40%, transparent 0%, rgba(0,0,0,0.4) 100%)',
+      }}
+    >
+      <AsciiGrid frameIndex={frameIndex} onionOn={onionOn} scene={scene} />
       <button
         {...stylex.props(styles.pill)}
         onClick={onOpenAgent}

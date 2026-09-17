@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { ToggleButton } from '@astryxdesign/core/ToggleButton';
@@ -5,6 +6,7 @@ import { Text } from '@astryxdesign/core/Text';
 import Transport from './Transport.tsx';
 import { AsciiThumb } from './Canvas.tsx';
 import { STUB_FRAMES } from './document.ts';
+import type { SceneConfig } from './scene.ts';
 
 const styles = stylex.create({
   bar: {
@@ -79,6 +81,7 @@ interface TimelineProps {
   frameIndex: number;
   playing: boolean;
   onionOn: boolean;
+  scene: SceneConfig;
   onSelectFrame: (i: number) => void;
   onJumpStart: () => void;
   onStepBack: () => void;
@@ -89,7 +92,21 @@ interface TimelineProps {
 }
 
 export default function Timeline(props: TimelineProps) {
-  const { frameIndex, playing, onionOn } = props;
+  const { frameIndex, playing, onionOn, scene } = props;
+  const activeThumbRef = useRef<HTMLButtonElement | null>(null);
+
+  // In play mode, keep the focused frame visible as the playhead advances.
+  // `nearest` is a no-op when the frame is already fully in view.
+  useEffect(() => {
+    if (playing) {
+      activeThumbRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        inline: 'nearest',
+        block: 'nearest',
+      });
+    }
+  }, [frameIndex, playing]);
+
   return (
     <div {...stylex.props(styles.bar)} aria-label="Frame timeline">
       <div {...stylex.props(styles.cluster)}>
@@ -107,13 +124,14 @@ export default function Timeline(props: TimelineProps) {
         {STUB_FRAMES.map((f, i) => (
           <button
             key={f.id}
+            ref={i === frameIndex ? activeThumbRef : undefined}
             {...stylex.props(styles.thumb, i === frameIndex && styles.thumbActive)}
             onClick={() => props.onSelectFrame(i)}
             role="option"
             aria-selected={i === frameIndex}
             title={`Frame ${f.id} · hold ${f.holdMs}ms`}
           >
-            <AsciiThumb frameIndex={i} />
+            <AsciiThumb frameIndex={i} scene={scene} />
             <Text
               type="code"
               size="3xs"

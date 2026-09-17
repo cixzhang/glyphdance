@@ -9,6 +9,8 @@ import { Switch } from '@astryxdesign/core/Switch';
 import { Badge } from '@astryxdesign/core/Badge';
 import { VStack } from '@astryxdesign/core/Stack';
 import { BottomSheet } from '@astryxdesign/core/BottomSheet';
+import ScenePanel from './ScenePanel.tsx';
+import type { SceneConfig } from './scene.ts';
 import { AsciiThumb } from './Canvas.tsx';
 
 const styles = stylex.create({
@@ -315,12 +317,16 @@ export default function Inspector({
   onToggleAgent,
   sheetOpen,
   onSheetOpenChange,
+  scene,
+  onSceneChange,
 }: {
   isMobile: boolean;
   agentOpen: boolean;
   onToggleAgent: () => void;
   sheetOpen: boolean;
   onSheetOpenChange: (open: boolean) => void;
+  scene: SceneConfig;
+  onSceneChange: (patch: Partial<SceneConfig>) => void;
 }) {
   // Mobile: the inspector lives in an Astryx BottomSheet — swipe-to-dismiss,
   // scrim, Escape, and focus trap come with it.
@@ -335,6 +341,7 @@ export default function Inspector({
       >
         <div {...stylex.props(styles.sheetContent)}>
           <AgentPanel open={agentOpen} onToggle={onToggleAgent} isMobile={isMobile} />
+          <ScenePanel scene={scene} onChange={onSceneChange} />
           <GlyphColorPanel />
           <StampsPanel />
         </div>
@@ -344,6 +351,7 @@ export default function Inspector({
   return (
     <div {...stylex.props(styles.col)}>
       <AgentPanel open={agentOpen} onToggle={onToggleAgent} isMobile={isMobile} />
+      <ScenePanel scene={scene} onChange={onSceneChange} />
       <GlyphColorPanel />
       <StampsPanel />
     </div>

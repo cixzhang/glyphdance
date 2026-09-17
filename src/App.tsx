@@ -7,6 +7,7 @@ import Inspector from './studio/Inspector.tsx';
 import Timeline from './studio/Timeline.tsx';
 import { useIsMobile } from './studio/responsive.ts';
 import { STUB_FRAMES } from './studio/document.ts';
+import { DEFAULT_SCENE, type SceneConfig } from './studio/scene.ts';
 
 const styles = stylex.create({
   root: {
@@ -52,9 +53,15 @@ export default function App() {
   const [playing, setPlaying] = useState(false);
   const [onionOn, setOnionOn] = useState(true);
   const [agentOpen, setAgentOpen] = useState(true);
-  // Mobile only: the inspector (agent + glyph/color + stamps) lives in a
-  // bottom sheet instead of a side column.
+  // Mobile only: the inspector (agent + scene + glyph/color + stamps) lives
+  // in a bottom sheet instead of a side column.
   const [sheetOpen, setSheetOpen] = useState(false);
+  // Demo scene: ET's sprite, the player's sprite, and the syntax-theme palette.
+  const [scene, setScene] = useState<SceneConfig>(DEFAULT_SCENE);
+  const patchScene = useCallback(
+    (patch: Partial<SceneConfig>) => setScene((s) => ({ ...s, ...patch })),
+    [],
+  );
   const timer = useRef<number | null>(null);
 
   const jumpStart = useCallback(() => setFrameIndex(0), []);
@@ -126,6 +133,7 @@ export default function App() {
           frameIndex={frameIndex}
           frameCount={STUB_FRAMES.length}
           onionOn={onionOn}
+          scene={scene}
           onOpenAgent={openPanels}
         />
       </div>
@@ -136,6 +144,8 @@ export default function App() {
           onToggleAgent={toggleAgent}
           sheetOpen={sheetOpen}
           onSheetOpenChange={setSheetOpen}
+          scene={scene}
+          onSceneChange={patchScene}
         />
       </div>
       <div {...stylex.props(styles.timeline)}>
@@ -143,6 +153,7 @@ export default function App() {
           frameIndex={frameIndex}
           playing={playing}
           onionOn={onionOn}
+          scene={scene}
           onSelectFrame={setFrameIndex}
           onJumpStart={jumpStart}
           onStepBack={stepBack}
