@@ -72,6 +72,7 @@ export const IconRedo = px(Redo);
 export const IconCheck = px(Check);
 export const IconClose = px(Close);
 export const IconPlus = px(Plus);
+export const IconMinus = px(Minus);
 export const IconSparkles = px(Sparkles);
 export const IconPanels = px(Layout);
 export const IconOnion = px(Copy);

@@ -7,6 +7,7 @@ import * as stylex from '@stylexjs/stylex';
 import { Button } from '@astryxdesign/core/Button';
 import { Card } from '@astryxdesign/core/Card';
 import { Heading } from '@astryxdesign/core/Heading';
+import { IconButton } from '@astryxdesign/core/IconButton';
 import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { Text } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
@@ -26,6 +27,7 @@ import {
   type DocState,
 } from './document.ts';
 import type { Action } from './actions.ts';
+import { IconMinus, IconPlus } from './icons.tsx';
 
 const styles = stylex.create({
   optionRow: {
@@ -121,30 +123,78 @@ function CanvasSizeControl({
     h >= MIN_CANVAS_H &&
     h <= MAX_CANVAS_H;
   const changed = w !== doc.width || h !== doc.height;
+  // The +/- steppers apply immediately (one undoable step per tap) for
+  // quick adjustments; typing a value still goes through Resize.
+  const stepWidth = (d: number) => {
+    const nw = Math.min(MAX_CANVAS_W, Math.max(MIN_CANVAS_W, doc.width + d));
+    if (nw !== doc.width)
+      dispatch({ type: 'resizeCanvas', width: nw, height: doc.height });
+  };
+  const stepHeight = (d: number) => {
+    const nh = Math.min(MAX_CANVAS_H, Math.max(MIN_CANVAS_H, doc.height + d));
+    if (nh !== doc.height)
+      dispatch({ type: 'resizeCanvas', width: doc.width, height: nh });
+  };
   return (
     <VStack gap={1}>
       <Text type="label" color="disabled">
         Canvas size
       </Text>
-      <HStack gap={2}>
-        <NumberInput
-          label="Width"
-          value={w}
-          onChange={setW}
-          min={MIN_CANVAS_W}
-          max={MAX_CANVAS_W}
-          step={1}
-          isIntegerOnly
-        />
-        <NumberInput
-          label="Height"
-          value={h}
-          onChange={setH}
-          min={MIN_CANVAS_H}
-          max={MAX_CANVAS_H}
-          step={1}
-          isIntegerOnly
-        />
+      <VStack gap={2}>
+        <HStack gap={1} align="end">
+          <IconButton
+            icon={<IconMinus />}
+            label="Decrease canvas width"
+            size="sm"
+            variant="secondary"
+            isDisabled={doc.width <= MIN_CANVAS_W}
+            onClick={() => stepWidth(-1)}
+          />
+          <NumberInput
+            label="Width"
+            value={w}
+            onChange={setW}
+            min={MIN_CANVAS_W}
+            max={MAX_CANVAS_W}
+            step={1}
+            isIntegerOnly
+          />
+          <IconButton
+            icon={<IconPlus />}
+            label="Increase canvas width"
+            size="sm"
+            variant="secondary"
+            isDisabled={doc.width >= MAX_CANVAS_W}
+            onClick={() => stepWidth(1)}
+          />
+        </HStack>
+        <HStack gap={1} align="end">
+          <IconButton
+            icon={<IconMinus />}
+            label="Decrease canvas height"
+            size="sm"
+            variant="secondary"
+            isDisabled={doc.height <= MIN_CANVAS_H}
+            onClick={() => stepHeight(-1)}
+          />
+          <NumberInput
+            label="Height"
+            value={h}
+            onChange={setH}
+            min={MIN_CANVAS_H}
+            max={MAX_CANVAS_H}
+            step={1}
+            isIntegerOnly
+          />
+          <IconButton
+            icon={<IconPlus />}
+            label="Increase canvas height"
+            size="sm"
+            variant="secondary"
+            isDisabled={doc.height >= MAX_CANVAS_H}
+            onClick={() => stepHeight(1)}
+          />
+        </HStack>
         <Button
           label="Resize canvas"
           variant="secondary"
@@ -157,7 +207,7 @@ function CanvasSizeControl({
         >
           Resize
         </Button>
-      </HStack>
+      </VStack>
       <Text type="supporting" color="disabled">
         Art stays centered; anything outside the new size is cropped. Undoable.
       </Text>
