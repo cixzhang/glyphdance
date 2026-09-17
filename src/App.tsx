@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { Theme } from '@astryxdesign/core/theme';
+import { Button } from '@astryxdesign/core/Button';
+import { useToast, ToastViewport } from '@astryxdesign/core/Toast';
 import { glyphdanceTheme } from './studio/glyphdance.js';
 import TopBar from './studio/TopBar.tsx';
 import ToolRail from './studio/ToolRail.tsx';
@@ -53,40 +55,6 @@ const styles = stylex.create({
     '@media (max-width: 760px)': { display: 'contents' },
   },
   timeline: { gridArea: 'timeline', minWidth: 0 },
-  // Agent-done toast: tappable, deep-links into the chat message.
-  toast: {
-    position: 'fixed',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    bottom: 160,
-    '@media (max-width: 760px)': { bottom: 190 },
-    zIndex: 60,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    maxWidth: '92vw',
-    padding: '10px 14px',
-    borderRadius: 14,
-    border: '1px solid var(--gd-border)',
-    backgroundColor: 'var(--gd-bg1)',
-    color: 'var(--gd-text)',
-    fontFamily: 'var(--gd-ui)',
-    fontSize: 12,
-    cursor: 'pointer',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-  },
-  toastCheck: { color: 'var(--gd-accent)', flexShrink: 0 },
-  toastText: {
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    maxWidth: '52vw',
-  },
-  toastView: {
-    color: 'var(--gd-accent)',
-    fontWeight: 700,
-    flexShrink: 0,
-  },
 });
 
 type ThemeMode = 'light' | 'dark';
@@ -138,12 +106,16 @@ export default function App() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   // Agent-done notification: set when an assistant turn finishes while the
-  // chat isn't visible. The toast deep-links to the chat message; tapping a
-  // token inside the message jumps to the stamp or frame it affected.
-  const [agentDone, setAgentDone] = useState<{ id: string; summary: string } | null>(null);
+  // chat isn't visible. An Astryx toast deep-links to the chat message;
+  // tapping a token inside the message jumps to the stamp or frame it affected.
+  const [agentDone, setAgentDone] = useState<{
+    id: string;
+    summary: string;
+    error?: boolean;
+  } | null>(null);
   const [scrollToMessage, setScrollToMessage] = useState<string | null>(null);
   const handleAgentDone = useCallback(
-    (info: { id: string; summary: string }) => setAgentDone(info),
+    (info: { id: string; summary: string; error?: boolean }) => setAgentDone(info),
     [],
   );
   // The brush: active tool plus the glyph and colors it paints with.
@@ -232,6 +204,34 @@ export default function App() {
     openPanels();
   }, [agentDone, openPanels]);
 
+  // Fire the Astryx toast when an agent turn finishes out of sight. Errors
+  // stay up until dismissed; the badge on the Agent button persists either
+  // way, so the deep link is never lost.
+  const showToast = useToast();
+  const lastToastedId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!agentDone || lastToastedId.current === agentDone.id) return;
+    lastToastedId.current = agentDone.id;
+    const dismiss = showToast({
+      type: agentDone.error ? 'error' : 'info',
+      body: agentDone.error ? agentDone.summary : `Agent finished: ${agentDone.summary}`,
+      endContent: (
+        <Button
+          label="View agent result"
+          size="sm"
+          onClick={() => {
+            dismiss();
+            viewAgentDone();
+          }}
+        >
+          View
+        </Button>
+      ),
+      isAutoHide: !agentDone.error,
+      autoHideDuration: 12000,
+    });
+  }, [agentDone, showToast, viewAgentDone]);
+
   // Playback honors each frame's hold time.
   useEffect(() => {
     if (!playing) return;
@@ -250,6 +250,7 @@ export default function App() {
 
   return (
     <Theme theme={glyphdanceTheme} mode={mode}>
+    <ToastViewport position="bottomEnd" inset={{ bottom: isMobile ? 210 : 170 }}>
     <div {...stylex.props(styles.root)}>
       <div {...stylex.props(styles.topbar)}>
         <TopBar
@@ -331,18 +332,8 @@ export default function App() {
           onToggleOnion={toggleOnion}
         />
       </div>
-      {agentDone && (
-        <button
-          {...stylex.props(styles.toast)}
-          onClick={viewAgentDone}
-          aria-label={`Agent finished. View result: ${agentDone.summary}`}
-        >
-          <span {...stylex.props(styles.toastCheck)}>✓</span>
-          <span {...stylex.props(styles.toastText)}>{agentDone.summary}</span>
-          <span {...stylex.props(styles.toastView)}>View</span>
-        </button>
-      )}
-    </div>
+      </div>
+    </ToastViewport>
     </Theme>
   );
 }

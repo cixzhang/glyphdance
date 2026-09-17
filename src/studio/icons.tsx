@@ -7,6 +7,7 @@ import {
   Brush,
   Check,
   Clipboard,
+  Close,
   Copy,
   Download,
   Eraser,
@@ -69,6 +70,7 @@ export const IconUndo = px(Undo);
 export const IconRedo = px(Redo);
 
 export const IconCheck = px(Check);
+export const IconClose = px(Close);
 export const IconPlus = px(Plus);
 export const IconSparkles = px(Sparkles);
 export const IconPanels = px(Layout);

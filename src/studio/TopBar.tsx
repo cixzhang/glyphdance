@@ -2,6 +2,7 @@ import * as stylex from '@stylexjs/stylex';
 import { TopNav, TopNavHeading, TopNavRenderContext } from '@astryxdesign/core/TopNav';
 import { Button } from '@astryxdesign/core/Button';
 import { IconButton } from '@astryxdesign/core/IconButton';
+import { StatusDot } from '@astryxdesign/core/StatusDot';
 import { IconMoon, IconPanels, IconSparkles, IconSun } from './icons';
 import { Text } from '@astryxdesign/core/Text';
 import Transport from './Transport.tsx';
@@ -58,16 +59,12 @@ const styles = stylex.create({
     '@media (max-width: 760px)': { display: 'flex' },
   },
   agentWrap: { position: 'relative', display: 'inline-flex' },
-  // Badge dot: the agent finished while the chat was closed.
+  // Badge dot: the agent finished while the chat was closed. Astryx
+  // StatusDot with positioning; the label keeps it accessible.
   agentDot: {
     position: 'absolute',
-    top: 2,
-    right: 2,
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: 'var(--gd-accent)',
-    border: '2px solid var(--gd-bg0)',
+    top: -2,
+    right: -2,
     pointerEvents: 'none',
   },
 });
@@ -182,7 +179,13 @@ export default function TopBar(props: TopBarProps) {
               tooltip={isMobile ? 'Open the agent' : 'Toggle the agent panel'}
               onClick={props.onToggleAgent}
             />
-            {props.agentDone && <span {...stylex.props(styles.agentDot)} />}
+            {props.agentDone && (
+              <StatusDot
+                variant="accent"
+                label="The agent finished while the chat was closed"
+                xstyle={styles.agentDot}
+              />
+            )}
           </span>
         </div>
       }

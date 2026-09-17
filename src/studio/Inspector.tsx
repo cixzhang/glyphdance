@@ -8,9 +8,11 @@ import { TextInput } from '@astryxdesign/core/TextInput';
 import { Switch } from '@astryxdesign/core/Switch';
 import { VStack } from '@astryxdesign/core/Stack';
 import { Button } from '@astryxdesign/core/Button';
+import { IconButton } from '@astryxdesign/core/IconButton';
+import { Token } from '@astryxdesign/core/Token';
 import { BottomSheet } from '@astryxdesign/core/BottomSheet';
 import { MobileNav } from '@astryxdesign/core/MobileNav';
-import { IconCheck, IconSparkles } from './icons';
+import { IconCheck, IconClose, IconSparkles } from './icons';
 import DocumentPanel from './DocumentPanel.tsx';
 import { ET_SPRITES, PLAYER_SPRITES } from './scene.ts';
 import { downloadFramesGif } from './gif.ts';
@@ -70,19 +72,6 @@ const styles = stylex.create({
     fontSize: 10,
     color: 'var(--gd-dim)',
     marginTop: 4,
-  },
-  // Tappable token inside an op-log line: jumps to the stamp or frame.
-  token: {
-    fontFamily: 'var(--gd-mono)',
-    fontSize: 10,
-    color: 'var(--gd-accent)',
-    backgroundColor: 'transparent',
-    border: '1px solid var(--gd-accent)',
-    borderRadius: 8,
-    padding: '0 6px',
-    margin: '0 2px',
-    cursor: 'pointer',
-    lineHeight: 1.6,
   },
   bubbleUser: {
     alignSelf: 'flex-end',
@@ -164,6 +153,12 @@ const styles = stylex.create({
     justifyContent: 'center',
     whiteSpace: 'pre',
   },
+  // Delete control on a custom stamp card: positioned overlay.
+  customDel: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+  },
 });
 
 const GLYPHS = ['█', '▓', '▒', '░', '·', '●', '◆', '✦', '◉', '+', '×', '/', '\\', '|', '(', ')', '[', ']', 'o', 'O', '#', '@', '<', '>'];
@@ -189,7 +184,7 @@ function AgentBody({
   /** Whether the chat is currently visible (sheet on mobile, card on desktop). */
   panelOpen: boolean;
   /** Fired when an assistant turn finishes while the chat is not visible. */
-  onDone: (info: { id: string; summary: string }) => void;
+  onDone: (info: { id: string; summary: string; error?: boolean }) => void;
   /** Message id to scroll to (from the done toast), or null. */
   scrollToId: string | null;
   onScrolled: () => void;
@@ -300,7 +295,7 @@ function AgentBody({
       };
       setMessages([...history, errMsg]);
       if (!panelOpenRef.current)
-        onDone({ id: errMsg.id, summary: 'The agent hit an error.' });
+        onDone({ id: errMsg.id, summary: 'The agent hit an error.', error: true });
     } finally {
       setWorking(false);
     }
@@ -378,18 +373,18 @@ function AgentBody({
                     seg.kind === 'text' ? (
                       <span key={k}>{seg.text}</span>
                     ) : (
-                      <button
+                      <Token
                         key={k}
-                        {...stylex.props(styles.token)}
+                        label={seg.label}
+                        size="sm"
+                        color={seg.target.kind === 'stamp' ? 'purple' : 'blue'}
                         onClick={() => onToken(seg.target)}
-                        title={
+                        description={
                           seg.target.kind === 'stamp'
                             ? `Show stamp ${seg.label}`
                             : `Go to ${seg.label}`
                         }
-                      >
-                        {seg.label}
-                      </button>
+                      />
                     ),
                   )}
                 </div>
@@ -449,7 +444,7 @@ function AgentPanel({
   dispatch: (a: Action) => void;
   mode: 'light' | 'dark';
   panelOpen: boolean;
-  onDone: (info: { id: string; summary: string }) => void;
+  onDone: (info: { id: string; summary: string; error?: boolean }) => void;
   scrollToId: string | null;
   onScrolled: () => void;
   onSelectStamp: (id: string) => void;
@@ -711,27 +706,14 @@ function StampsPanel({
                       </pre>
                       <Text type="label">{s.id}</Text>
                     </button>
-                    <button
+                    <IconButton
+                      label={`Delete stamp ${s.id}`}
+                      icon={<IconClose />}
+                      variant="ghost"
+                      size="sm"
+                      xstyle={styles.customDel}
                       onClick={() => dispatch({ type: 'deleteStamp', id: s.id })}
-                      title={`Delete stamp ${s.id}`}
-                      aria-label={`Delete stamp ${s.id}`}
-                      style={{
-                        position: 'absolute',
-                        top: 2,
-                        right: 2,
-                        width: 20,
-                        height: 20,
-                        borderRadius: 10,
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: 12,
-                        lineHeight: 1,
-                        background: 'rgba(0,0,0,0.5)',
-                        color: '#fff',
-                      }}
-                    >
-                      ×
-                    </button>
+                    />
                   </div>
                 );
               })}
@@ -776,7 +758,7 @@ export default function Inspector({
   brush: Brush;
   onBrushChange: (patch: Partial<Brush>) => void;
   mode: 'light' | 'dark';
-  onAgentDone: (info: { id: string; summary: string }) => void;
+  onAgentDone: (info: { id: string; summary: string; error?: boolean }) => void;
   scrollToMessage: string | null;
   onAgentScrolled: () => void;
   onSelectStamp: (id: string) => void;

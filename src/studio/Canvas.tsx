@@ -1,6 +1,9 @@
 import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { IconButton } from '@astryxdesign/core/IconButton';
+import { Button } from '@astryxdesign/core/Button';
+import { TextInput } from '@astryxdesign/core/TextInput';
+import { Kbd } from '@astryxdesign/core/Kbd';
 import { IconSparkles, IconGrid, IconZoomIn, IconZoomOut } from './icons';
 import {
   GRID_W,
@@ -89,59 +92,21 @@ const styles = stylex.create({
     zIndex: 2,
     backdropFilter: 'blur(6px)',
   },
-  textInput: {
+  textField: {
+    width: 170,
     fontFamily: 'var(--gd-mono)',
-    fontSize: 14,
-    backgroundColor: 'var(--gd-bg2)',
-    color: 'var(--gd-text)',
-    border: '1px solid var(--gd-border)',
-    borderRadius: 6,
-    padding: '6px 10px',
-    width: 160,
-    outline: 'none',
-  },
-  textPlace: {
-    appearance: 'none',
-    fontFamily: 'var(--gd-mono)',
-    fontSize: 13,
-    backgroundColor: 'var(--gd-accent)',
-    color: '#0d0f12',
-    border: 'none',
-    borderRadius: 6,
-    padding: '6px 12px',
-    cursor: 'pointer',
-    fontWeight: 700,
   },
   pill: {
     position: 'absolute',
     top: 14,
     left: '50%',
     transform: 'translateX(-50%)',
-    appearance: 'none',
-    border: '1px solid var(--gd-border)',
-    backgroundColor: 'rgba(29,33,38,0.92)',
-    color: 'var(--gd-dim)',
     borderRadius: 999,
-    fontSize: 12,
-    padding: '7px 14px',
-    cursor: 'pointer',
     // On mobile the top bar's Agent button is the entry point — the pill
     // would just eat canvas space.
     '@media (max-width: 760px)': { display: 'none' },
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
     backdropFilter: 'blur(6px)',
-    ':hover': { color: 'var(--gd-text)', borderColor: 'var(--gd-accent)' },
-  },
-  pillAccent: { color: 'var(--gd-accent)' },
-  kbd: {
-    fontFamily: 'var(--gd-mono)',
-    fontSize: 10,
-    border: '1px solid var(--gd-border)',
-    borderRadius: 4,
-    padding: '1px 5px',
-    color: 'var(--gd-faint)',
+    zIndex: 2,
   },
   status: {
     position: 'absolute',
@@ -468,25 +433,30 @@ export function AsciiGrid({
       </pre>
       {textAnchor !== null && (
         <div {...stylex.props(styles.textBar)}>
-          <input
-            {...stylex.props(styles.textInput)}
-            autoFocus
+          <TextInput
+            label="Text to place on the canvas"
+            isLabelHidden
+            hasAutoFocus
             value={textValue}
-            maxLength={GRID_W - textAnchor[0]}
-            onChange={(e) => setTextValue(e.target.value)}
+            onChange={(v) => setTextValue(v.slice(0, GRID_W - textAnchor[0]))}
+            onEnter={placeText}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') placeText();
               if (e.key === 'Escape') {
                 setTextAnchor(null);
                 setTextValue('');
               }
             }}
             placeholder="Type text…"
-            aria-label="Text to place on the canvas"
+            xstyle={styles.textField}
           />
-          <button {...stylex.props(styles.textPlace)} onClick={placeText}>
+          <Button
+            label="Place text on canvas"
+            variant="primary"
+            size="sm"
+            onClick={placeText}
+          >
             Place
-          </button>
+          </Button>
         </div>
       )}
     </>
@@ -611,14 +581,17 @@ export default function Canvas({
           onClick={onZoomIn}
         />
       </div>
-      <button
-        {...stylex.props(styles.pill)}
+      <Button
+        label="Open the agent panel"
+        variant="ghost"
+        size="sm"
+        icon={<IconSparkles />}
+        xstyle={styles.pill}
         onClick={onOpenAgent}
-        title="Open the agent panel"
+        tooltip="Open the agent panel"
       >
-        <IconSparkles {...stylex.props(styles.pillAccent)} /> Ask the agent…
-        <span {...stylex.props(styles.kbd)}>⌘K</span>
-      </button>
+        Ask the agent… <Kbd keys="⌘K" />
+      </Button>
       <div {...stylex.props(styles.status)}>
         {doc.name} · {GRID_W} × {GRID_H} · frame {doc.active + 1}/{doc.frames.length}
         {onionOn ? ' · onion on' : ''}
