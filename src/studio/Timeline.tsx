@@ -183,7 +183,7 @@ export default function Timeline(props: TimelineProps) {
             aria-selected={i === active}
             title={`Frame ${i + 1} · hold ${f.holdMs}ms`}
           >
-            <AsciiThumb cells={f.cells} dot={swatch.dot} bg={swatch.bg} />
+            <AsciiThumb cells={f.cells} width={doc.width} height={doc.height} dot={swatch.dot} bg={swatch.bg} />
             <Text
               type="code"
               size="3xs"

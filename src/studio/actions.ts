@@ -7,9 +7,12 @@ import {
   blankFrame,
   cellIndex,
   cloneFrame,
-  GRID_H,
-  GRID_W,
   inBounds,
+  MAX_CANVAS_H,
+  MAX_CANVAS_W,
+  MIN_CANVAS_H,
+  MIN_CANVAS_W,
+  resizeCells,
   type Cell,
   type CustomStamp,
   type DocState,
@@ -39,6 +42,18 @@ export type Action =
   | { type: 'setHold'; index: number; holdMs: number }
   | { type: 'setTheme'; themeId: string }
   | { type: 'rename'; name: string }
+  /**
+   * Resize the canvas. Existing art is re-centered by default (dx/dy
+   * override the placement offset; the inverse carries the negation so
+   * undo restores cells exactly). Crops art that doesn't fit.
+   */
+  | {
+      type: 'resizeCanvas';
+      width: number;
+      height: number;
+      dx?: number;
+      dy?: number;
+    }
   /** Selection — applies, but is never recorded for undo. */
   | { type: 'setActive'; index: number }
   /** Whole-document replace (import, demo reset) — clears history. */
@@ -74,7 +89,8 @@ export function validate(doc: DocState, a: Action): string | null {
       if (!validFrame(doc, a.frame)) return `no frame ${a.frame}`;
       if (a.cells.length === 0) return 'nothing to paint';
       for (const c of a.cells) {
-        if (!inBounds(c.x, c.y)) return `cell (${c.x},${c.y}) out of bounds`;
+        if (!inBounds(c.x, c.y, doc.width, doc.height))
+          return `cell (${c.x},${c.y}) out of bounds`;
         if (typeof c.cell.ch !== 'string' || [...c.cell.ch].length !== 1)
           return `cell (${c.x},${c.y}) needs a single character`;
         const ch = [...c.cell.ch][0];
@@ -114,6 +130,25 @@ export function validate(doc: DocState, a: Action): string | null {
       if (!SYNTAX_THEMES.some((t) => t.id === a.themeId))
         return `unknown theme ${a.themeId}`;
       return null;
+    case 'resizeCanvas': {
+      for (const [label, v] of [
+        ['width', a.width],
+        ['height', a.height],
+      ] as const) {
+        if (!Number.isInteger(v)) return `canvas ${label} must be a whole number`;
+      }
+      if (a.width < MIN_CANVAS_W || a.width > MAX_CANVAS_W)
+        return `canvas width must be ${MIN_CANVAS_W}–${MAX_CANVAS_W}`;
+      if (a.height < MIN_CANVAS_H || a.height > MAX_CANVAS_H)
+        return `canvas height must be ${MIN_CANVAS_H}–${MAX_CANVAS_H}`;
+      if (a.dx !== undefined && !Number.isInteger(a.dx))
+        return 'canvas dx must be a whole number';
+      if (a.dy !== undefined && !Number.isInteger(a.dy))
+        return 'canvas dy must be a whole number';
+      if (a.width === doc.width && a.height === doc.height)
+        return `canvas is already ${doc.width}×${doc.height}`;
+      return null;
+    }
     case 'rename':
       if (!a.name.trim()) return 'name cannot be empty';
       return null;
@@ -122,6 +157,19 @@ export function validate(doc: DocState, a: Action): string | null {
       return null;
     case 'load':
       if (a.doc.frames.length === 0) return 'document needs at least one frame';
+      if (
+        !Number.isInteger(a.doc.width) ||
+        a.doc.width < MIN_CANVAS_W ||
+        a.doc.width > MAX_CANVAS_W ||
+        !Number.isInteger(a.doc.height) ||
+        a.doc.height < MIN_CANVAS_H ||
+        a.doc.height > MAX_CANVAS_H
+      )
+        return 'document has an invalid canvas size';
+      if (
+        !a.doc.frames.every((f) => f.cells.length === a.doc.width * a.doc.height)
+      )
+        return 'document frames do not match the canvas size';
       return null;
     case 'addStamp':
       return validateStamp(doc, a.stamp);
@@ -130,7 +178,8 @@ export function validate(doc: DocState, a: Action): string | null {
       return null;
     case 'placeStamp': {
       if (!validFrame(doc, a.frame)) return `no frame ${a.frame}`;
-      if (!inBounds(a.x, a.y)) return `cell (${a.x},${a.y}) out of bounds`;
+      if (!inBounds(a.x, a.y, doc.width, doc.height))
+        return `cell (${a.x},${a.y}) out of bounds`;
       const stamp = resolveStamp(a.stampId, doc.stamps);
       if (!stamp) return `no stamp ${a.stampId}`;
       const sf = a.stampFrame ?? 0;
@@ -143,7 +192,7 @@ export function validate(doc: DocState, a: Action): string | null {
       const h = rows.length;
       const x0 = a.x - Math.floor(w / 2);
       const y0 = a.y - Math.floor(h / 2);
-      if (x0 < 0 || y0 < 0 || x0 + w > GRID_W || y0 + h > GRID_H)
+      if (x0 < 0 || y0 < 0 || x0 + w > doc.width || y0 + h > doc.height)
         return `stamp "${a.stampId}" (${w}x${h}) centered at (${a.x},${a.y}) would be clipped by the canvas edge — center it further inward`;
       if (!/^#[0-9a-fA-F]{6}$/.test(a.fg)) return `bad fg ${a.fg}`;
       if (a.bg !== '' && !/^#[0-9a-fA-F]{6}$/.test(a.bg)) return `bad bg ${a.bg}`;
@@ -192,7 +241,8 @@ export interface Applied {
 function setCells(doc: DocState, frameIdx: number, cells: PaintCell[]): DocState {
   const frames = doc.frames.slice();
   const frameCells = frames[frameIdx].cells.slice();
-  for (const c of cells) frameCells[cellIndex(c.x, c.y)] = { ...c.cell };
+  for (const c of cells)
+    frameCells[cellIndex(c.x, c.y, doc.width)] = { ...c.cell };
   frames[frameIdx] = { ...frames[frameIdx], cells: frameCells };
   return { ...doc, frames };
 }
@@ -217,7 +267,7 @@ export function applyAction(doc: DocState, a: Action): Applied {
       const before: PaintCell[] = a.cells.map((c) => ({
         x: c.x,
         y: c.y,
-        cell: { ...doc.frames[a.frame].cells[cellIndex(c.x, c.y)] },
+        cell: { ...doc.frames[a.frame].cells[cellIndex(c.x, c.y, doc.width)] },
       }));
       const next = setCells(doc, a.frame, a.cells);
       const inverse: Action = {
@@ -230,7 +280,7 @@ export function applyAction(doc: DocState, a: Action): Applied {
     }
     case 'addFrame': {
       const frames = doc.frames.slice();
-      frames.splice(a.after + 1, 0, blankFrame());
+      frames.splice(a.after + 1, 0, blankFrame(400, doc.width, doc.height));
       const next: DocState = { ...doc, frames, active: a.after + 1 };
       return { doc: next, inverse: { type: 'deleteFrame', index: a.after + 1 } };
     }
@@ -266,12 +316,15 @@ export function applyAction(doc: DocState, a: Action): Applied {
     case 'clearFrame': {
       const frame = doc.frames[a.frame];
       const before: PaintCell[] = frame.cells.map((cell, i) => ({
-        x: i % GRID_W,
-        y: Math.floor(i / GRID_W),
+        x: i % doc.width,
+        y: Math.floor(i / doc.width),
         cell: { ...cell },
       }));
       const frames = doc.frames.slice();
-      frames[a.frame] = { ...frame, cells: blankFrame(frame.holdMs).cells };
+      frames[a.frame] = {
+        ...frame,
+        cells: blankFrame(frame.holdMs, doc.width, doc.height).cells,
+      };
       const inverse: Action = {
         type: 'paintCells',
         frame: a.frame,
@@ -319,7 +372,7 @@ export function applyAction(doc: DocState, a: Action): Applied {
     case 'placeStamp': {
       const stamp = resolveStamp(a.stampId, doc.stamps)!;
       const rows = stamp.frames[a.stampFrame ?? 0];
-      const cells = stampCellsFor(rows, a.x, a.y, a.fg, a.bg);
+      const cells = stampCellsFor(rows, a.x, a.y, a.fg, a.bg, doc.width, doc.height);
       if (cells.length === 0) {
         // Stamp is all transparent — a legal no-op.
         const noop: Action = { type: 'paintCells', frame: a.frame, cells: [] };
@@ -328,10 +381,29 @@ export function applyAction(doc: DocState, a: Action): Applied {
       const before: PaintCell[] = cells.map((c) => ({
         x: c.x,
         y: c.y,
-        cell: { ...doc.frames[a.frame].cells[cellIndex(c.x, c.y)] },
+        cell: { ...doc.frames[a.frame].cells[cellIndex(c.x, c.y, doc.width)] },
       }));
       const next = setCells(doc, a.frame, cells);
       const inverse: Action = { type: 'paintCells', frame: a.frame, cells: before };
+      return { doc: next, inverse };
+    }
+    case 'resizeCanvas': {
+      const dx = a.dx ?? Math.floor((a.width - doc.width) / 2);
+      const dy = a.dy ?? Math.floor((a.height - doc.height) / 2);
+      const frames = doc.frames.map((f) => ({
+        ...f,
+        cells: resizeCells(f.cells, doc.width, doc.height, a.width, a.height, dx, dy),
+      }));
+      const next: DocState = { ...doc, width: a.width, height: a.height, frames };
+      // Undo re-centers with the negated offset, restoring cells exactly —
+      // even for odd size differences, where centering isn't symmetric.
+      const inverse: Action = {
+        type: 'resizeCanvas',
+        width: doc.width,
+        height: doc.height,
+        dx: -dx,
+        dy: -dy,
+      };
       return { doc: next, inverse };
     }
   }

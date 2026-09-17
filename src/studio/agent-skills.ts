@@ -43,7 +43,7 @@ Finding the right stamp — when the user names a thing ("add snowflakes", "put 
 
 To USE a stamp from the catalog, emit a placeStamp action — never hand-draw a stamp's cells:
 {"type":"placeStamp","stampId":"crab","frame":0,"x":12,"y":7,"fg":"<invader color>","bg":""}
-x,y is the CENTER of the stamp on the 24x14 grid, and the WHOLE stamp must fit inside the grid — placements that would clip at the edge are rejected, so keep the full stamp extent in bounds. bg "" keeps the background transparent. Use the theme's stamp colors given above for fg so stamps match the scene (invaders/nature: invader color; ships/play: player color; critters/space: star color).
+x,y is the CENTER of the stamp on the canvas (size is in the document description above), and the WHOLE stamp must fit inside the canvas — placements that would clip at the edge are rejected, so keep the full stamp extent in bounds. bg "" keeps the background transparent. Use the theme's stamp colors given above for fg so stamps match the scene (invaders/nature: invader color; ships/play: player color; critters/space: star color).
 
 To CREATE a new stamp the user can keep and reuse from their Stamps panel, emit addStamp:
 {"type":"addStamp","stamp":{"id":"cat","fg":"#ffd75e","frames":[[" /\\\\_/\\\\ ","( o.o )"," > ^ < "],[" /\\\\_/\\\\ ","( -.- )"," > ^ < "]]}}
@@ -63,7 +63,7 @@ Watch out: ★ ☆ ❅ ❆ and emoji are NOT in the font — never use them (use
 
 Missing-character rule: when the user asks for a character, emoji, or symbol that isn't in the repertoire above, NEVER emit it — not in stamp art, not in paintCells. The action layer rejects unsupported characters, so emitting one means your edit fails. Instead invent a stamp that suggests what they asked for out of the glyphs you do have: addStamp it, then placeStamp it in the SAME reply. A 1-cell stamp (❄ for ❅, ✦ for ★, ♥ for an emoji heart) is a complete answer — create it, place it, done.
 
-Concept → glyph starter kit (adapt freely; keep new stamps 3-7 cells wide so they read on the 24x14 grid):
+Concept → glyph starter kit (adapt freely; keep new stamps 3-7 cells wide so they read on the canvas):
 - snowflake: ❄ on its own reads instantly; a larger flake:
   \\  |  /
    * * *
@@ -91,13 +91,14 @@ Concept → glyph starter kit (adapt freely; keep new stamps 3-7 cells wide so t
 - music: ♪ ♫   suits: ♥ ♦ ♣ ♠   arrows: ▲ ▼ ◀ ▶
 When the user names one small thing ("a star", "snowflakes"), a 1-cell stamp straight from the repertoire (❄, ✦, ♥…) is a complete answer — create it, place it, done.`;
 
-export const COLOR_SKILL = `Color — use it deliberately, not decoratively.
-- Every paintCells cell carries fg (and optional bg); placeStamp takes fg/bg too. Flat single-color art reads as unfinished — vary fg across elements.
+export const COLOR_SKILL = `Color — paint in color, always.
+- Every paintCells cell carries fg (and optional bg); placeStamp takes fg/bg too. A whole piece in a single fg is unfinished — never do it.
+- Give every element its own fg from the theme palette: silhouette in one theme color, interior details, eyes, highlights, shadows, and motion trails in 2-4 other theme colors.
 - The document description above lists the current theme and its stamp colors (invaders/nature, ships/play, critters/space, background). Default to those so new art matches the scene.
-- Silhouette in one color, accents (eyes, highlights, motion trails) in 1-2 contrasting theme colors. bg "" keeps cells transparent so the theme background shows through; set bg only for solid fills or glow effects.
+- bg "" keeps cells transparent so the theme background shows through; set bg only for solid fills or glow effects.
 - setTheme switches the whole palette — use it only when the user asks for a different mood or names a palette, never unprompted.`;
 
-export const PIXEL_ART_SKILL = `Pixel-art technique (24 wide x 14 tall grid)
+export const PIXEL_ART_SKILL = `Pixel-art technique (canvas size is in the document description above — x is 0..width-1, y is 0..height-1)
 - Sketch before you emit: plan the full layout on coordinates first. Keep subjects 5-10 cells wide so they read; the grid is small.
 - Symmetry is your friend: creatures and ships read best mirrored left/right.
 - Batch ALL cells for one frame into ONE paintCells action. Never emit one cell per action.

@@ -7,6 +7,10 @@
 import {
   GRID_H,
   GRID_W,
+  MAX_CANVAS_H,
+  MAX_CANVAS_W,
+  MIN_CANVAS_H,
+  MIN_CANVAS_W,
   emptyCell,
   type Cell,
   type CustomStamp,
@@ -15,7 +19,8 @@ import {
 } from './document.ts';
 
 export const DOC_STORAGE_KEY = 'glyphdance.doc.v1';
-const FORMAT_VERSION = 1;
+// v2 adds canvas width/height; v1 saves are accepted and default to 24x14.
+const FORMAT_VERSION = 2;
 
 function isCell(c: unknown): c is Cell {
   if (typeof c !== 'object' || c === null) return false;
@@ -50,10 +55,15 @@ function sanitizeStamp(s: unknown): CustomStamp | null {
   return { id: o.id, fg: o.fg, frames };
 }
 
-function sanitizeFrame(f: unknown, index: number): Frame | null {
+function sanitizeFrame(
+  f: unknown,
+  index: number,
+  width: number,
+  height: number,
+): Frame | null {
   if (typeof f !== 'object' || f === null) return null;
   const o = f as Record<string, unknown>;
-  if (!Array.isArray(o.cells) || o.cells.length !== GRID_W * GRID_H) return null;
+  if (!Array.isArray(o.cells) || o.cells.length !== width * height) return null;
   if (!o.cells.every(isCell)) return null;
   const holdMs =
     typeof o.holdMs === 'number' && o.holdMs > 0 ? Math.min(10000, o.holdMs) : 400;
@@ -67,12 +77,28 @@ export function deserializeDoc(json: string): DocState | null {
   try {
     const o = JSON.parse(json) as Record<string, unknown>;
     if (typeof o !== 'object' || o === null) return null;
-    if (o.v !== FORMAT_VERSION) return null;
+    // v1 saves predate canvas width/height — they were always 24x14.
+    const v = o.v === 1 ? 1 : o.v === FORMAT_VERSION ? 2 : null;
+    if (v === null) return null;
+    const width =
+      v === 2 &&
+      Number.isInteger(o.width) &&
+      (o.width as number) >= MIN_CANVAS_W &&
+      (o.width as number) <= MAX_CANVAS_W
+        ? (o.width as number)
+        : GRID_W;
+    const height =
+      v === 2 &&
+      Number.isInteger(o.height) &&
+      (o.height as number) >= MIN_CANVAS_H &&
+      (o.height as number) <= MAX_CANVAS_H
+        ? (o.height as number)
+        : GRID_H;
     if (typeof o.name !== 'string' || o.name.length === 0) return null;
     if (!Array.isArray(o.frames) || o.frames.length === 0) return null;
     const frames: Frame[] = [];
     for (let i = 0; i < o.frames.length; i++) {
-      const sf = sanitizeFrame(o.frames[i], i);
+      const sf = sanitizeFrame(o.frames[i], i, width, height);
       if (!sf) return null;
       frames.push(sf);
     }
@@ -94,7 +120,7 @@ export function deserializeDoc(json: string): DocState | null {
         stamps.push(ss);
       }
     }
-    return { name: o.name, frames, active, themeId, stamps };
+    return { name: o.name, frames, active, themeId, stamps, width, height };
   } catch {
     return null;
   }
@@ -106,6 +132,8 @@ export function serializeDoc(doc: DocState): string {
     v: FORMAT_VERSION,
     name: doc.name,
     themeId: doc.themeId,
+    width: doc.width,
+    height: doc.height,
     active: doc.active,
     frames: doc.frames.map((f) => ({ id: f.id, cells: f.cells, holdMs: f.holdMs })),
     stamps: doc.stamps,
@@ -147,6 +175,8 @@ export function blankDoc(name = 'untitled'): DocState {
   for (let i = 0; i < GRID_W * GRID_H; i++) cells.push(emptyCell());
   return {
     name,
+    width: GRID_W,
+    height: GRID_H,
     frames: [{ id: 'restored-0', cells, holdMs: 400 }],
     active: 0,
     stamps: [],

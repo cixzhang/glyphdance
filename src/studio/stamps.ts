@@ -103,6 +103,8 @@ export function stampCellsFor(
   cy: number,
   fg: string,
   bg: string,
+  w: number = GRID_W,
+  h: number = GRID_H,
 ): PaintCell[] {
   const out: PaintCell[] = [];
   const startY = cy - Math.floor(rows.length / 2);
@@ -114,7 +116,7 @@ export function stampCellsFor(
       if (ch === ' ') continue;
       const x = startX + c;
       const y = startY + r;
-      if (x < 0 || y < 0 || x >= GRID_W || y >= GRID_H) continue;
+      if (x < 0 || y < 0 || x >= w || y >= h) continue;
       out.push({ x, y, cell: { ch, fg, bg } });
     }
   }

@@ -43,9 +43,14 @@ function buildPalette(pixels: Uint8ClampedArray[]): RGB[] {
   return quantize(joined, 256) as RGB[];
 }
 
-export function exportFramesToGif(frames: Frame[], opts: GifOptions = {}): Blob {
+export function exportFramesToGif(
+  frames: Frame[],
+  width: number,
+  height: number,
+  opts: GifOptions = {},
+): Blob {
   if (frames.length === 0) throw new Error('no frames to export');
-  let canvases = frames.map((f) => renderFrameToCanvas(f, opts));
+  let canvases = frames.map((f) => renderFrameToCanvas(f, width, height, opts));
   const maxDim = opts.maxDimension ?? 768;
   let w = canvases[0].width;
   let h = canvases[0].height;
@@ -88,9 +93,11 @@ export function exportFramesToGif(frames: Frame[], opts: GifOptions = {}): Blob 
 export function downloadFramesGif(
   docName: string,
   frames: Frame[],
+  width: number,
+  height: number,
   opts: GifOptions = {},
 ): void {
-  const blob = exportFramesToGif(frames, opts);
+  const blob = exportFramesToGif(frames, width, height, opts);
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

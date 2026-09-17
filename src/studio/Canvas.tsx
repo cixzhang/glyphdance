@@ -9,8 +9,6 @@ import { IconSparkles, IconGrid, IconZoomIn, IconZoomOut, IconPanels, IconClose 
 import Transport from './Transport.tsx';
 import { TOOLS } from './ToolRail.tsx';
 import {
-  GRID_W,
-  GRID_H,
   cellIndex,
   inBounds,
   type Cell,
@@ -229,9 +227,16 @@ function lineCells(x0: number, y0: number, x1: number, y1: number): Array<[numbe
 
 /** Flood fill from (x, y): every connected cell identical to the target
  *  (char + fg + bg) becomes the brush cell. */
-function floodFill(cells: Cell[], x: number, y: number, brush: Brush): PaintCell[] {
-  if (!inBounds(x, y)) return [];
-  const target = cells[cellIndex(x, y)];
+function floodFill(
+  cells: Cell[],
+  x: number,
+  y: number,
+  brush: Brush,
+  w: number,
+  h: number,
+): PaintCell[] {
+  if (!inBounds(x, y, w, h)) return [];
+  const target = cells[cellIndex(x, y, w)];
   const repl: Cell = { ch: brush.glyph, fg: brush.fg, bg: brush.bg };
   const same = (c: Cell) =>
     c.ch === target.ch && c.fg === target.fg && c.bg === target.bg;
@@ -241,8 +246,8 @@ function floodFill(cells: Cell[], x: number, y: number, brush: Brush): PaintCell
   const stack: Array<[number, number]> = [[x, y]];
   while (stack.length > 0) {
     const [cx, cy] = stack.pop()!;
-    if (!inBounds(cx, cy)) continue;
-    const i = cellIndex(cx, cy);
+    if (!inBounds(cx, cy, w, h)) continue;
+    const i = cellIndex(cx, cy, w);
     if (seen.has(i) || !same(cells[i])) continue;
     seen.add(i);
     out.push({ x: cx, y: cy, cell: repl });
@@ -285,6 +290,10 @@ export function AsciiGrid({
 }) {
   const theme = themeById(doc.themeId)[mode];
   const cells = doc.frames[frame].cells;
+  // Canvas size aliases — the grid renders at the document's size, not the
+  // historical 24×14 constants.
+  const W = doc.width;
+  const H = doc.height;
   const prevCells = useMemo(() => {
     if (!onionOn || doc.frames.length < 2) return null;
     return doc.frames[(frame - 1 + doc.frames.length) % doc.frames.length].cells;
@@ -339,7 +348,7 @@ export function AsciiGrid({
     // the field and the grid never disagree, and a rejected paintCells
     // batch can never swallow the whole keystroke.
     const clean = toSupportedText(v, caret);
-    const str = clean.text.slice(0, GRID_W - ax);
+    const str = clean.text.slice(0, W - ax);
     const restore: PaintCell[] = [];
     textOrig.current.forEach((orig, key) => {
       const [x, y] = key.split(',').map(Number);
@@ -348,10 +357,10 @@ export function AsciiGrid({
     const paint: PaintCell[] = [];
     [...str].forEach((ch, i) => {
       const x = ax + i;
-      if (!inBounds(x, ay)) return;
+      if (!inBounds(x, ay, W, H)) return;
       const key = `${x},${ay}`;
       if (!textOrig.current.has(key)) {
-        textOrig.current.set(key, cells[cellIndex(x, ay)]);
+        textOrig.current.set(key, cells[cellIndex(x, ay, W)]);
       }
       paint.push({ x, y: ay, cell: { ch, fg: brush.fg, bg: brush.bg } });
     });
@@ -417,7 +426,7 @@ export function AsciiGrid({
     const out: PaintCell[] = [];
     for (const [x, y] of lineCells(x0, y0, x1, y1)) {
       const key = `${x},${y}`;
-      if (inBounds(x, y) && !painted.has(key)) {
+      if (inBounds(x, y, W, H) && !painted.has(key)) {
         painted.add(key);
         const cell: Cell =
           brush.tool === 'erase'
@@ -443,13 +452,13 @@ export function AsciiGrid({
   };
 
   const beginStroke = (x: number, y: number) => {
-    if (!inBounds(x, y)) return;
+    if (!inBounds(x, y, W, H)) return;
     switch (brush.tool) {
       case 'pick':
-        onPick(cells[cellIndex(x, y)]);
+        onPick(cells[cellIndex(x, y, W)]);
         return;
       case 'fill': {
-        const out = floodFill(cells, x, y, brush);
+        const out = floodFill(cells, x, y, brush, W, H);
         if (out.length > 0) onPaint(out, nextStroke());
         return;
       }
@@ -488,7 +497,7 @@ export function AsciiGrid({
     const s = strokeRef.current;
     if (s === null) return;
     if (brush.tool === 'stamp') {
-      if (inBounds(x, y)) placeStamp(x, y, s.id, s.painted);
+      if (inBounds(x, y, W, H)) placeStamp(x, y, s.id, s.painted);
       return;
     }
     if (brush.tool === 'brush' || brush.tool === 'erase') {
@@ -514,17 +523,17 @@ export function AsciiGrid({
         onPointerLeave={endStroke}
         onDragStart={(e) => e.preventDefault()}
       >
-        {Array.from({ length: GRID_H }, (_, r) => (
+        {Array.from({ length: H }, (_, r) => (
           <span key={r} {...stylex.props(styles.row)}>
-            {Array.from({ length: GRID_W }, (_, c) => {
-              const cell = cells[cellIndex(c, r)];
+            {Array.from({ length: W }, (_, c) => {
+              const cell = cells[cellIndex(c, r, W)];
               const empty = cell.ch === ' ';
               const ghost =
                 onionOn &&
                 empty &&
                 prevCells !== null &&
-                prevCells[cellIndex(c, r)].ch !== ' ';
-              const ghostCell = ghost && prevCells ? prevCells[cellIndex(c, r)] : null;
+                prevCells[cellIndex(c, r, W)].ch !== ' ';
+              const ghostCell = ghost && prevCells ? prevCells[cellIndex(c, r, W)] : null;
               const shownCh = ghost && ghostCell ? ghostCell.ch : empty ? '·' : cell.ch;
               // Caret: the next cell the text tool will type into.
               const caret =
@@ -635,7 +644,7 @@ export function AsciiGrid({
                   const ny = Math.max(
                     0,
                     Math.min(
-                      GRID_H - 1,
+                      H - 1,
                       anchor[1] + (e.key === 'ArrowUp' ? -1 : 1),
                     ),
                   );
@@ -696,7 +705,7 @@ export function AsciiGrid({
                   }
               }
             }}
-            placeholder={`Type up to ${GRID_W - textAnchor[0]} characters — live on the canvas…`}
+            placeholder={`Type up to ${W - textAnchor[0]} characters — live on the canvas…`}
             xstyle={styles.textField}
           />
           <Button
@@ -725,10 +734,14 @@ export function AsciiGrid({
 /** Tiny render of a frame for the timeline filmstrip. */
 export function AsciiThumb({
   cells,
+  width,
+  height,
   dot,
   bg,
 }: {
   cells: Cell[];
+  width: number;
+  height: number;
   dot: string;
   bg: string;
 }) {
@@ -738,10 +751,10 @@ export function AsciiThumb({
       style={{ fontSize: 4.5, lineHeight: 1.083, backgroundColor: bg }}
       aria-hidden="true"
     >
-      {Array.from({ length: GRID_H }, (_, r) => (
+      {Array.from({ length: height }, (_, r) => (
         <span key={r} {...stylex.props(styles.row)}>
-          {Array.from({ length: GRID_W }, (_, c) => {
-            const cell = cells[cellIndex(c, r)];
+          {Array.from({ length: width }, (_, c) => {
+            const cell = cells[cellIndex(c, r, width)];
             const empty = cell.ch === ' ';
             return (
               <span
@@ -908,7 +921,7 @@ export default function Canvas({
         Ask the agent… <Kbd keys="⌘K" />
       </Button>
       <div {...stylex.props(styles.status)}>
-        {doc.name} · {GRID_W} × {GRID_H} · frame {doc.active + 1}/{doc.frames.length}
+        {doc.name} · {doc.width} × {doc.height} · frame {doc.active + 1}/{doc.frames.length}
         {onionOn ? ' · onion on' : ''}
         {zoom !== 1 ? ` · ${Math.round(zoom * 100)}%` : ''}
       </div>

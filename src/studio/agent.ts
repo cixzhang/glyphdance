@@ -8,8 +8,6 @@
 // can take, through the same undoable path.
 
 import {
-  GRID_H,
-  GRID_W,
   cellIndex,
   type DocState,
 } from './document.ts';
@@ -73,9 +71,8 @@ interface ModelReply {
 
 const THEME_IDS = ['dracula', 'monokai', 'nord', 'solarized', 'tokyo', 'onedark'];
 
-const COL_RULER = Array.from({ length: GRID_W }, (_, x) =>
-  String(x % 10),
-).join('');
+const colRuler = (width: number): string =>
+  Array.from({ length: width }, (_, x) => String(x % 10)).join('');
 
 /** Compact color legend for a frame: distinct ch/fg pairs actually in use. */
 function frameColors(doc: DocState, index: number): string {
@@ -96,11 +93,11 @@ function frameColors(doc: DocState, index: number): string {
 
 function frameAsText(doc: DocState, index: number): string {
   const frame = doc.frames[index];
-  const rows: string[] = [`    ${COL_RULER}`];
-  for (let y = 0; y < GRID_H; y++) {
+  const rows: string[] = [`    ${colRuler(doc.width)}`];
+  for (let y = 0; y < doc.height; y++) {
     let row = '';
-    for (let x = 0; x < GRID_W; x++) {
-      row += frame.cells[cellIndex(x, y)].ch;
+    for (let x = 0; x < doc.width; x++) {
+      row += frame.cells[cellIndex(x, y, doc.width)].ch;
     }
     rows.push(`${String(y).padStart(2, '0')}  ${row}`);
   }
@@ -115,6 +112,7 @@ export function describeDocument(
   const theme = themeById(doc.themeId)[mode];
   const parts = [
     `name: ${doc.name}`,
+    `canvas: ${doc.width} wide x ${doc.height} tall cells (x is 0..${doc.width - 1}, y is 0..${doc.height - 1})`,
     `frames: ${doc.frames.length}, active: frame ${doc.active + 1} (in actions, use index ${doc.active})`,
     `theme: ${doc.themeId} (background ${theme.bg}; stamp colors: invaders/nature ${theme.invader}, ships/play ${theme.player}, critters/space ${theme.star})`,
     `user-created stamps: ${doc.stamps.length > 0 ? doc.stamps.map((s) => s.id).join(', ') : '(none yet)'}`,
@@ -137,16 +135,17 @@ export function buildSystemPrompt(
 ): string {
   const theme = themeById(doc.themeId)[mode];
   return `You are the glyphdance co-pilot, an assistant inside an ASCII-art animation studio.
-The canvas is a ${GRID_W}-wide x ${GRID_H}-tall grid of cells. Each cell holds one character, a foreground color (fg), and a background color (bg; "" means transparent, the theme background shows through).
+The canvas is a ${doc.width}-wide x ${doc.height}-tall grid of cells. Each cell holds one character, a foreground color (fg), and a background color (bg; "" means transparent, the theme background shows through).
 A document has frames; each frame has cells and a holdMs (how long the frame shows). doc.active is the selected frame index.
 
 You edit ONLY by emitting actions as JSON. Reply with exactly one JSON object and nothing else:
 {"message": "short human-readable summary", "actions": [ ... ]}
 
 Action types (every field required):
-- {"type":"paintCells","frame":0,"cells":[{"x":1,"y":2,"cell":{"ch":"█","fg":"#4ade80","bg":""}}]}
-  ch must be exactly one character. x is 0..${GRID_W - 1}, y is 0..${GRID_H - 1}. Batch ALL painted cells for one frame into ONE paintCells action.
+- {"type":"paintCells","frame":0,"cells":[{"x":1,"y":2,"cell":{"ch":"█","fg":"#4ade80","bg":""}},{"x":2,"y":2,"cell":{"ch":"█","fg":"#4ade80","bg":""}},{"x":1,"y":3,"cell":{"ch":"●","fg":"#f472b6","bg":""}}]}
+  ch must be exactly one character. x is 0..${doc.width - 1}, y is 0..${doc.height - 1}. Batch ALL painted cells for one frame into ONE paintCells action. Notice the fg values differ per element — paint in color, never a whole piece in one fg.
 - {"type":"addFrame","after":1} — insert a blank frame after the given frame index.
+- {"type":"resizeCanvas","width":32,"height":20} — resize the canvas (width 4-64, height 4-48); existing art is re-centered on the new canvas, art that doesn't fit is cropped. Use when the user asks for a bigger/smaller canvas.
 - {"type":"duplicateFrame","index":1}
 - {"type":"deleteFrame","index":1}
 - {"type":"clearFrame","frame":0} — erase every cell in a frame (keeps its holdMs). To hand the user a blank slate, clearFrame every frame; the document must keep at least one frame, so NEVER try to delete them all.
@@ -290,6 +289,8 @@ export function summarizeAction(a: Action): OpLine {
       return { segments: [t(`switched theme to ${a.themeId}`)] };
     case 'rename':
       return { segments: [t(`renamed document to "${a.name}"`)] };
+    case 'resizeCanvas':
+      return { segments: [t(`resized canvas to ${a.width}×${a.height}`)] };
     case 'setActive':
       return { segments: [t('selected '), frameTok(a.index)] };
     case 'addStamp':
@@ -370,6 +371,8 @@ function describeAction(a: Action): string {
       return `setTheme(${a.themeId})`;
     case 'rename':
       return `rename("${a.name}")`;
+    case 'resizeCanvas':
+      return `resizeCanvas(${a.width}x${a.height})`;
     case 'setActive':
       return `setActive(${a.index})`;
     case 'deleteStamp':

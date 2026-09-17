@@ -525,11 +525,11 @@ function ExportPanel({ doc, getActive }: { doc: DocState; getActive: () => numbe
   // of doc.active would export a stale frame.
   const exportFrameText = () => {
     const i = getActive();
-    downloadFrameText(doc.name, i, doc.frames[i]);
+    downloadFrameText(doc.name, i, doc.frames[i], doc.width, doc.height);
   };
   const exportFramePng = () => {
     const i = getActive();
-    downloadFramePng(doc.name, i, doc.frames[i]);
+    downloadFramePng(doc.name, i, doc.frames[i], doc.width, doc.height);
   };
   return (
     <Card padding={3}>
@@ -548,7 +548,7 @@ function ExportPanel({ doc, getActive }: { doc: DocState; getActive: () => numbe
             label="Download all frames as text"
             variant="secondary"
             size="sm"
-            onClick={() => downloadAllFramesText(doc.name, doc.frames)}
+            onClick={() => downloadAllFramesText(doc.name, doc.frames, doc.width, doc.height)}
           >
             TXT · all frames
           </Button>
@@ -564,7 +564,7 @@ function ExportPanel({ doc, getActive }: { doc: DocState; getActive: () => numbe
             label="Download the animation as GIF"
             variant="secondary"
             size="sm"
-            onClick={() => downloadFramesGif(doc.name, doc.frames)}
+            onClick={() => downloadFramesGif(doc.name, doc.frames, doc.width, doc.height)}
           >
             GIF · all frames
           </Button>

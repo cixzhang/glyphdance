@@ -7,9 +7,10 @@ import * as stylex from '@stylexjs/stylex';
 import { Button } from '@astryxdesign/core/Button';
 import { Card } from '@astryxdesign/core/Card';
 import { Heading } from '@astryxdesign/core/Heading';
+import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { Text } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
-import { VStack } from '@astryxdesign/core/Stack';
+import { HStack, VStack } from '@astryxdesign/core/Stack';
 import {
   SYNTAX_THEMES,
   type SyntaxTheme,
@@ -17,7 +18,13 @@ import {
 } from './scene.ts';
 import { seedDocument } from './seed.ts';
 import { clearAutosavedDoc } from './persist.ts';
-import type { DocState } from './document.ts';
+import {
+  MAX_CANVAS_H,
+  MAX_CANVAS_W,
+  MIN_CANVAS_H,
+  MIN_CANVAS_W,
+  type DocState,
+} from './document.ts';
 import type { Action } from './actions.ts';
 
 const styles = stylex.create({
@@ -92,6 +99,72 @@ function ThemeOption({
   );
 }
 
+function CanvasSizeControl({
+  doc,
+  dispatch,
+}: {
+  doc: DocState;
+  dispatch: (a: Action) => void;
+}) {
+  const [w, setW] = useState(doc.width);
+  const [h, setH] = useState(doc.height);
+  // Undo/redo or the agent can resize from outside these inputs.
+  useEffect(() => {
+    setW(doc.width);
+    setH(doc.height);
+  }, [doc.width, doc.height]);
+  const inRange =
+    Number.isInteger(w) &&
+    Number.isInteger(h) &&
+    w >= MIN_CANVAS_W &&
+    w <= MAX_CANVAS_W &&
+    h >= MIN_CANVAS_H &&
+    h <= MAX_CANVAS_H;
+  const changed = w !== doc.width || h !== doc.height;
+  return (
+    <VStack gap={1}>
+      <Text type="label" color="disabled">
+        Canvas size
+      </Text>
+      <HStack gap={2}>
+        <NumberInput
+          label="Width"
+          value={w}
+          onChange={setW}
+          min={MIN_CANVAS_W}
+          max={MAX_CANVAS_W}
+          step={1}
+          isIntegerOnly
+        />
+        <NumberInput
+          label="Height"
+          value={h}
+          onChange={setH}
+          min={MIN_CANVAS_H}
+          max={MAX_CANVAS_H}
+          step={1}
+          isIntegerOnly
+        />
+        <Button
+          label="Resize canvas"
+          variant="secondary"
+          size="sm"
+          isDisabled={!inRange || !changed}
+          onClick={() => {
+            if (inRange && changed)
+              dispatch({ type: 'resizeCanvas', width: w, height: h });
+          }}
+        >
+          Resize
+        </Button>
+      </HStack>
+      <Text type="supporting" color="disabled">
+        Art stays centered; anything outside the new size is cropped. Undoable.
+      </Text>
+    </VStack>
+  );
+}
+
 export default function DocumentPanel({
   doc,
   dispatch,
@@ -123,6 +196,7 @@ export default function DocumentPanel({
             if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
           }}
         />
+        <CanvasSizeControl doc={doc} dispatch={dispatch} />
         <VStack gap={1}>
           <Text type="label" color="disabled">
             Canvas theme

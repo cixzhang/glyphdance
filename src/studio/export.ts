@@ -2,15 +2,15 @@
 // Pure rendering helpers are exported for testing; the download helpers use
 // the DOM and run only in the browser.
 
-import { GRID_H, GRID_W, cellIndex, type Frame } from './document.ts';
+import { cellIndex, type Frame } from './document.ts';
 
 /** The active frame as plain text rows (trailing spaces trimmed per row). */
-export function frameToText(frame: Frame): string {
+export function frameToText(frame: Frame, width: number, height: number): string {
   const rows: string[] = [];
-  for (let y = 0; y < GRID_H; y++) {
+  for (let y = 0; y < height; y++) {
     let row = '';
-    for (let x = 0; x < GRID_W; x++) {
-      row += frame.cells[cellIndex(x, y)].ch;
+    for (let x = 0; x < width; x++) {
+      row += frame.cells[cellIndex(x, y, width)].ch;
     }
     rows.push(row.replace(/\s+$/, ''));
   }
@@ -20,8 +20,12 @@ export function frameToText(frame: Frame): string {
 }
 
 /** The whole document as text: frames separated by a form-feed line. */
-export function docToText(frames: Frame[]): string {
-  return frames.map(frameToText).join('\n\f\n');
+export function docToText(
+  frames: Frame[],
+  width: number,
+  height: number,
+): string {
+  return frames.map((f) => frameToText(f, width, height)).join('\n\f\n');
 }
 
 export interface PngOptions {
@@ -40,12 +44,14 @@ export interface PngOptions {
  */
 export function renderFrameToCanvas(
   frame: Frame,
+  width: number,
+  height: number,
   opts: PngOptions = {},
 ): HTMLCanvasElement {
   const cellPx = opts.cellPx ?? 16;
   const scale = opts.scale ?? 2;
-  const w = GRID_W * cellPx * scale;
-  const h = GRID_H * cellPx * scale;
+  const w = width * cellPx * scale;
+  const h = height * cellPx * scale;
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
@@ -56,9 +62,9 @@ export function renderFrameToCanvas(
   }
   ctx.font = `${cellPx * scale}px "Cozette", "IBM VGA", monospace`;
   ctx.textBaseline = 'top';
-  for (let y = 0; y < GRID_H; y++) {
-    for (let x = 0; x < GRID_W; x++) {
-      const cell = frame.cells[cellIndex(x, y)];
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const cell = frame.cells[cellIndex(x, y, width)];
       const px = x * cellPx * scale;
       const py = y * cellPx * scale;
       if (cell.bg) {
@@ -89,16 +95,23 @@ export function downloadFrameText(
   docName: string,
   frameIndex: number,
   frame: Frame,
+  width: number,
+  height: number,
 ): void {
-  const text = frameToText(frame);
+  const text = frameToText(frame, width, height);
   downloadBlob(
     new Blob([text + '\n'], { type: 'text/plain;charset=utf-8' }),
     `${docName}-f${frameIndex + 1}.txt`,
   );
 }
 
-export function downloadAllFramesText(docName: string, frames: Frame[]): void {
-  const text = docToText(frames);
+export function downloadAllFramesText(
+  docName: string,
+  frames: Frame[],
+  width: number,
+  height: number,
+): void {
+  const text = docToText(frames, width, height);
   downloadBlob(
     new Blob([text + '\n'], { type: 'text/plain;charset=utf-8' }),
     `${docName}-all.txt`,
@@ -109,9 +122,11 @@ export function downloadFramePng(
   docName: string,
   frameIndex: number,
   frame: Frame,
+  width: number,
+  height: number,
   opts: PngOptions = {},
 ): void {
-  const canvas = renderFrameToCanvas(frame, opts);
+  const canvas = renderFrameToCanvas(frame, width, height, opts);
   canvas.toBlob((blob) => {
     if (blob) downloadBlob(blob, `${docName}-f${frameIndex + 1}.png`);
   }, 'image/png');
