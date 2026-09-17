@@ -3,7 +3,7 @@ import * as stylex from '@stylexjs/stylex';
 import { Theme } from '@astryxdesign/core/theme';
 import { Button } from '@astryxdesign/core/Button';
 import { useToast, ToastViewport } from '@astryxdesign/core/Toast';
-import { glyphdanceTheme } from './studio/glyphdance.js';
+import { chromeThemeFor } from './studio/syntax-chrome.ts';
 import TopBar from './studio/TopBar.tsx';
 import ToolRail from './studio/ToolRail.tsx';
 import Canvas from './studio/Canvas.tsx';
@@ -72,7 +72,6 @@ function initialMode(): ThemeMode {
 
 export default function App() {
   const isMobile = useIsMobile();
-  // The studio is a darkroom by default; the switch persists the choice.
   const [mode, setMode] = useState<ThemeMode>(initialMode);
   const toggleMode = useCallback(() => {
     setMode((m) => {
@@ -92,6 +91,14 @@ export default function App() {
   // exists; otherwise we seed the demo scene.
   const [seedDoc] = useState(() => loadAutosavedDoc() ?? seedDocument(initialMode()));
   const { doc, dispatch, undo, redo, canUndo, canRedo } = useDocument(seedDoc);
+
+  // The canvas theme selector re-skins the whole studio: derive the Astryx
+  // theme object from the active syntax swatch so app chrome (backgrounds,
+  // text, borders, accent) marches with the canvas.
+  const chromeTheme = useMemo(
+    () => chromeThemeFor(doc.themeId, mode),
+    [doc.themeId, mode],
+  );
 
   // Autosave: debounce 1.5s so a drag stroke writes once, not per pointer event.
   useEffect(() => {
@@ -277,7 +284,7 @@ export default function App() {
   );
 
   return (
-    <Theme theme={glyphdanceTheme} mode={mode}>
+    <Theme theme={chromeTheme} mode={mode}>
     <ToastViewport position="bottomEnd" inset={{ bottom: isMobile ? 210 : 170 }}>
     <div {...stylex.props(styles.root)}>
       <div {...stylex.props(styles.topbar)}>
