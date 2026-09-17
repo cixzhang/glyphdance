@@ -155,27 +155,12 @@ export default function App() {
     },
     [patchBrush, isMobile],
   );
-  // Canvas view: grid overlay + zoom. Fit mode is the default: the frame
-  // auto-scales to fill the canvas area; any manual zoom switches to the
-  // manual zoom level instead.
+  // Canvas view: grid overlay + zoom.
   const [gridOn, setGridOn] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const [fitMode, setFitMode] = useState(true);
-  const [fitZoom, setFitZoom] = useState(1);
   const toggleGrid = useCallback(() => setGridOn((g) => !g), []);
-  const zoomIn = useCallback(() => {
-    setZoom((z) => Math.min(3, +(((fitMode ? fitZoom : z) + 0.25).toFixed(2))));
-    setFitMode(false);
-  }, [fitMode, fitZoom]);
-  const zoomOut = useCallback(() => {
-    setZoom((z) => Math.max(0.5, +(((fitMode ? fitZoom : z) - 0.25).toFixed(2))));
-    setFitMode(false);
-  }, [fitMode, fitZoom]);
-  const zoomFit = useCallback(() => setFitMode(true), []);
-  const handleFitZoom = useCallback(
-    (z: number) => setFitZoom((f) => (f === z ? f : z)),
-    [],
-  );
+  const zoomIn = useCallback(() => setZoom((z) => Math.min(3, +(z + 0.25).toFixed(2))), []);
+  const zoomOut = useCallback(() => setZoom((z) => Math.max(0.5, +(z - 0.25).toFixed(2))), []);
   const timer = useRef<number | null>(null);
 
   const frameCount = doc.frames.length;
@@ -389,13 +374,9 @@ export default function App() {
           brush={brush}
           gridOn={gridOn}
           zoom={zoom}
-          fitMode={fitMode}
-          fitZoom={fitZoom}
           onToggleGrid={toggleGrid}
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
-          onZoomFit={zoomFit}
-          onFitZoom={handleFitZoom}
           onPaint={onPaint}
           onPick={onPick}
           onPlaceStamp={onPlaceStamp}
