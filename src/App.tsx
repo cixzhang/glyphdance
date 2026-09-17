@@ -10,7 +10,7 @@ import Timeline from './studio/Timeline.tsx';
 import { useIsMobile } from './studio/responsive.ts';
 import { useDocument } from './studio/store.ts';
 import { seedDocument } from './studio/seed.ts';
-import { DEFAULT_BRUSH, type Brush } from './studio/brush.ts';
+import { DEFAULT_BRUSH, type Brush, type ToolId } from './studio/brush.ts';
 import type { Cell } from './studio/document.ts';
 import type { PaintCell } from './studio/actions.ts';
 
@@ -97,6 +97,12 @@ export default function App() {
     (patch: Partial<Brush>) => setBrush((b) => ({ ...b, ...patch })),
     [],
   );
+  // Canvas view: grid overlay + zoom.
+  const [gridOn, setGridOn] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const toggleGrid = useCallback(() => setGridOn((g) => !g), []);
+  const zoomIn = useCallback(() => setZoom((z) => Math.min(3, +(z + 0.25).toFixed(2))), []);
+  const zoomOut = useCallback(() => setZoom((z) => Math.max(0.5, +(z - 0.25).toFixed(2))), []);
   const timer = useRef<number | null>(null);
 
   const frameCount = doc.frames.length;
@@ -133,6 +139,7 @@ export default function App() {
         glyph: cell.ch === ' ' ? b.glyph : cell.ch,
         fg: cell.fg,
         bg: cell.bg,
+        stampId: b.stampId,
       })),
     [],
   );
@@ -196,7 +203,7 @@ export default function App() {
         <ToolRail
           isMobile={isMobile}
           tool={brush.tool}
-          onToolChange={(tool) => patchBrush({ tool })}
+          onToolChange={(tool) => patchBrush({ tool: tool as ToolId })}
           canUndo={canUndo}
           canRedo={canRedo}
           onUndo={undo}
@@ -209,6 +216,11 @@ export default function App() {
           onionOn={onionOn}
           mode={mode}
           brush={brush}
+          gridOn={gridOn}
+          zoom={zoom}
+          onToggleGrid={toggleGrid}
+          onZoomIn={zoomIn}
+          onZoomOut={zoomOut}
           onPaint={onPaint}
           onPick={onPick}
           onOpenAgent={openPanels}

@@ -6,13 +6,12 @@ import { Heading } from '@astryxdesign/core/Heading';
 import { Text } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { Switch } from '@astryxdesign/core/Switch';
-import { Badge } from '@astryxdesign/core/Badge';
 import { VStack } from '@astryxdesign/core/Stack';
 import { BottomSheet } from '@astryxdesign/core/BottomSheet';
 import { MobileNav } from '@astryxdesign/core/MobileNav';
 import { IconCheck, IconSparkles } from './icons';
 import DocumentPanel from './DocumentPanel.tsx';
-import { ET_SPRITES } from './scene.ts';
+import { ET_SPRITES, PLAYER_SPRITES } from './scene.ts';
 import type { DocState } from './document.ts';
 import type { Action } from './actions.ts';
 import type { Brush } from './brush.ts';
@@ -114,6 +113,10 @@ const styles = stylex.create({
     flexDirection: 'column',
     gap: 6,
     ':hover': { borderColor: 'var(--gd-faint)' },
+  },
+  stampActive: {
+    borderColor: 'var(--gd-accent)',
+    boxShadow: '0 0 0 1px var(--gd-accent)',
   },
   stampArt: {
     fontFamily: 'var(--gd-mono)',
@@ -279,50 +282,50 @@ function GlyphColorPanel({
   );
 }
 
-const TREE = '  *\n ***\n*****\n  |';
-const GHOST = ' .--.\n|o o|\n|___|';
-
-function StampsPanel({ mode }: { mode: 'light' | 'dark' }) {
-  const stamps: Array<{
-    name: string;
-    thumb: boolean;
-    art?: string;
-    tag: string;
-    animated: boolean;
-  }> = [
-    { name: 'invader', thumb: true, tag: 'static · soon', animated: false },
-    { name: 'star', thumb: false, art: '✦', tag: 'static · soon', animated: false },
-    { name: 'ghost', thumb: false, art: GHOST, tag: 'animated · soon', animated: true },
-    { name: 'tree', thumb: false, art: TREE, tag: 'static · soon', animated: false },
+function StampsPanel({
+  brush,
+  onBrushChange,
+}: {
+  brush: Brush;
+  onBrushChange: (patch: Partial<Brush>) => void;
+}) {
+  const sections: Array<{ title: string; sprites: typeof ET_SPRITES }> = [
+    { title: 'Invaders', sprites: ET_SPRITES },
+    { title: 'Ships', sprites: PLAYER_SPRITES },
   ];
   return (
     <Card padding={3}>
       <VStack gap={2}>
         <Heading level={4}>Stamps</Heading>
-        <div {...stylex.props(styles.stampGrid)}>
-          {stamps.map((s) => (
-            <button
-              key={s.name}
-              {...stylex.props(styles.stamp)}
-              title={`Stamp: ${s.name} (soon)`}
-            >
-              {s.thumb ? (
-                <pre {...stylex.props(styles.stampArt)} aria-hidden="true">
-                  {ET_SPRITES[0].frames[0].join('\n')}
-                </pre>
-              ) : (
-                <pre {...stylex.props(styles.stampArt)}>{s.art}</pre>
-              )}
-              <Text type="label">{s.name}</Text>
-              <span>
-                <Badge
-                  variant={s.animated ? 'warning' : 'neutral'}
-                  label={s.tag}
-                />
-              </span>
-            </button>
-          ))}
-        </div>
+        {sections.map((sec) => (
+          <VStack key={sec.title} gap={1}>
+            <Text type="label" color="disabled">
+              {sec.title}
+            </Text>
+            <div {...stylex.props(styles.stampGrid)}>
+              {sec.sprites.map((s) => {
+                const selected = brush.tool === 'stamp' && brush.stampId === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    {...stylex.props(styles.stamp, selected && styles.stampActive)}
+                    onClick={() => onBrushChange({ tool: 'stamp', stampId: s.id })}
+                    title={`Stamp: ${s.id} — tap the canvas to place`}
+                    aria-pressed={selected}
+                  >
+                    <pre {...stylex.props(styles.stampArt)} aria-hidden="true">
+                      {s.frames[0].join('\n')}
+                    </pre>
+                    <Text type="label">{s.id}</Text>
+                  </button>
+                );
+              })}
+            </div>
+          </VStack>
+        ))}
+        <Text type="supporting" color="disabled">
+          Pick a stamp, then tap the canvas to place it. Drag to stamp repeatedly.
+        </Text>
       </VStack>
     </Card>
   );
@@ -371,7 +374,7 @@ export default function Inspector({
           <div {...stylex.props(styles.drawerContent)}>
             <DocumentPanel doc={doc} dispatch={dispatch} mode={mode} />
             <GlyphColorPanel brush={brush} onChange={onBrushChange} />
-            <StampsPanel mode={mode} />
+            <StampsPanel brush={brush} onBrushChange={onBrushChange} />
           </div>
         </MobileNav>
         <BottomSheet
@@ -393,7 +396,7 @@ export default function Inspector({
       <AgentPanel open={agentOpen} onToggle={onToggleAgent} isMobile={isMobile} />
       <DocumentPanel doc={doc} dispatch={dispatch} mode={mode} />
       <GlyphColorPanel brush={brush} onChange={onBrushChange} />
-      <StampsPanel mode={mode} />
+      <StampsPanel brush={brush} onBrushChange={onBrushChange} />
     </div>
   );
 }

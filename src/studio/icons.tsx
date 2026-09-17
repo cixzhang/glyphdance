@@ -8,7 +8,9 @@ import {
   Check,
   Clipboard,
   Copy,
+  Download,
   Eraser,
+  Grid3x3,
   Image,
   Layout,
   LetterA,
@@ -25,6 +27,8 @@ import {
   Moon,
   Trash,
   Undo,
+  ZoomIn,
+  ZoomOut,
 } from 'pixelarticons/react';
 
 type IconProps = SVGProps<SVGSVGElement>;
@@ -71,5 +75,9 @@ export const IconPanels = px(Layout);
 export const IconOnion = px(Copy);
 export const IconDuplicate = px(Clipboard);
 export const IconTrash = px(Trash);
+export const IconGrid = px(Grid3x3);
+export const IconZoomIn = px(ZoomIn);
+export const IconZoomOut = px(ZoomOut);
+export const IconDownload = px(Download);
 export const IconSun = px(Sun);
 export const IconMoon = px(Moon);

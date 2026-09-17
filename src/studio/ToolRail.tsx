@@ -60,8 +60,9 @@ const styles = stylex.create({
   },
 });
 
-// Tools that paint today; the rest are honest stubs until their actions land.
-const LIVE_TOOLS = new Set(['brush', 'erase', 'pick']);
+// Every tool paints today except Select, which stays an honest stub until
+// region selection lands.
+const LIVE_TOOLS = new Set(['brush', 'erase', 'fill', 'line', 'text', 'stamp', 'pick']);
 
 const TOOLS = [
   { id: 'select', icon: <IconSelect />, label: 'Select' },
