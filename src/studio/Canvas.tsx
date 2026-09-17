@@ -287,13 +287,19 @@ export function AsciiGrid({
   // Text tool: tap a cell to anchor; keystrokes paint LIVE into the grid.
   // The whole session shares one stroke id → a single undo step.
   // Backspace restores each cell's pre-session content.
+  // textCaret is the insertion index into textValue; arrow keys move it
+  // (and the outlined grid caret follows), typing inserts at it,
+  // Backspace/Delete remove around it, Up/Down nudge the line between rows.
   const [textAnchor, setTextAnchor] = useState<[number, number] | null>(null);
   const [textValue, setTextValue] = useState('');
+  const [textCaret, setTextCaret] = useState(0);
   const textStroke = useRef<string | null>(null);
   const textOrig = useRef(new Map<string, Cell>());
+  const textInputRef = useRef<HTMLInputElement>(null);
   const clearTextSession = useCallback(() => {
     setTextAnchor(null);
     setTextValue('');
+    setTextCaret(0);
     textStroke.current = null;
     textOrig.current = new Map();
   }, []);
@@ -311,10 +317,11 @@ export function AsciiGrid({
   // captured once per cell (first touch wins from the fresh grid), so
   // backspace always restores the pre-session content and the store
   // merges the session into one undo step.
-  const syncTextLive = (v: string) => {
-    const anchor = textAnchor;
+  // setText paints `str` at `anchor` and moves the caret; the native
+  // input cursor is synced to match so the two never disagree.
+  const setText = (anchor: [number, number], v: string, caret: number) => {
     const id = textStroke.current;
-    if (!anchor || !id) return;
+    if (!id) return;
     const [ax, ay] = anchor;
     const str = v.slice(0, GRID_W - ax);
     const restore: PaintCell[] = [];
@@ -335,7 +342,22 @@ export function AsciiGrid({
     if (restore.length > 0 || paint.length > 0) {
       onPaint([...restore, ...paint], id);
     }
+    const c = Math.max(0, Math.min(caret, str.length));
     setTextValue(str);
+    setTextCaret(c);
+    requestAnimationFrame(() => {
+      const el = textInputRef.current;
+      if (el && document.activeElement === el) {
+        try {
+          el.setSelectionRange(c, c);
+        } catch {
+          /* non-text inputs — ignore */
+        }
+      }
+    });
+  };
+  const syncTextLive = (v: string) => {
+    if (textAnchor) setText(textAnchor, v, v.length);
   };
   /** Commit: keep the live paints, dismiss the bar. */
   const commitText = () => clearTextSession();
@@ -510,7 +532,7 @@ export function AsciiGrid({
               // Caret: the next cell the text tool will type into.
               const caret =
                 textAnchor !== null &&
-                textAnchor[0] + textValue.length === c &&
+                textAnchor[0] + textCaret === c &&
                 textAnchor[1] === r;
               const shownCh = preview ? brush.glyph : ghost && ghostCell ? ghostCell.ch : empty ? '·' : cell.ch;
               return (
@@ -553,12 +575,112 @@ export function AsciiGrid({
             isLabelHidden
             hasAutoFocus
             size="sm"
+            ref={textInputRef}
             value={textValue}
             onChange={syncTextLive}
             onEnter={commitText}
+            onPaste={(e) => {
+              const anchor = textAnchor;
+              if (!anchor) return;
+              e.preventDefault();
+              const clip = e.clipboardData?.getData('text') ?? '';
+              if (!clip) return;
+              const el = e.currentTarget as unknown as HTMLInputElement;
+              const pos =
+                typeof el.selectionStart === 'number'
+                  ? el.selectionStart
+                  : textCaret;
+              setText(
+                anchor,
+                textValue.slice(0, pos) + clip + textValue.slice(pos),
+                pos + clip.length,
+              );
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Escape') {
                 cancelText();
+                return;
+              }
+              // Let IME composition and modified keys through untouched.
+              const native = e.nativeEvent as unknown as {
+                isComposing?: boolean;
+              };
+              if (native.isComposing || e.ctrlKey || e.metaKey || e.altKey)
+                return;
+              const anchor = textAnchor;
+              if (!anchor) return;
+              // Read the live native cursor so a mouse/touch reposition
+              // can't desync it from the grid caret.
+              const el = e.currentTarget;
+              const pos =
+                typeof el.selectionStart === 'number'
+                  ? el.selectionStart
+                  : textCaret;
+              const move = (c: number) => {
+                e.preventDefault();
+                setText(anchor, textValue, c);
+              };
+              switch (e.key) {
+                case 'ArrowLeft':
+                  move(Math.max(0, pos - 1));
+                  return;
+                case 'ArrowRight':
+                  move(Math.min(textValue.length, pos + 1));
+                  return;
+                case 'ArrowUp':
+                case 'ArrowDown': {
+                  // Nudge the whole line between rows; caret index stays.
+                  e.preventDefault();
+                  const ny = Math.max(
+                    0,
+                    Math.min(
+                      GRID_H - 1,
+                      anchor[1] + (e.key === 'ArrowUp' ? -1 : 1),
+                    ),
+                  );
+                  if (ny !== anchor[1]) {
+                    const next: [number, number] = [anchor[0], ny];
+                    setTextAnchor(next);
+                    setText(next, textValue, pos);
+                  }
+                  return;
+                }
+                case 'Home':
+                  move(0);
+                  return;
+                case 'End':
+                  move(textValue.length);
+                  return;
+                case 'Backspace':
+                  e.preventDefault();
+                  if (pos > 0) {
+                    setText(
+                      anchor,
+                      textValue.slice(0, pos - 1) + textValue.slice(pos),
+                      pos - 1,
+                    );
+                  }
+                  return;
+                case 'Delete':
+                  e.preventDefault();
+                  if (pos < textValue.length) {
+                    setText(
+                      anchor,
+                      textValue.slice(0, pos) + textValue.slice(pos + 1),
+                      pos,
+                    );
+                  }
+                  return;
+                default:
+                  // Printable character: insert at the caret.
+                  if (e.key.length === 1) {
+                    e.preventDefault();
+                    setText(
+                      anchor,
+                      textValue.slice(0, pos) + e.key + textValue.slice(pos),
+                      pos + 1,
+                    );
+                  }
               }
             }}
             placeholder={`Type up to ${GRID_W - textAnchor[0]} characters — live on the canvas…`}
