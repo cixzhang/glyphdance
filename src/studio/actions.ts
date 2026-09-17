@@ -17,6 +17,7 @@ import {
 } from './document.ts';
 import { SYNTAX_THEMES } from './scene.ts';
 import { builtinStampIds, resolveStamp, stampCellsFor } from './stamps.ts';
+import { isSupportedGlyph } from './glyphs.ts';
 
 export interface PaintCell {
   x: number;
@@ -74,8 +75,14 @@ export function validate(doc: DocState, a: Action): string | null {
       if (a.cells.length === 0) return 'nothing to paint';
       for (const c of a.cells) {
         if (!inBounds(c.x, c.y)) return `cell (${c.x},${c.y}) out of bounds`;
-        if (typeof c.cell.ch !== 'string' || c.cell.ch.length !== 1)
+        if (typeof c.cell.ch !== 'string' || [...c.cell.ch].length !== 1)
           return `cell (${c.x},${c.y}) needs a single character`;
+        const ch = [...c.cell.ch][0];
+        // The canvas font can't draw this — reject it instead of painting
+        // tofu, and point the agent at inventing a stamp from glyphs that
+        // exist.
+        if (!isSupportedGlyph(ch))
+          return `cell (${c.x},${c.y}) uses "${ch}", which the canvas font can't draw — design a custom stamp from supported glyphs with addStamp instead of painting it directly`;
       }
       return null;
     case 'addFrame':
@@ -166,6 +173,10 @@ export function validateStamp(doc: DocState, stamp: CustomStamp): string | null 
       for (const ch of row) {
         if (ch === '\n' || ch === '\r' || ch === '\t')
           return 'stamp rows must not contain whitespace control chars';
+        // A missing glyph would render as an empty box — reject it so the
+        // agent redesigns the stamp out of characters the font can draw.
+        if (!isSupportedGlyph(ch))
+          return `stamp "${stamp.id}" uses "${ch}", which the canvas font can't draw — redesign the stamp using only supported glyphs`;
       }
     }
   }

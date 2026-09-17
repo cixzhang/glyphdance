@@ -20,6 +20,7 @@ import {
   STAMP_CATALOG,
   STAMP_SKILL,
   GLYPH_ADVICE,
+  COLOR_SKILL,
 } from './agent-skills.ts';
 import { themeById } from './scene.ts';
 
@@ -166,6 +167,8 @@ Built-in stamp catalog (placeable art):
 ${STAMP_CATALOG}
 
 ${PIXEL_ART_SKILL}
+
+${COLOR_SKILL}
 
 Rules:
 - Drawing means paintCells on the active frame, or on a frame you just added/duplicated first. Prefer building on the active frame.

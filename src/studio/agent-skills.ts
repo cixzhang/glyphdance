@@ -12,6 +12,7 @@ import {
   PLAY_SPRITES,
   type Sprite,
 } from './scene.ts';
+import { repertoireLine } from './glyphs.ts';
 
 function renderSprite(s: Sprite, kind: string): string {
   const frames = s.frames
@@ -37,6 +38,7 @@ Finding the right stamp — when the user names a thing ("add snowflakes", "put 
 1. SEARCH the built-in catalog below and their stamp list for a match — be generous with plurals and synonyms ("snowflakes"→no match; "kitty"→cat; "ufo"→saucer; "ship"→dart/rocket/dish; "ghost"→ghost).
 2. Match found → placeStamp it. Never re-create a stamp that already exists.
 3. No match → CREATE it with addStamp, designing the art from the glyph advice below, then placeStamp it in the SAME reply so the user sees it immediately.
+   If the user named a specific character, emoji, or symbol that ISN'T in the glyph repertoire (e.g. 🐉, ★, ❅), do NOT emit that character anywhere — it renders as an empty box and the action layer will reject it. Instead invent a custom stamp that evokes it using ONLY supported glyphs (a dragon from █ ▲ ● ~, a star from ✦, a snowflake from ❄), then addStamp + placeStamp it in the SAME reply.
 4. No placement given ("add snowflakes") → don't stall and don't emit empty actions: place 2-4 copies across empty areas of the active frame — on every frame with slight offsets for weather/falling effects — and say what you chose in "message".
 
 To USE a stamp from the catalog, emit a placeStamp action — never hand-draw a stamp's cells:
@@ -56,8 +58,10 @@ Rules:
 /** What the canvas font can actually draw — the agent's ASCII palette. */
 export const GLYPH_ADVICE = `Glyph repertoire — the canvas font draws THESE characters and nothing else.
 Use ONLY these in stamp art and paintCells "ch" values; anything else renders as an empty box:
-█ ▓ ▒ ░ · ● ◆ ✦ ◉ ❄ ♥ ♦ ♣ ♠ ▲ ▼ ◀ ▶ ✚ ♪ ♫ + × * / \\ | - _ ^ ~ = : ; ! ? % $ ( ) [ ] < > o O # @
+${repertoireLine()}
 Watch out: ★ ☆ ❅ ❆ and emoji are NOT in the font — never use them (use ✦ instead of ★, ❄ instead of ❅/❆).
+
+Missing-character rule: when the user asks for a character, emoji, or symbol that isn't in the repertoire above, NEVER emit it — not in stamp art, not in paintCells. The action layer rejects unsupported characters, so emitting one means your edit fails. Instead invent a stamp that suggests what they asked for out of the glyphs you do have: addStamp it, then placeStamp it in the SAME reply. A 1-cell stamp (❄ for ❅, ✦ for ★, ♥ for an emoji heart) is a complete answer — create it, place it, done.
 
 Concept → glyph starter kit (adapt freely; keep new stamps 3-7 cells wide so they read on the 24x14 grid):
 - snowflake: ❄ on its own reads instantly; a larger flake:
@@ -86,6 +90,12 @@ Concept → glyph starter kit (adapt freely; keep new stamps 3-7 cells wide so t
       |
 - music: ♪ ♫   suits: ♥ ♦ ♣ ♠   arrows: ▲ ▼ ◀ ▶
 When the user names one small thing ("a star", "snowflakes"), a 1-cell stamp straight from the repertoire (❄, ✦, ♥…) is a complete answer — create it, place it, done.`;
+
+export const COLOR_SKILL = `Color — use it deliberately, not decoratively.
+- Every paintCells cell carries fg (and optional bg); placeStamp takes fg/bg too. Flat single-color art reads as unfinished — vary fg across elements.
+- The document description above lists the current theme and its stamp colors (invaders/nature, ships/play, critters/space, background). Default to those so new art matches the scene.
+- Silhouette in one color, accents (eyes, highlights, motion trails) in 1-2 contrasting theme colors. bg "" keeps cells transparent so the theme background shows through; set bg only for solid fills or glow effects.
+- setTheme switches the whole palette — use it only when the user asks for a different mood or names a palette, never unprompted.`;
 
 export const PIXEL_ART_SKILL = `Pixel-art technique (24 wide x 14 tall grid)
 - Sketch before you emit: plan the full layout on coordinates first. Keep subjects 5-10 cells wide so they read; the grid is small.

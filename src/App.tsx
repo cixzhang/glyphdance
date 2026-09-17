@@ -275,7 +275,18 @@ export default function App() {
     lastToastedId.current = agentDone.id;
     const dismiss = showToast({
       type: agentDone.error ? 'error' : 'info',
-      body: agentDone.error ? agentDone.summary : `Agent finished: ${agentDone.summary}`,
+      body: (
+        <span
+          style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}
+        >
+          {agentDone.error ? agentDone.summary : `Agent finished: ${agentDone.summary}`}
+        </span>
+      ),
       endContent: (
         <Button
           label="View agent result"
