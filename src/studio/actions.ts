@@ -9,10 +9,12 @@ import {
   cloneFrame,
   inBounds,
   type Cell,
+  type CustomStamp,
   type DocState,
   type Frame,
 } from './document.ts';
 import { SYNTAX_THEMES } from './scene.ts';
+import { builtinStampIds, resolveStamp, stampCellsFor } from './stamps.ts';
 
 export interface PaintCell {
   x: number;
@@ -35,7 +37,26 @@ export type Action =
   /** Selection — applies, but is never recorded for undo. */
   | { type: 'setActive'; index: number }
   /** Whole-document replace (import, demo reset) — clears history. */
-  | { type: 'load'; doc: DocState };
+  | { type: 'load'; doc: DocState }
+  /** Define a reusable stamp in the document's stamp library. */
+  | { type: 'addStamp'; stamp: CustomStamp }
+  /** Remove a user-created stamp (built-ins can't be deleted). */
+  | { type: 'deleteStamp'; id: string }
+  /**
+   * Paint a stamp's art centered on (x, y). The agent's way to *use* stamps
+   * without hand-emitting every cell; fg/bg are explicit so the action
+   * stays theme-independent.
+   */
+  | {
+      type: 'placeStamp';
+      stampId: string;
+      frame: number;
+      x: number;
+      y: number;
+      fg: string;
+      bg: string;
+      stampFrame?: number;
+    };
 
 const frameCount = (doc: DocState): number => doc.frames.length;
 const validFrame = (doc: DocState, i: number): boolean =>
@@ -88,7 +109,51 @@ export function validate(doc: DocState, a: Action): string | null {
     case 'load':
       if (a.doc.frames.length === 0) return 'document needs at least one frame';
       return null;
+    case 'addStamp':
+      return validateStamp(doc, a.stamp);
+    case 'deleteStamp':
+      if (!doc.stamps.some((s) => s.id === a.id)) return `no stamp ${a.id}`;
+      return null;
+    case 'placeStamp': {
+      if (!validFrame(doc, a.frame)) return `no frame ${a.frame}`;
+      if (!inBounds(a.x, a.y)) return `cell (${a.x},${a.y}) out of bounds`;
+      const stamp = resolveStamp(a.stampId, doc.stamps);
+      if (!stamp) return `no stamp ${a.stampId}`;
+      const sf = a.stampFrame ?? 0;
+      if (!Number.isInteger(sf) || sf < 0 || sf >= stamp.frames.length)
+        return `stamp ${a.stampId} has no frame ${sf}`;
+      if (!/^#[0-9a-fA-F]{6}$/.test(a.fg)) return `bad fg ${a.fg}`;
+      if (a.bg !== '' && !/^#[0-9a-fA-F]{6}$/.test(a.bg)) return `bad bg ${a.bg}`;
+      return null;
+    }
   }
+}
+
+/** Shared shape validation for a new custom stamp (used by addStamp). */
+export function validateStamp(doc: DocState, stamp: CustomStamp): string | null {
+  if (typeof stamp !== 'object' || stamp === null) return 'stamp must be an object';
+  if (!/^[a-z0-9-]{1,20}$/.test(stamp.id))
+    return 'stamp id must be 1-20 lowercase letters, digits, or dashes';
+  if (builtinStampIds().includes(stamp.id)) return `stamp id ${stamp.id} is built-in`;
+  if (doc.stamps.some((s) => s.id === stamp.id))
+    return `stamp ${stamp.id} already exists`;
+  if (!/^#[0-9a-fA-F]{6}$/.test(stamp.fg)) return `bad stamp fg ${stamp.fg}`;
+  if (!Array.isArray(stamp.frames) || stamp.frames.length < 1 || stamp.frames.length > 4)
+    return 'stamp needs 1-4 frames';
+  for (const rows of stamp.frames) {
+    if (!Array.isArray(rows) || rows.length < 1 || rows.length > 8)
+      return 'stamp frames need 1-8 rows';
+    for (const row of rows) {
+      if (typeof row !== 'string') return 'stamp rows must be strings';
+      const len = [...row].length;
+      if (len < 1 || len > 12) return 'stamp rows must be 1-12 characters';
+      for (const ch of row) {
+        if (ch === '\n' || ch === '\r' || ch === '\t')
+          return 'stamp rows must not contain whitespace control chars';
+      }
+    }
+  }
+  return null;
 }
 
 export interface Applied {
@@ -196,5 +261,35 @@ export function applyAction(doc: DocState, a: Action): Applied {
       return { doc: { ...doc, active: a.index }, inverse: null };
     case 'load':
       return { doc: a.doc, inverse: null };
+    case 'addStamp': {
+      const next: DocState = { ...doc, stamps: [...doc.stamps, a.stamp] };
+      return { doc: next, inverse: { type: 'deleteStamp', id: a.stamp.id } };
+    }
+    case 'deleteStamp': {
+      const removed = doc.stamps.find((s) => s.id === a.id)!;
+      const next: DocState = {
+        ...doc,
+        stamps: doc.stamps.filter((s) => s.id !== a.id),
+      };
+      return { doc: next, inverse: { type: 'addStamp', stamp: removed } };
+    }
+    case 'placeStamp': {
+      const stamp = resolveStamp(a.stampId, doc.stamps)!;
+      const rows = stamp.frames[a.stampFrame ?? 0];
+      const cells = stampCellsFor(rows, a.x, a.y, a.fg, a.bg);
+      if (cells.length === 0) {
+        // Stamp is all transparent — a legal no-op.
+        const noop: Action = { type: 'paintCells', frame: a.frame, cells: [] };
+        return { doc, inverse: noop };
+      }
+      const before: PaintCell[] = cells.map((c) => ({
+        x: c.x,
+        y: c.y,
+        cell: { ...doc.frames[a.frame].cells[cellIndex(c.x, c.y)] },
+      }));
+      const next = setCells(doc, a.frame, cells);
+      const inverse: Action = { type: 'paintCells', frame: a.frame, cells: before };
+      return { doc: next, inverse };
+    }
   }
 }

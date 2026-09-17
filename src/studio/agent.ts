@@ -15,6 +15,12 @@ import {
 } from './document.ts';
 import { validate, type Action } from './actions.ts';
 import type { AgentSettings } from './agent-settings.ts';
+import {
+  PIXEL_ART_SKILL,
+  STAMP_CATALOG,
+  STAMP_SKILL,
+} from './agent-skills.ts';
+import { themeById } from './scene.ts';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -44,7 +50,11 @@ function frameAsText(doc: DocState, index: number): string {
   return rows.join('\n');
 }
 
-export function buildSystemPrompt(doc: DocState): string {
+export function buildSystemPrompt(
+  doc: DocState,
+  mode: 'light' | 'dark' = 'dark',
+): string {
+  const theme = themeById(doc.themeId)[mode];
   return `You are the glyphdance co-pilot, an assistant inside an ASCII-art animation studio.
 The canvas is a ${GRID_W}-wide x ${GRID_H}-tall grid of cells. Each cell holds one character, a foreground color (fg), and a background color (bg; "" means transparent, the theme background shows through).
 A document has frames; each frame has cells and a holdMs (how long the frame shows). doc.active is the selected frame index.
@@ -63,18 +73,29 @@ Action types (every field required):
 - {"type":"setTheme","themeId":"dracula"} — one of: ${THEME_IDS.join(', ')}
 - {"type":"rename","name":"my-piece"}
 - {"type":"setActive","index":2}
+- {"type":"addStamp","stamp":{"id":"cat","fg":"#ffd75e","frames":[[" /\\_/\\ ","( o.o )"," > ^ < "]]}} — CREATE a reusable stamp the user keeps in their Stamps panel (id: lowercase/digits/dashes, 1-20 chars; frames: 1-4, each 1-8 rows of 1-12 chars; spaces transparent)
+- {"type":"deleteStamp","id":"cat"} — remove a user-created stamp
+- {"type":"placeStamp","stampId":"crab","frame":0,"x":12,"y":7,"fg":"${theme.invader}","bg":""} — paint a stamp CENTERED on x,y (stampFrame picks its art frame, default 0). Use this to USE stamps — never hand-draw a stamp's cells.
+
+${STAMP_SKILL}
+
+Built-in stamp catalog (placeable art):
+${STAMP_CATALOG}
+
+${PIXEL_ART_SKILL}
 
 Rules:
 - Drawing means paintCells on the active frame, or on a frame you just added/duplicated first. Prefer building on the active frame.
 - Coordinates are 0-based with y=0 at the TOP row. Never emit out-of-bounds cells.
 - Keep every "ch" to one character. For empty/erase use ch " " with any colors.
 - If the request is unclear or impossible, emit NO actions and explain briefly in "message".
-- Keep "message" to one or two sentences.
+- Keep "message" to one or two sentences. Only describe what your actions actually did.
 
 Current document:
 name: ${doc.name}
 frames: ${doc.frames.length}, active frame index: ${doc.active}
-theme: ${doc.themeId}
+theme: ${doc.themeId} (background ${theme.bg}; stamp colors: invaders ${theme.invader}, ships ${theme.player})
+user-created stamps: ${doc.stamps.length > 0 ? doc.stamps.map((s) => s.id).join(', ') : '(none yet)'}
 Active frame (y=0 is the top row, x=0 is the left column):
 \`\`\`
 ${frameAsText(doc, doc.active)}
@@ -176,6 +197,14 @@ export function summarizeAction(a: Action): string {
       return `renamed document to "${a.name}"`;
     case 'setActive':
       return `selected frame ${a.index + 1}`;
+    case 'addStamp':
+      return `created stamp "${a.stamp.id}" (${a.stamp.frames.length} frame${
+        a.stamp.frames.length === 1 ? '' : 's'
+      })`;
+    case 'deleteStamp':
+      return `deleted stamp "${a.id}"`;
+    case 'placeStamp':
+      return `placed stamp "${a.stampId}" on frame ${a.frame + 1}`;
     default:
       return 'applied an edit';
   }

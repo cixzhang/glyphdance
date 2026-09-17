@@ -9,6 +9,7 @@ import {
   GRID_W,
   emptyCell,
   type Cell,
+  type CustomStamp,
   type DocState,
   type Frame,
 } from './document.ts';
@@ -25,6 +26,28 @@ function isCell(c: unknown): c is Cell {
     typeof o.fg === 'string' &&
     typeof o.bg === 'string'
   );
+}
+
+function sanitizeStamp(s: unknown): CustomStamp | null {
+  if (typeof s !== 'object' || s === null) return null;
+  const o = s as Record<string, unknown>;
+  if (typeof o.id !== 'string' || !/^[a-z0-9-]{1,20}$/.test(o.id)) return null;
+  if (typeof o.fg !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(o.fg)) return null;
+  if (!Array.isArray(o.frames) || o.frames.length < 1 || o.frames.length > 4)
+    return null;
+  const frames: string[][] = [];
+  for (const f of o.frames) {
+    if (!Array.isArray(f) || f.length < 1 || f.length > 8) return null;
+    const rows: string[] = [];
+    for (const r of f) {
+      if (typeof r !== 'string') return null;
+      const len = [...r].length;
+      if (len < 1 || len > 12) return null;
+      rows.push(r);
+    }
+    frames.push(rows);
+  }
+  return { id: o.id, fg: o.fg, frames };
 }
 
 function sanitizeFrame(f: unknown, index: number): Frame | null {
@@ -61,7 +84,17 @@ export function deserializeDoc(json: string): DocState | null {
         ? o.active
         : 0;
     const themeId = typeof o.themeId === 'string' ? o.themeId : 'dracula';
-    return { name: o.name, frames, active, themeId };
+    const stamps: CustomStamp[] = [];
+    if (Array.isArray(o.stamps)) {
+      const seen = new Set<string>();
+      for (const s of o.stamps) {
+        const ss = sanitizeStamp(s);
+        if (!ss || seen.has(ss.id)) return null;
+        seen.add(ss.id);
+        stamps.push(ss);
+      }
+    }
+    return { name: o.name, frames, active, themeId, stamps };
   } catch {
     return null;
   }
@@ -75,6 +108,7 @@ export function serializeDoc(doc: DocState): string {
     themeId: doc.themeId,
     active: doc.active,
     frames: doc.frames.map((f) => ({ id: f.id, cells: f.cells, holdMs: f.holdMs })),
+    stamps: doc.stamps,
   });
 }
 
@@ -115,6 +149,7 @@ export function blankDoc(name = 'untitled'): DocState {
     name,
     frames: [{ id: 'restored-0', cells, holdMs: 400 }],
     active: 0,
+    stamps: [],
     themeId: 'dracula',
   };
 }

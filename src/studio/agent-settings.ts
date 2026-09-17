@@ -6,7 +6,7 @@
 export const AGENT_SETTINGS_KEY = 'glyphdance.agent.v1';
 
 /** Default model when the user hasn't picked one. */
-export const DEFAULT_MODEL = 'openrouter/auto';
+export const DEFAULT_MODEL = 'deepseek/deepseek-chat';
 
 export interface AgentSettings {
   /** OpenRouter API key (sk-or-...). Empty until the user adds one. */

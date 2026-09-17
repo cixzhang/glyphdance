@@ -22,6 +22,19 @@ export interface Frame {
   cells: Cell[];
 }
 
+/**
+ * A user/agent-created stamp: reusable ASCII art living in the document
+ * (built-in sprites stay in scene.ts). frames[0] is what the stamp tool
+ * places; extra frames are animation variants.
+ */
+export interface CustomStamp {
+  /** Lowercase slug, unique across built-in and custom stamps. */
+  id: string;
+  fg: string;
+  /** Animation frames; each frame is an array of equal-ish character rows. */
+  frames: string[][];
+}
+
 export interface DocState {
   name: string;
   /** Canvas theme id (background + dot grid) — chrome, not cell data. */
@@ -29,6 +42,8 @@ export interface DocState {
   frames: Frame[];
   /** Index of the selected frame. */
   active: number;
+  /** User/agent-created stamps, placeable from the Stamps panel. */
+  stamps: CustomStamp[];
 }
 
 export const cellIndex = (x: number, y: number): number => y * GRID_W + x;

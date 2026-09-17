@@ -162,9 +162,11 @@ const BG = ['#0d0f12', '#1d2126', '#2b3a4a', '#3a2b4a', '#4a2b2b', '#2b4a2f', '#
 function AgentBody({
   doc,
   dispatch,
+  mode,
 }: {
   doc: DocState;
   dispatch: (a: Action) => void;
+  mode: 'light' | 'dark';
 }) {
   const [settings, setSettings] = useState<AgentSettings>(() => loadAgentSettings());
   const [keyDraft, setKeyDraft] = useState(settings.apiKey);
@@ -201,7 +203,7 @@ function AgentBody({
     try {
       const raw = await callOpenRouter(
         settings,
-        buildSystemPrompt(docRef.current),
+        buildSystemPrompt(docRef.current, mode),
         messages,
         prompt,
       );
@@ -347,12 +349,14 @@ function AgentPanel({
   isMobile,
   doc,
   dispatch,
+  mode,
 }: {
   open: boolean;
   onToggle: () => void;
   isMobile: boolean;
   doc: DocState;
   dispatch: (a: Action) => void;
+  mode: 'light' | 'dark';
 }) {
   // Inside the mobile bottom sheet the card is always expanded — the sheet
   // itself is the thing that opens and closes.
@@ -363,7 +367,7 @@ function AgentPanel({
           <Heading level={4}>
             <IconSparkles {...stylex.props(styles.agentName)} /> Agent
           </Heading>
-          <AgentBody doc={doc} dispatch={dispatch} />
+          <AgentBody doc={doc} dispatch={dispatch} mode={mode} />
         </VStack>
       </Card>
     );
@@ -380,7 +384,7 @@ function AgentPanel({
         onOpenChange={onToggle}
         chevronPosition="end"
       >
-        <AgentBody doc={doc} dispatch={dispatch} />
+        <AgentBody doc={doc} dispatch={dispatch} mode={mode} />
       </Collapsible>
     </Card>
   );
@@ -510,9 +514,13 @@ function ExportPanel({ doc }: { doc: DocState }) {
 function StampsPanel({
   brush,
   onBrushChange,
+  doc,
+  dispatch,
 }: {
   brush: Brush;
   onBrushChange: (patch: Partial<Brush>) => void;
+  doc: DocState;
+  dispatch: (a: Action) => void;
 }) {
   const sections: Array<{ title: string; sprites: typeof ET_SPRITES }> = [
     { title: 'Invaders', sprites: ET_SPRITES },
@@ -548,6 +556,74 @@ function StampsPanel({
             </div>
           </VStack>
         ))}
+        <VStack gap={1}>
+          <Text type="label" color="disabled">
+            Yours{doc.stamps.length > 0 ? ` (${doc.stamps.length})` : ''}
+          </Text>
+          {doc.stamps.length === 0 ? (
+            <Text type="supporting" color="disabled">
+              Ask the agent to create a stamp — e.g. "make me a cat stamp".
+            </Text>
+          ) : (
+            <div {...stylex.props(styles.stampGrid)}>
+              {doc.stamps.map((s) => {
+                const selected =
+                  brush.tool === 'stamp' && brush.stampId === s.id;
+                return (
+                  <div
+                    key={s.id}
+                    {...stylex.props(styles.stamp, selected && styles.stampActive)}
+                    style={{ position: 'relative' }}
+                  >
+                    <button
+                      onClick={() =>
+                        onBrushChange({ tool: 'stamp', stampId: s.id })
+                      }
+                      title={`Stamp: ${s.id} — tap the canvas to place`}
+                      aria-pressed={selected}
+                      style={{
+                        all: 'unset',
+                        cursor: 'pointer',
+                        display: 'block',
+                        width: '100%',
+                      }}
+                    >
+                      <pre
+                        {...stylex.props(styles.stampArt)}
+                        aria-hidden="true"
+                        style={{ color: s.fg }}
+                      >
+                        {s.frames[0].join('\n')}
+                      </pre>
+                      <Text type="label">{s.id}</Text>
+                    </button>
+                    <button
+                      onClick={() => dispatch({ type: 'deleteStamp', id: s.id })}
+                      title={`Delete stamp ${s.id}`}
+                      aria-label={`Delete stamp ${s.id}`}
+                      style={{
+                        position: 'absolute',
+                        top: 2,
+                        right: 2,
+                        width: 20,
+                        height: 20,
+                        borderRadius: 10,
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: 12,
+                        lineHeight: 1,
+                        background: 'rgba(0,0,0,0.5)',
+                        color: '#fff',
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </VStack>
         <Text type="supporting" color="disabled">
           Pick a stamp, then tap the canvas to place it. Drag to stamp repeatedly.
         </Text>
@@ -599,7 +675,7 @@ export default function Inspector({
           <div {...stylex.props(styles.drawerContent)}>
             <DocumentPanel doc={doc} dispatch={dispatch} mode={mode} />
             <GlyphColorPanel brush={brush} onChange={onBrushChange} />
-            <StampsPanel brush={brush} onBrushChange={onBrushChange} />
+            <StampsPanel brush={brush} onBrushChange={onBrushChange} doc={doc} dispatch={dispatch} />
             <ExportPanel doc={doc} />
           </div>
         </MobileNav>
@@ -611,7 +687,7 @@ export default function Inspector({
           snapPoints={[0.45]}
         >
           <div {...stylex.props(styles.sheetContent)}>
-            <AgentPanel open={agentOpen} onToggle={onToggleAgent} isMobile={isMobile} doc={doc} dispatch={dispatch} />
+            <AgentPanel open={agentOpen} onToggle={onToggleAgent} isMobile={isMobile} doc={doc} dispatch={dispatch} mode={mode} />
           </div>
         </BottomSheet>
       </>
@@ -619,10 +695,10 @@ export default function Inspector({
   }
   return (
     <div {...stylex.props(styles.col)}>
-      <AgentPanel open={agentOpen} onToggle={onToggleAgent} isMobile={isMobile} doc={doc} dispatch={dispatch} />
+      <AgentPanel open={agentOpen} onToggle={onToggleAgent} isMobile={isMobile} doc={doc} dispatch={dispatch} mode={mode} />
       <DocumentPanel doc={doc} dispatch={dispatch} mode={mode} />
       <GlyphColorPanel brush={brush} onChange={onBrushChange} />
-      <StampsPanel brush={brush} onBrushChange={onBrushChange} />
+      <StampsPanel brush={brush} onBrushChange={onBrushChange} doc={doc} dispatch={dispatch} />
       <ExportPanel doc={doc} />
     </div>
   );

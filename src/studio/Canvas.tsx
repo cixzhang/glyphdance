@@ -11,7 +11,8 @@ import {
   type DocState,
 } from './document.ts';
 import type { PaintCell } from './actions.ts';
-import { themeById, ET_SPRITES, PLAYER_SPRITES, type Sprite } from './scene.ts';
+import { themeById } from './scene.ts';
+import { resolveStamp, stampCellsFor } from './stamps.ts';
 import type { Brush } from './brush.ts';
 
 const styles = stylex.create({
@@ -224,29 +225,14 @@ function floodFill(cells: Cell[], x: number, y: number, brush: Brush): PaintCell
   return out;
 }
 
-const ET_IDS = new Set(ET_SPRITES.map((s) => s.id));
-const ALL_SPRITES: Sprite[] = [...ET_SPRITES, ...PLAYER_SPRITES];
-export function spriteById(id: string | null): Sprite | null {
-  if (!id) return null;
-  return ALL_SPRITES.find((s) => s.id === id) ?? null;
-}
-
 /** Stamp a sprite centered on (ax, ay), painting its real characters. */
-function stampCells(sprite: Sprite, ax: number, ay: number, fg: string): PaintCell[] {
-  const art = sprite.frames[0];
-  const w = Math.max(...art.map((l) => [...l].length));
-  const ox = ax - Math.floor(w / 2);
-  const oy = ay - Math.floor(art.length / 2);
-  const out: PaintCell[] = [];
-  art.forEach((line, r) => {
-    [...line].forEach((ch, c) => {
-      if (ch === ' ') return;
-      const x = ox + c;
-      const y = oy + r;
-      if (inBounds(x, y)) out.push({ x, y, cell: { ch, fg, bg: '' } });
-    });
-  });
-  return out;
+function stampCells(
+  rows: string[],
+  ax: number,
+  ay: number,
+  fg: string,
+): PaintCell[] {
+  return stampCellsFor(rows, ax, ay, fg, '');
 }
 
 /** Full-size character grid for the canvas. Empty cells render the theme's
@@ -323,10 +309,12 @@ export function AsciiGrid({
     const key = `${x},${y}`;
     if (placed.has(key)) return;
     placed.add(key);
-    const sprite = spriteById(brush.stampId);
-    if (!sprite) return;
-    const fg = ET_IDS.has(sprite.id) ? theme.invader : theme.player;
-    const out = stampCells(sprite, x, y, fg);
+    if (!brush.stampId) return;
+    const stamp = resolveStamp(brush.stampId, doc.stamps);
+    if (!stamp) return;
+    const fg =
+      stamp.fg ?? (stamp.kind === 'player' ? theme.player : theme.invader);
+    const out = stampCells(stamp.frames[0], x, y, fg);
     if (out.length > 0) onPaint(out, id);
   };
 
