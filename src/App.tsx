@@ -5,23 +5,8 @@ import ToolRail from './studio/ToolRail.tsx';
 import Canvas from './studio/Canvas.tsx';
 import Inspector from './studio/Inspector.tsx';
 import Timeline from './studio/Timeline.tsx';
+import { useIsMobile } from './studio/responsive.ts';
 import { STUB_FRAMES } from './studio/document.ts';
-
-const MOBILE_QUERY = '(max-width: 760px)';
-
-/** Tracks the single responsive breakpoint used across the studio. */
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia(MOBILE_QUERY).matches,
-  );
-  useEffect(() => {
-    const mq = window.matchMedia(MOBILE_QUERY);
-    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
-  return isMobile;
-}
 
 const styles = stylex.create({
   root: {
@@ -134,7 +119,7 @@ export default function App() {
         />
       </div>
       <div {...stylex.props(styles.rail)}>
-        <ToolRail />
+        <ToolRail isMobile={isMobile} />
       </div>
       <div {...stylex.props(styles.canvas)}>
         <Canvas
@@ -150,7 +135,7 @@ export default function App() {
           agentOpen={agentOpen}
           onToggleAgent={toggleAgent}
           sheetOpen={sheetOpen}
-          onCloseSheet={() => setSheetOpen(false)}
+          onSheetOpenChange={setSheetOpen}
         />
       </div>
       <div {...stylex.props(styles.timeline)}>

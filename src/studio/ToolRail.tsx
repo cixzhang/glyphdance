@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { IconButton } from '@astryxdesign/core/IconButton';
+import { ToggleButton, ToggleButtonGroup } from '@astryxdesign/core/ToggleButton';
 
 const styles = stylex.create({
   rail: {
@@ -29,10 +30,14 @@ const styles = stylex.create({
       scrollbarWidth: 'none',
     },
   },
+  // The group lays out its own buttons; it just must not shrink inside the
+  // scrolling mobile strip. (StyleX needs a non-conditional base property.)
+  group: {
+    flexShrink: 1,
+    '@media (max-width: 760px)': { flexShrink: 0 },
+  },
   tool: {
-    // Base value is the flex default; the media query pins buttons at full
-    // size inside the scrolling strip. (StyleX requires a non-conditional
-    // property alongside conditional ones.)
+    // Keep the undo/redo buttons at full size inside the scrolling strip.
     flexShrink: 1,
     '@media (max-width: 760px)': { flexShrink: 0 },
   },
@@ -59,29 +64,39 @@ const TOOLS = [
   { id: 'pick', icon: '◉', label: 'Eyedropper' },
 ] as const;
 
-// NOTE: IconButton has no selected/pressed state, so the active tool is shown
-// via the primary variant — a workaround worth revisiting (SideNavItem has
-// isSelected but is built for labeled rows, not an icon-only rail).
-export default function ToolRail() {
+// The tool rail is a textbook single-select toolbar: exactly one tool is
+// active, so it maps directly onto ToggleButtonGroup (vertical on desktop,
+// horizontal in the mobile strip). Undo/redo are momentary actions, not
+// toggles, so they stay as plain IconButtons outside the group.
+export default function ToolRail({ isMobile }: { isMobile: boolean }) {
   const [active, setActive] = useState<string>('brush');
   return (
     <div {...stylex.props(styles.rail)} role="toolbar" aria-label="Tools">
-      {TOOLS.map((t) => (
-        <IconButton
-          key={t.id}
-          xstyle={styles.tool}
-          label={t.label}
-          icon={
-            <span {...stylex.props(styles.toolIcon)} aria-hidden="true">
-              {t.icon}
-            </span>
-          }
-          variant={active === t.id ? 'primary' : 'ghost'}
-          size="md"
-          tooltip={`${t.label} (stub — painting arrives in Phase 1)`}
-          onClick={() => setActive(t.id)}
-        />
-      ))}
+      <ToggleButtonGroup
+        label="Tools"
+        type="single"
+        orientation={isMobile ? 'horizontal' : 'vertical'}
+        value={active}
+        onChange={(v) => {
+          if (typeof v === 'string') setActive(v);
+        }}
+        xstyle={styles.group}
+      >
+        {TOOLS.map((t) => (
+          <ToggleButton
+            key={t.id}
+            value={t.id}
+            label={t.label}
+            icon={
+              <span {...stylex.props(styles.toolIcon)} aria-hidden="true">
+                {t.icon}
+              </span>
+            }
+            isIconOnly
+            tooltip={`${t.label} (stub — painting arrives in Phase 1)`}
+          />
+        ))}
+      </ToggleButtonGroup>
       <div {...stylex.props(styles.spacer)} />
       <IconButton
         label="Undo"

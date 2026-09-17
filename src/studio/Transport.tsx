@@ -1,5 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 import { IconButton } from '@astryxdesign/core/IconButton';
+import { ToggleButton } from '@astryxdesign/core/ToggleButton';
 
 const styles = stylex.create({
   row: {
@@ -53,13 +54,17 @@ export default function Transport({
         tooltip="Previous frame"
         onClick={onStepBack}
       />
-      <IconButton
+      {/* Play/pause is persistent binary state — a ToggleButton with an
+          icon swap, not a momentary IconButton. */}
+      <ToggleButton
         label={playing ? 'Pause' : 'Play'}
-        icon={<Glyph>{playing ? '❚❚' : '▶'}</Glyph>}
-        variant="secondary"
+        icon={<Glyph>▶</Glyph>}
+        pressedIcon={<Glyph>❚❚</Glyph>}
+        isPressed={playing}
+        onPressedChange={() => onTogglePlay()}
         size="sm"
         tooltip={playing ? 'Pause' : 'Play'}
-        onClick={onTogglePlay}
+        isIconOnly
       />
       <IconButton
         label="Next frame"

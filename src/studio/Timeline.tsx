@@ -1,5 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 import { IconButton } from '@astryxdesign/core/IconButton';
+import { ToggleButton } from '@astryxdesign/core/ToggleButton';
 import { Text } from '@astryxdesign/core/Text';
 import Transport from './Transport.tsx';
 import { AsciiThumb } from './Canvas.tsx';
@@ -136,17 +137,19 @@ export default function Timeline(props: TimelineProps) {
         />
       </div>
       <div {...stylex.props(styles.cluster)}>
-        <IconButton
+        {/* Onion skinning is persistent binary state — a ToggleButton. */}
+        <ToggleButton
           label="Toggle onion skinning"
           icon={
             <span {...stylex.props(styles.addIcon)} aria-hidden="true">
               ◑
             </span>
           }
-          variant={onionOn ? 'primary' : 'ghost'}
+          isPressed={onionOn}
+          onPressedChange={() => props.onToggleOnion()}
           size="sm"
           tooltip="Toggle onion skinning"
-          onClick={props.onToggleOnion}
+          isIconOnly
         />
         <div {...stylex.props(styles.meta)}>
           <Text type="code" size="3xs" color="disabled">

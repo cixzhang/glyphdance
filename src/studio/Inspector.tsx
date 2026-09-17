@@ -8,6 +8,7 @@ import { TextInput } from '@astryxdesign/core/TextInput';
 import { Switch } from '@astryxdesign/core/Switch';
 import { Badge } from '@astryxdesign/core/Badge';
 import { VStack } from '@astryxdesign/core/Stack';
+import { BottomSheet } from '@astryxdesign/core/BottomSheet';
 import { AsciiThumb } from './Canvas.tsx';
 
 const styles = stylex.create({
@@ -20,81 +21,14 @@ const styles = stylex.create({
     backgroundColor: 'var(--gd-bg1)',
     borderLeft: '1px solid var(--gd-border)',
     overflowY: 'auto',
-    // Mobile: the whole inspector becomes a bottom sheet, parked off-screen
-    // until opened.
-    '@media (max-width: 760px)': {
-      position: 'fixed',
-      left: 0,
-      right: 0,
-      bottom: 0,
-      top: 'auto',
-      height: 'auto',
-      maxHeight: '74dvh',
-      zIndex: 60,
-      padding: '6px 14px calc(14px + env(safe-area-inset-bottom))',
-      borderLeft: 'none',
-      borderTop: '1px solid var(--gd-border)',
-      borderTopLeftRadius: 16,
-      borderTopRightRadius: 16,
-      boxShadow: '0 -16px 48px rgba(0,0,0,0.55)',
-      transform: 'translateY(calc(100% + 16px))',
-      transition: 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)',
-      overscrollBehavior: 'contain',
-    },
   },
-  colOpen: {
-    '@media (max-width: 760px)': { transform: 'translateY(0)' },
-  },
-  // Dimmed backdrop behind the sheet; tapping it closes the sheet.
-  scrim: {
-    display: 'none',
-    '@media (max-width: 760px)': {
-      display: 'block',
-      position: 'fixed',
-      inset: 0,
-      zIndex: 55,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      opacity: 0,
-      pointerEvents: 'none',
-      transition: 'opacity 0.25s ease',
-    },
-  },
-  scrimOpen: {
-    '@media (max-width: 760px)': { opacity: 1, pointerEvents: 'auto' },
-  },
-  // Sheet chrome: grabber + close button. Desktop never sees it.
-  sheetBar: {
-    display: 'none',
-    '@media (max-width: 760px)': {
-      display: 'flex',
-      position: 'relative',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '4px 0 8px',
-      flexShrink: 0,
-    },
-  },
-  grabber: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'var(--gd-border)',
-  },
-  closeBtn: {
-    appearance: 'none',
-    position: 'absolute',
-    right: 0,
-    top: '50%',
-    transform: 'translateY(-50%)',
-    width: 30,
-    height: 30,
-    borderRadius: '50%',
-    border: '1px solid var(--gd-border)',
-    backgroundColor: 'var(--gd-bg2)',
-    color: 'var(--gd-dim)',
-    fontSize: 15,
-    lineHeight: 1,
-    cursor: 'pointer',
+  // The BottomSheet owns the panel, handle, scrim, swipe-to-dismiss, and
+  // focus trap — this just stacks the cards inside its scrollable area.
+  sheetContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
+    paddingBottom: 8,
   },
   agentName: { color: 'var(--gd-accent)', fontWeight: 600 },
   opLog: {
@@ -380,46 +314,38 @@ export default function Inspector({
   agentOpen,
   onToggleAgent,
   sheetOpen,
-  onCloseSheet,
+  onSheetOpenChange,
 }: {
   isMobile: boolean;
   agentOpen: boolean;
   onToggleAgent: () => void;
   sheetOpen: boolean;
-  onCloseSheet: () => void;
+  onSheetOpenChange: (open: boolean) => void;
 }) {
-  return (
-    <>
-      {isMobile && (
-        <div
-          {...stylex.props(styles.scrim, sheetOpen && styles.scrimOpen)}
-          onClick={onCloseSheet}
-          aria-hidden="true"
-        />
-      )}
-      <div
-        {...stylex.props(styles.col, sheetOpen && styles.colOpen)}
-        role={isMobile ? 'dialog' : undefined}
-        aria-label={isMobile ? 'Panels' : undefined}
-        aria-hidden={isMobile && !sheetOpen}
-        inert={isMobile && !sheetOpen}
+  // Mobile: the inspector lives in an Astryx BottomSheet — swipe-to-dismiss,
+  // scrim, Escape, and focus trap come with it.
+  if (isMobile) {
+    return (
+      <BottomSheet
+        isOpen={sheetOpen}
+        onOpenChange={onSheetOpenChange}
+        label="Panels"
+        height="72dvh"
+        snapPoints={[0.45]}
       >
-        {isMobile && (
-          <div {...stylex.props(styles.sheetBar)}>
-            <div {...stylex.props(styles.grabber)} aria-hidden="true" />
-            <button
-              {...stylex.props(styles.closeBtn)}
-              onClick={onCloseSheet}
-              aria-label="Close panels"
-            >
-              ×
-            </button>
-          </div>
-        )}
-        <AgentPanel open={agentOpen} onToggle={onToggleAgent} isMobile={isMobile} />
-        <GlyphColorPanel />
-        <StampsPanel />
-      </div>
-    </>
+        <div {...stylex.props(styles.sheetContent)}>
+          <AgentPanel open={agentOpen} onToggle={onToggleAgent} isMobile={isMobile} />
+          <GlyphColorPanel />
+          <StampsPanel />
+        </div>
+      </BottomSheet>
+    );
+  }
+  return (
+    <div {...stylex.props(styles.col)}>
+      <AgentPanel open={agentOpen} onToggle={onToggleAgent} isMobile={isMobile} />
+      <GlyphColorPanel />
+      <StampsPanel />
+    </div>
   );
 }
