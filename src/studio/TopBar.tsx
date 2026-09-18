@@ -48,7 +48,7 @@ const styles = stylex.create({
   end: {
     display: 'flex',
     alignItems: 'center',
-    gap: 6,
+    gap: 2,
   },
   // Disabled stubs — hidden on mobile to keep the bar compact.
   stubs: {
