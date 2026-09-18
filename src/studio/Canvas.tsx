@@ -246,7 +246,8 @@ function lineCells(x0: number, y0: number, x1: number, y1: number): Array<[numbe
 }
 
 /** Flood fill from (x, y): every connected cell identical to the target
- *  (char + fg + bg) becomes the brush cell. */
+ *  (char + fg + bg) becomes the brush cell. An optional mask rect constrains
+ *  the fill (selection-as-mask). */
 function floodFill(
   cells: Cell[],
   x: number,
@@ -254,8 +255,10 @@ function floodFill(
   brush: Brush,
   w: number,
   h: number,
+  mask?: { x0: number; y0: number; x1: number; y1: number } | null,
 ): PaintCell[] {
   if (!inBounds(x, y, w, h)) return [];
+  if (mask && (x < mask.x0 || x > mask.x1 || y < mask.y0 || y > mask.y1)) return [];
   const target = cells[cellIndex(x, y, w)];
   const repl: Cell = { ch: brush.glyph, fg: brush.fg, bg: brush.bg };
   const same = (c: Cell) =>
@@ -267,6 +270,7 @@ function floodFill(
   while (stack.length > 0) {
     const [cx, cy] = stack.pop()!;
     if (!inBounds(cx, cy, w, h)) continue;
+    if (mask && (cx < mask.x0 || cx > mask.x1 || cy < mask.y0 || cy > mask.y1)) continue;
     const i = cellIndex(cx, cy, w);
     if (seen.has(i) || !same(cells[i])) continue;
     seen.add(i);
@@ -449,11 +453,9 @@ export function AsciiGrid({
         // Live paints stay — switching tools commits the text.
         commitText();
         break;
-      case 'select':
-        setSelAnchor(null);
-        setSelCorner(null);
-        setClipboard(null);
-        break;
+      // Select keeps its selection across tool switches so it can mask
+      // brush/paint/fill. It clears via the selBar X, a new marquee, or a
+      // cut/delete/make-stamp that consumes it.
     }
   };
   const prevToolRef = useRef<ToolId>(brush.tool);
@@ -469,7 +471,10 @@ export function AsciiGrid({
     const out: PaintCell[] = [];
     for (const [x, y] of lineCells(x0, y0, x1, y1)) {
       const key = `${x},${y}`;
-      if (inBounds(x, y, W, H) && !painted.has(key)) {
+      // An active selection masks painting to its rect.
+      const masked = normSel !== null &&
+        (x < normSel.x0 || x > normSel.x1 || y < normSel.y0 || y > normSel.y1);
+      if (inBounds(x, y, W, H) && !painted.has(key) && !masked) {
         painted.add(key);
         const cell: Cell =
           brush.tool === 'erase'
@@ -609,7 +614,7 @@ export function AsciiGrid({
         onPick(cells[cellIndex(x, y, W)]);
         return;
       case 'fill': {
-        const out = floodFill(cells, x, y, brush, W, H);
+        const out = floodFill(cells, x, y, brush, W, H, normSel);
         if (out.length > 0) onPaint(out, nextStroke());
         return;
       }
@@ -940,6 +945,17 @@ export function AsciiGrid({
             label="Discard clipboard"
             size="sm"
             onClick={() => setClipboard(null)}
+          />
+        </div>
+      )}
+      {normSel !== null && brush.tool !== 'select' && (
+        <div {...stylex.props(styles.selBar)}>
+          <Text size="sm">Selection masks paint</Text>
+          <IconButton
+            icon={<IconClose />}
+            label="Clear selection"
+            size="sm"
+            onClick={clearSelection}
           />
         </div>
       )}
