@@ -25,12 +25,13 @@ import type { PaintCell } from './studio/actions.ts';
 
 const styles = stylex.create({
   root: {
-    // Full-viewport app shell. Normal flow with 100dvh: position:fixed
-    // has proven unreliable in iOS PWA (root ends 74pt short of the
-    // visual viewport, leaving a Dracula dead band). The body is
-    // overflow:hidden, so normal flow with dvh fills correctly.
+    // Full-viewport app shell. iOS PWA misreports 100dvh (leaves a dead
+    // band), so use -webkit-fill-available which measures the actual
+    // visible viewport in standalone mode.
     width: '100vw',
-    height: '100dvh',
+    height: '-webkit-fill-available',
+    // DIAGNOSTIC: red to see root bounds (revert after fix)
+    backgroundColor: '#ff0000',
     // In the installed PWA there is no browser chrome: pad for the notch /
     // status bar and the home indicator. Zero elsewhere.
     paddingTop: 'env(safe-area-inset-top)',
