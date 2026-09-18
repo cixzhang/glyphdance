@@ -93,13 +93,13 @@ const styles = stylex.create({
     boxShadow: 'inset 0 0 0 1px var(--gd-accent)',
   },
   // Selection action bar: floats above the canvas bottom.
-  // Single contextual action bar pattern: top-center of the canvas, clear
-  // of the status (top-left), view controls (top-right), transport
+  // Single contextual action bar pattern: below the top row of the canvas
+  // (status left, view controls right), centered. Clear of the transport
   // (bottom-left) and tool badge (bottom-right). Used for selection
   // actions and the text tool alike.
   contextBar: {
     position: 'absolute',
-    top: 12,
+    top: 52,
     left: '50%',
     transform: 'translateX(-50%)',
     display: 'flex',
