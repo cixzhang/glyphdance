@@ -11,7 +11,7 @@ import { IconButton } from '@astryxdesign/core/IconButton';
 import { Token } from '@astryxdesign/core/Token';
 import { BottomSheet } from '@astryxdesign/core/BottomSheet';
 import { MobileNav } from '@astryxdesign/core/MobileNav';
-import { IconCheck, IconSparkles } from './icons';
+import { IconCheck, IconGithub, IconSparkles } from './icons';
 import DocumentPanel from './DocumentPanel.tsx';
 import { downloadFramesGif } from './gif.ts';
 import { canvasFontById } from './canvasFonts.ts';
@@ -79,6 +79,14 @@ const styles = stylex.create({
     color: 'var(--color-text-secondary)',
     textAlign: 'center',
     paddingTop: 8,
+  },
+  versionLink: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 5,
+    color: 'inherit',
+    textDecoration: 'none',
+    ':hover': { color: 'var(--color-text)', textDecoration: 'underline' },
   },
   agentName: { color: 'var(--gd-accent)', fontWeight: 600 },
   opLog: {
@@ -676,7 +684,17 @@ function Inspector({
             <DocumentPanel doc={doc} dispatch={dispatch} mode={mode} />
             <ExportPanel doc={doc} getActive={getActive} />
             <div {...stylex.props(styles.version)}>
-              build {typeof __COMMIT_HASH__ !== 'undefined' ? __COMMIT_HASH__ : 'dev'}
+              <a
+                href="https://github.com/cixzhang/glyphdance"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="glyphdance on GitHub"
+                title="glyphdance on GitHub"
+                {...stylex.props(styles.versionLink)}
+              >
+                <IconGithub />
+                build {typeof __COMMIT_HASH__ !== 'undefined' ? __COMMIT_HASH__ : 'dev'}
+              </a>
             </div>
           </div>
         </MobileNav>
@@ -726,7 +744,17 @@ function Inspector({
       <DocumentPanel doc={doc} dispatch={dispatch} mode={mode} />
       <ExportPanel doc={doc} getActive={getActive} />
       <div {...stylex.props(styles.version)}>
-        build {typeof __COMMIT_HASH__ !== 'undefined' ? __COMMIT_HASH__ : 'dev'}
+        <a
+          href="https://github.com/cixzhang/glyphdance"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="glyphdance on GitHub"
+          title="glyphdance on GitHub"
+          {...stylex.props(styles.versionLink)}
+        >
+          <IconGithub />
+          build {typeof __COMMIT_HASH__ !== 'undefined' ? __COMMIT_HASH__ : 'dev'}
+        </a>
       </div>
     </div>
   );

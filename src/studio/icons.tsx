@@ -13,6 +13,7 @@ import {
   Download,
   Eraser,
   Grid3x3,
+  Github,
   Image,
   Layout,
   LetterA,
@@ -85,46 +86,7 @@ export const IconGrid = px(Grid3x3);
 export const IconZoomIn = px(ZoomIn);
 export const IconZoomOut = px(ZoomOut);
 export const IconDownload = px(Download);
+export const IconGithub = px(Github);
 export const IconSun = px(Sun);
 export const IconMoon = px(Moon);
 
-// Pixelated GitHub mark, drawn on a 16x16 grid to match the pixelarticons
-// aesthetic. Octocat silhouette: pointed ears, round head, tentacle body.
-export function IconGithub(props: IconProps) {
-  // 16x16 pixel map: █ = filled. Based on the GitHub mark silhouette.
-  const rows = [
-    '                ',
-    '  █          █  ',
-    '  ██        ██  ',
-    '  ███      ███  ',
-    '  ████████████  ',
-    '   ██████████   ',
-    '   ██████████   ',
-    '    ████████    ',
-    '    ████████    ',
-    '    ████████    ',
-    '     ██████     ',
-    '   ██████████   ',
-    '  ███ ████ ███  ',
-    '  ██   ██   ██  ',
-    '       ██       ',
-    '                ',
-  ];
-  return (
-    <svg
-      width={12}
-      height={12}
-      viewBox="0 0 16 16"
-      aria-hidden="true"
-      {...props}
-    >
-      {rows.map((row, y) =>
-        [...row].map((ch, x) =>
-          ch === '█' ? (
-            <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill="currentColor" />
-          ) : null,
-        ),
-      )}
-    </svg>
-  );
-}
