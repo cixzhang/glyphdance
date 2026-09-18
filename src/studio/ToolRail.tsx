@@ -121,7 +121,7 @@ export const TOOLS = [  { id: 'select', icon: <IconSelect />, label: 'Select' },
   { id: 'pick', icon: <IconEyedropper />, label: 'Eyedropper' },
 ] as const;
 
-function ColorSwatchIcon({ fg, bg }: { fg: string; bg: string }) {
+export function ColorSwatchIcon({ fg, bg }: { fg: string; bg: string }) {
   const transparent = bg === '';
   return (
     <span {...stylex.props(styles.colorIcon)} aria-hidden="true">

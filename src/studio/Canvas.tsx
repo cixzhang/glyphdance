@@ -7,7 +7,7 @@ import { Text } from '@astryxdesign/core/Text';
 import { Kbd } from '@astryxdesign/core/Kbd';
 import { IconSparkles, IconGrid, IconZoomIn, IconZoomOut, IconPanels, IconClose } from './icons';
 import Transport from './Transport.tsx';
-import { TOOLS } from './ToolRail.tsx';
+import { TOOLS, ColorSwatchIcon } from './ToolRail.tsx';
 import {
   cellIndex,
   inBounds,
@@ -163,24 +163,14 @@ const styles = stylex.create({
     pointerEvents: 'auto',
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'center',
     width: 28,
     height: 28,
     borderRadius: 999,
-    borderWidth: 1,
-    borderStyle: 'solid',
-    borderColor: 'var(--color-border)',
-    overflow: 'hidden',
     cursor: 'pointer',
     padding: 0,
+    borderWidth: 0,
     backgroundColor: 'transparent',
-  },
-  badgeSwatchFg: {
-    width: '50%',
-    height: '100%',
-  },
-  badgeSwatchBg: {
-    width: '50%',
-    height: '100%',
   },
   // Shown only on mobile (inside the floating view bar).
   mobileOnly: {
@@ -1172,17 +1162,7 @@ export default function Canvas({
           onClick={onOpenColors}
           {...stylex.props(styles.badgeSwatch)}
         >
-          <span
-            {...stylex.props(styles.badgeSwatchFg)}
-            style={{ backgroundColor: brush.fg }}
-          />
-          <span
-            {...stylex.props(styles.badgeSwatchBg)}
-            style={{
-              backgroundColor:
-                brush.bg === '' ? 'transparent' : brush.bg,
-            }}
-          />
+          <ColorSwatchIcon fg={brush.fg} bg={brush.bg} />
         </button>
       </div>
       <Button
