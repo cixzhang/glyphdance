@@ -25,13 +25,14 @@ import type { PaintCell } from './studio/actions.ts';
 
 const styles = stylex.create({
   root: {
-    // Full-viewport app shell. iOS PWA misreports 100dvh (leaves a dead
-    // band), so use -webkit-fill-available which measures the actual
-    // visible viewport in standalone mode.
-    width: '100vw',
-    height: '-webkit-fill-available',
-    // DIAGNOSTIC: red to see root bounds (revert after fix)
-    backgroundColor: '#ff0000',
+    // Full-viewport app shell. The html/body/#root chain uses
+    // -webkit-fill-available (see index.css), so height:100% fills the
+    // actual visible viewport in iOS PWA. No position:fixed needed.
+    width: '100%',
+    height: '100%',
+    // Explicit fallback: if the theme variable doesn't resolve (scoped
+    // theme CSS), the root must still be opaque.
+    backgroundColor: 'var(--color-background-body, #1b1b1b)',
     // In the installed PWA there is no browser chrome: pad for the notch /
     // status bar and the home indicator. Zero elsewhere.
     paddingTop: 'env(safe-area-inset-top)',
@@ -41,7 +42,6 @@ const styles = stylex.create({
     gridTemplateRows: '52px minmax(0, 1fr) 148px',
     gridTemplateColumns: '60px minmax(0, 1fr) 300px',
     gridTemplateAreas: '"topbar topbar topbar" "rail canvas inspector" "timeline timeline timeline"',
-    // DIAGNOSTIC: original backgroundColor removed (red is active above)
     color: 'var(--color-text-primary)',
     fontSize: 13,
     // Mobile: single column. The tool rail becomes a bottom strip ("tools")

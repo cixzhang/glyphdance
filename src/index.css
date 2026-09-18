@@ -2,6 +2,9 @@ html,
 body,
 #root {
   height: 100%;
+  /* iOS PWA: -webkit-fill-available measures the actual visible viewport;
+     100% alone leaves a dead band below the app. */
+  height: -webkit-fill-available;
 }
 
 /* Studio color system: generic chrome uses Astryx design tokens
@@ -21,8 +24,7 @@ body,
 body {
   margin: 0;
   font-family: 'Pixelify Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  /* DIAGNOSTIC: green to identify if the blue band is the body */
-  background-color: #00ff00;
+  background-color: var(--color-background-body);
   color: var(--color-text-primary);
   overflow: hidden;
   /* The studio is a full-screen app: no pull-to-refresh or scroll chaining. */
