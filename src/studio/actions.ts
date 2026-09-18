@@ -229,15 +229,13 @@ export function validateStamp(doc: DocState, stamp: CustomStamp): string | null 
   if (doc.stamps.some((s) => s.id === stamp.id))
     return `stamp ${stamp.id} already exists`;
   if (!/^#[0-9a-fA-F]{6}$/.test(stamp.fg)) return `bad stamp fg ${stamp.fg}`;
-  if (!Array.isArray(stamp.frames) || stamp.frames.length < 1 || stamp.frames.length > 4)
-    return 'stamp needs 1-4 frames';
+  if (!Array.isArray(stamp.frames) || stamp.frames.length < 1)
+    return 'stamp needs at least 1 frame';
   for (const rows of stamp.frames) {
-    if (!Array.isArray(rows) || rows.length < 1 || rows.length > 8)
-      return 'stamp frames need 1-8 rows';
+    if (!Array.isArray(rows) || rows.length < 1)
+      return 'stamp frames need at least 1 row';
     for (const row of rows) {
       if (typeof row !== 'string') return 'stamp rows must be strings';
-      const len = [...row].length;
-      if (len < 1 || len > 12) return 'stamp rows must be 1-12 characters';
       for (const ch of row) {
         if (ch === '\n' || ch === '\r' || ch === '\t')
           return 'stamp rows must not contain whitespace control chars';

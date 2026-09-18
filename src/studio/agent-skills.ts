@@ -49,7 +49,7 @@ To CREATE a new stamp the user can keep and reuse from their Stamps panel, emit 
 {"type":"addStamp","stamp":{"id":"cat","fg":"#ffd75e","frames":[[" /\\\\_/\\\\ ","( o.o )"," > ^ < "],[" /\\\\_/\\\\ ","( -.- )"," > ^ < "]]}}
 Rules:
 - id: lowercase letters/digits/dashes, 1-20 chars; must not collide with built-ins or the user's existing stamps.
-- frames: 1-4 frames; each frame 1-8 rows; each row 1-12 characters; spaces are transparent.
+- any number of frames; each frame any number of rows; spaces are transparent.
 - Give 2 frames for anything animated (blink, tail wag, leg shuffle) — change only 2-3 characters between frames, like the crab's legs in the catalog.
 - fg: a hex color that reads on the background color given above.
 - After addStamp, ALWAYS placeStamp it onto the canvas so the user sees it. Creating without placing is incomplete.

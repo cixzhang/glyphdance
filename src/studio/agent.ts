@@ -171,7 +171,7 @@ Action types (every field required):
 - {"type":"setTheme","themeId":"dracula"} — one of: ${THEME_IDS.join(', ')}
 - {"type":"rename","name":"my-piece"}
 - {"type":"setActive","index":2}
-- {"type":"addStamp","stamp":{"id":"cat","fg":"#ffd75e","frames":[[" /\\_/\\ ","( o.o )"," > ^ < "]]}} — CREATE a reusable stamp the user keeps in their Stamps panel (id: lowercase/digits/dashes, 1-20 chars; frames: 1-4, each 1-8 rows of 1-12 chars; spaces transparent)
+- {"type":"addStamp","stamp":{"id":"cat","fg":"#ffd75e","frames":[[" /\\_/\\ ","( o.o )"," > ^ < "]]}} — CREATE a reusable stamp the user keeps in their Stamps panel (id: lowercase/digits/dashes, 1-20 chars; any size, any frame count; spaces transparent)
 - {"type":"deleteStamp","id":"cat"} — remove a user-created stamp
 - {"type":"placeStamp","stampId":"crab","frame":0,"x":12,"y":7,"fg":"${theme.invader}","bg":""} — paint a stamp CENTERED on x,y (stampFrame picks its art frame, default 0). Use this to USE stamps — never hand-draw a stamp's cells.
 

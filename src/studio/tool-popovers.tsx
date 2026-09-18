@@ -28,6 +28,7 @@ import {
   themeById,
 } from './scene.ts';
 import { kindSwatchKey } from './stamps.ts';
+import { useIsMobile } from './responsive.ts';
 import type { DocState } from './document.ts';
 import type { Action } from './actions.ts';
 import type { Brush } from './brush.ts';
@@ -285,18 +286,31 @@ export function ColorPopoverContent({
 function StampArt({ frames, color, bg, fgMap, bgMap }: { frames: string[][]; color: string; bg?: string; fgMap?: string[][][] | null; bgMap?: string[][][] | null }) {
   const animated = frames.length > 1;
   const [tick, setTick] = useState(0);
+  const isMobile = useIsMobile();
   useEffect(() => {
     if (!animated) return;
     const id = setInterval(() => setTick((t) => t + 1), 400);
     return () => clearInterval(id);
   }, [animated]);
   const fi = animated ? tick % frames.length : 0;
+  // Stamps can be any size now — shrink the preview so big art fits the
+  // 120×148 card (art area ≈ 104×100). Glyphs are ~0.6em wide at the
+  // card's base font size; small stamps still render full-size.
+  let maxW = 1;
+  let maxH = 1;
+  for (const f of frames) {
+    maxH = Math.max(maxH, f.length);
+    for (const r of f) maxW = Math.max(maxW, [...r].length);
+  }
+  const base = isMobile ? 8 : 11;
+  const scale = Math.min(1, 104 / (maxW * base * 0.6), 100 / (maxH * base * 1.25));
+  const fontSize = Math.max(4, Math.floor(base * scale));
   // Background hugs the glyphs exactly like placement does: stampCellsFor
   // skips space cells, so bg is only painted behind non-space characters —
   // never the padding around the art.
   return (
     <>
-      <div {...stylex.props(styles.stampArt)} aria-hidden="true" style={{ color }}>
+      <div {...stylex.props(styles.stampArt)} aria-hidden="true" style={{ color, fontSize }}>
         {frames[fi].map((row, r) => (
           <div key={r} style={{ whiteSpace: 'pre', lineHeight: 'inherit' }}>
             {[...row].map((ch, c) => (

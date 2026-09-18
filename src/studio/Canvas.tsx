@@ -20,7 +20,7 @@ import { validate } from './actions.ts';
 import { toSupportedText } from './glyphs.ts';
 import { themeById } from './scene.ts';
 import { canvasFontById } from './canvasFonts.ts';
-import { resolveStamp } from './stamps.ts';
+import { builtinStampIds, resolveStamp } from './stamps.ts';
 import type { Brush, ToolId } from './brush.ts';
 
 const styles = stylex.create({
@@ -569,22 +569,7 @@ export function AsciiGrid({
     if (out.length > 0) onPaint(out, nextStroke());
   }, [clipboard, W, H, onPaint]);
 
-  /** Translate an addStamp validation rejection into something actionable. */
-function friendlyStampError(
-  err: string,
-  sel: { x0: number; y0: number; x1: number; y1: number },
-  allFrames: boolean,
-): string {
-  const w = sel.x1 - sel.x0 + 1;
-  const h = sel.y1 - sel.y0 + 1;
-  if (err === 'stamp needs 1-4 frames' && allFrames)
-    return 'Too many frames — stamps hold at most 4. Try "This frame".';
-  if (err === 'stamp frames need 1-8 rows' || err === 'stamp rows must be 1-12 characters')
-    return `Selection is ${w}×${h} — stamps max out at 12×8. Shrink the selection and try again.`;
-  return err;
-}
-
-/** Build a CustomStamp from the selection; optionally one frame per doc frame. */
+  /** Build a CustomStamp from the selection; optionally one frame per doc frame. */
   const makeStamp = useCallback(() => {
     if (!normSel) return;
     const name = stampName.trim() || 'My stamp';
@@ -620,10 +605,10 @@ function friendlyStampError(
     let fg = brush.fg;
     let best = 0;
     for (const [c, n] of fgCounts) if (n > best) { best = n; fg = c; }
-    // Ensure unique id.
+    // Ensure unique id (built-ins included — "ghost" becomes "ghost-2").
     let uid = id;
     let n = 2;
-    const existing = new Set(doc.stamps.map(s => s.id));
+    const existing = new Set([...doc.stamps.map(s => s.id), ...builtinStampIds()]);
     while (existing.has(uid)) uid = `${id}-${n++}`;
     // Validate up front: the store only logs rejections to the console, so
     // check here and keep the dialog open with the reason instead of
@@ -631,7 +616,7 @@ function friendlyStampError(
     const stamp = { id: uid, fg, frames };
     const err = validate(doc, { type: 'addStamp', stamp });
     if (err) {
-      setStampError(friendlyStampError(err, normSel, stampAllFrames));
+      setStampError(err);
       return;
     }
     onMakeStamp(stamp);
