@@ -19,6 +19,7 @@ import {
   downloadAllFramesText,
   downloadFramePng,
   downloadFrameText,
+  downloadStampJson,
 } from './export.ts';
 import {
   buildRepairPrompt,
@@ -590,10 +591,19 @@ function ExportPanel({ doc, getActive }: { doc: DocState; getActive: () => numbe
           >
             GIF · all frames
           </Button>
+          <Button
+            label="Download frames as stamp JSON"
+            variant="secondary"
+            size="sm"
+            onClick={() => downloadStampJson(doc.name, doc.frames, doc.width, doc.height)}
+          >
+            JSON · stamp
+          </Button>
         </VStack>
         <Text type="supporting" color="disabled">
           PNG renders at 2× for crispness. GIF loops forever at each frame's
-          hold time.
+          hold time. JSON crops to the art's bounding box — send it to the
+          agent to turn frames into a stamp.
         </Text>
       </VStack>
     </Card>

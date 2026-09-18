@@ -28,6 +28,78 @@ export function docToText(
   return frames.map((f) => frameToText(f, width, height)).join('\n\f\n');
 }
 
+/**
+ * Frames as stamp-ready JSON: cropped to the bounding box of non-empty
+ * cells (shared across frames so animation alignment is preserved), with
+ * the dominant fg/bg colors. Paste this to the agent to turn art into a
+ * stamp.
+ */
+export function framesToStampJson(
+  name: string,
+  frames: Frame[],
+  width: number,
+  height: number,
+): string {
+  // Bounding box across all frames.
+  let x0 = width, y0 = height, x1 = -1, y1 = -1;
+  const fgCount = new Map<string, number>();
+  const bgCount = new Map<string, number>();
+  for (const f of frames) {
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const c = f.cells[cellIndex(x, y, width)];
+        if (c.ch === ' ') continue;
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+        fgCount.set(c.fg, (fgCount.get(c.fg) ?? 0) + 1);
+        if (c.bg) bgCount.set(c.bg, (bgCount.get(c.bg) ?? 0) + 1);
+      }
+    }
+  }
+  const top = (m: Map<string, number>): string | null => {
+    let best: string | null = null, n = 0;
+    for (const [k, v] of m) if (v > n) { best = k; n = v; }
+    return best;
+  };
+  const out: {
+    kind: string;
+    name: string;
+    width: number;
+    height: number;
+    frames: string[][];
+    fg: string | null;
+    bg: string | null;
+    palette: { fg: string[]; bg: string[] };
+  } = {
+    kind: 'glyphdance-stamp',
+    name,
+    width: 0,
+    height: 0,
+    frames: [],
+    fg: top(fgCount),
+    bg: top(bgCount),
+    palette: { fg: [...fgCount.keys()], bg: [...bgCount.keys()] },
+  };
+  if (x1 >= x0) {
+    out.width = x1 - x0 + 1;
+    out.height = y1 - y0 + 1;
+    for (const f of frames) {
+      const rows: string[] = [];
+      for (let y = y0; y <= y1; y++) {
+        let row = '';
+        for (let x = x0; x <= x1; x++) {
+          row += f.cells[cellIndex(x, y, width)].ch;
+        }
+        rows.push(row);
+      }
+      out.frames.push(rows);
+    }
+  }
+  return JSON.stringify(out, null, 2);
+}
+
 export interface PngOptions {
   /** CSS px per cell before the device scale multiplier. */
   cellPx?: number;
@@ -117,6 +189,19 @@ export function downloadAllFramesText(
   downloadBlob(
     new Blob([text + '\n'], { type: 'text/plain;charset=utf-8' }),
     `${docName}-all.txt`,
+  );
+}
+
+export function downloadStampJson(
+  docName: string,
+  frames: Frame[],
+  width: number,
+  height: number,
+): void {
+  const json = framesToStampJson(docName, frames, width, height);
+  downloadBlob(
+    new Blob([json + '\n'], { type: 'application/json;charset=utf-8' }),
+    `${docName}-stamp.json`,
   );
 }
 
