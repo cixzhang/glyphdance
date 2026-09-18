@@ -18,7 +18,7 @@ import {
   type ThemeSwatch,
 } from './scene.ts';
 import { CANVAS_FONTS, type CanvasFont } from './canvasFonts.ts';
-import { seedDocument } from './seed.ts';
+import { seedDocument, blankDocument } from './seed.ts';
 import { clearAutosavedDoc } from './persist.ts';
 import {
   MAX_CANVAS_H,
@@ -321,6 +321,17 @@ export default function DocumentPanel({
           }}
         >
           Reset to demo scene
+        </Button>
+        <Button
+          label="Clear all frames"
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            clearAutosavedDoc();
+            dispatch({ type: 'load', doc: blankDocument() });
+          }}
+        >
+          Clear all frames
         </Button>
       </VStack>
     </Card>

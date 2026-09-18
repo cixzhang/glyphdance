@@ -81,3 +81,17 @@ export function seedDocument(mode: 'light' | 'dark'): DocState {
 
   return { name: DOC_NAME, themeId: 'dracula', fontId: 'cozette', width: GRID_W, height: GRID_H, frames, active: 0, stamps: [] };
 }
+
+/** A fresh blank document: one empty frame, default dimensions. */
+export function blankDocument(): DocState {
+  return {
+    name: DOC_NAME,
+    themeId: 'dracula',
+    fontId: 'cozette',
+    width: GRID_W,
+    height: GRID_H,
+    frames: [blankFrame(400)],
+    active: 0,
+    stamps: [],
+  };
+}
