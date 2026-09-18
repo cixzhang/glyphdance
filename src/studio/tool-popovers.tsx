@@ -336,40 +336,14 @@ export function StampPopoverContent({
         animate — one tap paints the loop across your frames from here to the
         end. Drag to stamp repeatedly.
       </Text>
-      {sections.map((sec) => (
-        <VStack key={sec.title} gap={1} role="group" aria-label={`${sec.title} stamps`}>
-          <Text type="label" color="disabled">
-            {sec.title}
-          </Text>
-          <div {...stylex.props(styles.stampGrid)}>
-            {sec.sprites.map((s) => {
-              const selected = brush.tool === 'stamp' && brush.stampId === s.id;
-              return (
-                <SelectableCard
-                  key={s.id}
-                  label={`Stamp: ${s.id}${s.frames.length > 1 ? `, ${s.frames.length}-frame animated loop` : ''}`}
-                  isSelected={selected}
-                  onChange={(isSelected) => {
-                    if (isSelected) onBrushChange({ tool: 'stamp', stampId: s.id });
-                  }}
-                >
-                  <StampArt frames={s.frames} color={sec.color} />
-                  <span {...stylex.props(styles.stampName)}>
-                    <Text type="label">{s.id}</Text>
-                  </span>
-                </SelectableCard>
-              );
-            })}
-          </div>
-        </VStack>
-      ))}
       <VStack gap={1}>
         <Text type="label" color="disabled">
           Yours{doc.stamps.length > 0 ? ` (${doc.stamps.length})` : ''}
         </Text>
         {doc.stamps.length === 0 ? (
           <Text type="supporting" color="disabled">
-            Ask the agent to create a stamp — e.g. "make me a cat stamp".
+            No custom stamps yet. Ask the agent to make you one — e.g. "make
+            me a cat stamp" — and it'll appear here.
           </Text>
         ) : (
           <div {...stylex.props(styles.stampGrid)}>
@@ -404,6 +378,33 @@ export function StampPopoverContent({
           </div>
         )}
       </VStack>
+      {sections.map((sec) => (
+        <VStack key={sec.title} gap={1} role="group" aria-label={`${sec.title} stamps`}>
+          <Text type="label" color="disabled">
+            {sec.title}
+          </Text>
+          <div {...stylex.props(styles.stampGrid)}>
+            {sec.sprites.map((s) => {
+              const selected = brush.tool === 'stamp' && brush.stampId === s.id;
+              return (
+                <SelectableCard
+                  key={s.id}
+                  label={`Stamp: ${s.id}${s.frames.length > 1 ? `, ${s.frames.length}-frame animated loop` : ''}`}
+                  isSelected={selected}
+                  onChange={(isSelected) => {
+                    if (isSelected) onBrushChange({ tool: 'stamp', stampId: s.id });
+                  }}
+                >
+                  <StampArt frames={s.frames} color={sec.color} />
+                  <span {...stylex.props(styles.stampName)}>
+                    <Text type="label">{s.id}</Text>
+                  </span>
+                </SelectableCard>
+              );
+            })}
+          </div>
+        </VStack>
+      ))}
     </div>
   );
 }
