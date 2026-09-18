@@ -90,7 +90,7 @@ const styles = stylex.create({
   fab: {
     position: 'absolute',
     top: 10,
-    right: 10,
+    right: 54,
     display: 'flex',
     gap: 4,
     backgroundColor: 'var(--gd-float)',
@@ -102,10 +102,11 @@ const styles = stylex.create({
   },
   // Mobile only: playback floats top-left so the timeline strip can give
   // the frame filmstrip the full width.
+  // Mobile only: playback floats bottom-left (swapped with status).
   transportFab: {
     position: 'absolute',
-    top: 10,
-    left: 10,
+    bottom: 12,
+    left: 14,
     display: 'flex',
     gap: 4,
     backgroundColor: 'var(--gd-float)',
@@ -133,10 +134,15 @@ const styles = stylex.create({
     pointerEvents: 'none',
     '@media (min-width: 761px)': { display: 'none' },
   },
-  // Shown only on mobile (inside the floating view bar).
-  mobileOnly: {
+  // Mobile only: the control-panels toggle floats top-right as its own
+  // flat button over the canvas, outside the view-controls card.
+  panelsToggle: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 2,
     display: 'none',
-    '@media (max-width: 760px)': { display: 'contents' },
+    '@media (max-width: 760px)': { display: 'block' },
   },
   textBar: {
     position: 'absolute',
@@ -171,8 +177,8 @@ const styles = stylex.create({
   },
   status: {
     position: 'absolute',
-    left: 14,
-    bottom: 12,
+    left: 10,
+    top: 10,
     fontFamily: 'var(--font-family-code)',
     fontSize: 11,
     color: 'var(--color-text-secondary)',
@@ -878,18 +884,17 @@ export default function Canvas({
           isDisabled={zoom >= 3}
           onClick={onZoomIn}
         />
-        {/* Mobile: the control-panels entry lives here, right of the view
-            controls, instead of crowding the top bar. */}
-        <span {...stylex.props(styles.mobileOnly)}>
-          <IconButton
-            label="Control panels"
-            icon={<IconPanels />}
-            variant="ghost"
-            size="sm"
-            tooltip="Open the control panels"
-            onClick={onOpenControls}
-          />
-        </span>
+      </div>
+      {/* Mobile: control-panels toggle as its own flat button over the canvas. */}
+      <div {...stylex.props(styles.panelsToggle)}>
+        <IconButton
+          label="Control panels"
+          icon={<IconPanels />}
+          variant="ghost"
+          size="sm"
+          tooltip="Open the control panels"
+          onClick={onOpenControls}
+        />
       </div>
       {/* Mobile: playback floats top-left of the canvas. */}
       <div
@@ -923,7 +928,7 @@ export default function Canvas({
         Ask the agent… <Kbd keys="⌘K" />
       </Button>
       <div {...stylex.props(styles.status)}>
-        {doc.name} · {doc.width} × {doc.height} · frame {doc.active + 1}/{doc.frames.length}
+        {doc.width} × {doc.height} · frame {doc.active + 1}/{doc.frames.length}
         {onionOn ? ' · onion on' : ''}
         {zoom !== 1 ? ` · ${Math.round(zoom * 100)}%` : ''}
       </div>
