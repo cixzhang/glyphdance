@@ -145,10 +145,9 @@ export function renderFrameToCanvas(
   const cellPx = opts.cellPx ?? 16;
   const scale = opts.scale ?? 2;
   // Match the display's cell aspect ratio. The canvas uses 1ch × 1.35em
-  // tiles; the browser's ch unit renders wider than the font's nominal
-  // advance, so we use a calibrated width factor (tuned against the
-  // on-screen canvas, not the font metrics alone).
-  const cw = cellPx * 0.6 * scale;
+  // tiles; measured from the rendered grid, the browser's ch unit for
+  // Cozette is ~0.95em (not the nominal 0.5em advance).
+  const cw = cellPx * 0.95 * scale;
   const ch = cellPx * 1.35 * scale;
   const w = Math.round(width * cw);
   const h = Math.round(height * ch);
