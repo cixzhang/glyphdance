@@ -42,6 +42,7 @@ const styles = stylex.create({
     gap: 10,
     // Bottom sheets need breathing room at the edges.
     paddingInline: 16,
+    paddingTop: 8,
     // The stamp library is long: cap the popover and scroll inside it.
     maxHeight: 'min(70dvh, 520px)',
     overflowY: 'auto',
@@ -52,12 +53,7 @@ const styles = stylex.create({
     gap: 4,
     minWidth: 264,
   },
-  // ToggleButton restyle for the glyph grid: the character itself is the
-  // content, in the code font.
-  glyphToggle: {
-    fontFamily: 'var(--font-family-code)',
-    fontSize: 14,
-  },
+  // The glyph character inside the toggle button, in the code font.
   glyphChar: {
     fontFamily: 'var(--font-family-code)',
     fontSize: 14,
@@ -159,15 +155,14 @@ export function GlyphPopoverContent({
       key={g.ch}
       label={`Glyph ${g.name}`}
       tooltip={g.name}
+      icon={<span {...stylex.props(styles.glyphChar)}>{g.ch}</span>}
       isIconOnly
       size="sm"
       isPressed={brush.glyph === g.ch}
       onPressedChange={(pressed) => {
         if (pressed) onChange({ glyph: g.ch });
       }}
-      xstyle={styles.glyphToggle}
     >
-      <span {...stylex.props(styles.glyphChar)}>{g.ch}</span>
     </ToggleButton>
   );
 
