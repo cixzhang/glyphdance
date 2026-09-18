@@ -57,7 +57,7 @@ export function renderFrameToCanvas(
   canvas.height = h;
   const ctx = canvas.getContext('2d')!;
   if (!opts.transparent) {
-    ctx.fillStyle = opts.pageBg ?? '#0d0f12';
+    ctx.fillStyle = opts.pageBg ?? '#1b1b1b';
     ctx.fillRect(0, 0, w, h);
   }
   ctx.font = `${cellPx * scale}px "Cozette", "IBM VGA", monospace`;
