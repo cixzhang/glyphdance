@@ -335,20 +335,6 @@ function ToolRail({
           </Popover>
         </>
       )}
-      {/* Select is an honest stub until region selection lands. It's a plain
-          IconButton (not a ToggleButton): Astryx renders isDisabled as
-          aria-disabled when a tooltip is present, and a ToggleButton's
-          optimistic pressed state still flips on mouse click in that mode.
-          With no onClick at all, this is a true no-op. */}
-      <IconButton
-        label="Select"
-        icon={<IconSelect />}
-        variant="ghost"
-        size="md"
-        tooltip="Select — soon"
-        isDisabled
-        xstyle={styles.tool}
-      />
       <div {...stylex.props(styles.spacer)} />
       <IconButton
         label="Undo"
