@@ -16,6 +16,7 @@ import {
   type DocState,
 } from './document.ts';
 import type { PaintCell } from './actions.ts';
+import { validate } from './actions.ts';
 import { toSupportedText } from './glyphs.ts';
 import { themeById } from './scene.ts';
 import { canvasFontById } from './canvasFonts.ts';
@@ -113,6 +114,13 @@ const styles = stylex.create({
     borderColor: 'var(--color-border)',
     zIndex: 3,
     maxWidth: 'calc(100% - 20px)',
+  },
+  // Inline validation error inside the make-stamp dialog.
+  stampError: {
+    fontSize: 11,
+    lineHeight: 1.3,
+    color: 'var(--color-error)',
+    maxWidth: 220,
   },
   // All view controls flat over the canvas — no toolbar card.
   fab: {
@@ -346,6 +354,7 @@ export function AsciiGrid({
   const [stampDialog, setStampDialog] = useState(false);
   const [stampName, setStampName] = useState('');
   const [stampAllFrames, setStampAllFrames] = useState(false);
+  const [stampError, setStampError] = useState<string | null>(null);
   const normSel = selAnchor && selCorner ? {
     x0: Math.min(selAnchor[0], selCorner[0]),
     y0: Math.min(selAnchor[1], selCorner[1]),
@@ -560,7 +569,22 @@ export function AsciiGrid({
     if (out.length > 0) onPaint(out, nextStroke());
   }, [clipboard, W, H, onPaint]);
 
-  /** Build a CustomStamp from the selection; optionally one frame per doc frame. */
+  /** Translate an addStamp validation rejection into something actionable. */
+function friendlyStampError(
+  err: string,
+  sel: { x0: number; y0: number; x1: number; y1: number },
+  allFrames: boolean,
+): string {
+  const w = sel.x1 - sel.x0 + 1;
+  const h = sel.y1 - sel.y0 + 1;
+  if (err === 'stamp needs 1-4 frames' && allFrames)
+    return 'Too many frames — stamps hold at most 4. Try "This frame".';
+  if (err === 'stamp frames need 1-8 rows' || err === 'stamp rows must be 1-12 characters')
+    return `Selection is ${w}×${h} — stamps max out at 12×8. Shrink the selection and try again.`;
+  return err;
+}
+
+/** Build a CustomStamp from the selection; optionally one frame per doc frame. */
   const makeStamp = useCallback(() => {
     if (!normSel) return;
     const name = stampName.trim() || 'My stamp';
@@ -588,7 +612,10 @@ export function AsciiGrid({
       const trimmed = rows.map(r => r.slice(trimLeft).replace(/\s+$/, ''));
       if (trimmed.some(r => r.trim() !== '')) frames.push(trimmed);
     }
-    if (frames.length === 0) return;
+    if (frames.length === 0) {
+      setStampError('The selection is empty — nothing to make a stamp from.');
+      return;
+    }
     // Most-used fg wins; fall back to the brush fg.
     let fg = brush.fg;
     let best = 0;
@@ -598,9 +625,19 @@ export function AsciiGrid({
     let n = 2;
     const existing = new Set(doc.stamps.map(s => s.id));
     while (existing.has(uid)) uid = `${id}-${n++}`;
-    onMakeStamp({ id: uid, fg, frames });
+    // Validate up front: the store only logs rejections to the console, so
+    // check here and keep the dialog open with the reason instead of
+    // silently swallowing the stamp.
+    const stamp = { id: uid, fg, frames };
+    const err = validate(doc, { type: 'addStamp', stamp });
+    if (err) {
+      setStampError(friendlyStampError(err, normSel, stampAllFrames));
+      return;
+    }
+    onMakeStamp(stamp);
     setStampDialog(false);
     setStampName('');
+    setStampError(null);
     clearSelection();
   }, [normSel, stampName, stampAllFrames, doc, frame, W, brush.fg, onMakeStamp, clearSelection]);
 
@@ -922,7 +959,7 @@ export function AsciiGrid({
           <Button size="sm" label="Cut" onClick={cutSelection}>Cut</Button>
           <Button size="sm" label="Copy" onClick={copySelection}>Copy</Button>
           <Button size="sm" label="Delete" onClick={deleteSelection}>Delete</Button>
-          <Button size="sm" label="Make stamp" onClick={() => setStampDialog(true)}>Make stamp</Button>
+          <Button size="sm" label="Make stamp" onClick={() => { setStampError(null); setStampDialog(true); }}>Make stamp</Button>
           <IconButton
             icon={<IconClose />}
             label="Clear selection"
@@ -956,6 +993,11 @@ export function AsciiGrid({
             size="sm"
             onClick={() => setStampDialog(false)}
           />
+          {stampError && (
+            <span {...stylex.props(styles.stampError)} role="alert">
+              {stampError}
+            </span>
+          )}
         </div>
       )}
       {clipboard !== null && normSel === null && brush.tool === 'select' && (
