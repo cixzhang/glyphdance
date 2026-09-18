@@ -285,6 +285,39 @@ export const ITEM_SPRITES: Sprite[] = [
 // NATURE — line art + density shading.
 export const NATURE_SPRITES: Sprite[] = [
 {
+    id: 'snowflake',
+    name: 'Snowflake',
+    frames: [[
+      '  ❄  ',
+      ' ❄❄❄ ',
+      '❄❄❄❄❄',
+      ' ❄❄❄ ',
+      '  ❄  ',
+    ]],
+    fg: '#e8f4ff',
+  },
+  {
+    id: 'snowfall',
+    name: 'Snowfall',
+    frames: [
+      [
+        '❄     ',
+        '   ❄  ',
+        '     ❄',
+        '  ❄   ',
+        '    ❄ ',
+      ],
+      [
+        '    ❄ ',
+        '❄     ',
+        '   ❄  ',
+        '     ❄',
+        '  ❄   ',
+      ],
+    ],
+    fg: '#e8f4ff',
+  },
+{
     id: 'bloom',
     name: 'Bloom',
     frames: [
