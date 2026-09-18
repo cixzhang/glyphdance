@@ -430,7 +430,9 @@ export function AsciiGrid({
         const cell: Cell =
           brush.tool === 'erase'
             ? { ch: ' ', fg: brush.fg, bg: '' }
-            : { ch: brush.glyph, fg: brush.fg, bg: brush.bg };
+            : brush.tool === 'paint'
+              ? { ...cells[cellIndex(x, y, W)], fg: brush.fg, bg: brush.bg }
+              : { ch: brush.glyph, fg: brush.fg, bg: brush.bg };
         out.push({ x, y, cell });
       }
     }
@@ -482,7 +484,7 @@ export function AsciiGrid({
       case 'select':
         return;
       default: {
-        // brush + erase: freehand.
+        // brush + erase + paint: freehand.
         const id = nextStroke();
         const painted = new Set<string>();
         strokeRef.current = { id, painted, last: [x, y] };
@@ -499,7 +501,7 @@ export function AsciiGrid({
       if (inBounds(x, y, W, H)) placeStamp(x, y, s.id, s.painted);
       return;
     }
-    if (brush.tool === 'brush' || brush.tool === 'erase') {
+    if (brush.tool === 'brush' || brush.tool === 'erase' || brush.tool === 'paint') {
       paintFreehand(s.last[0], s.last[1], x, y, s.id, s.painted);
       s.last = [x, y];
     }

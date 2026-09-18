@@ -9,6 +9,7 @@ import {
   IconEraser,
   IconEyedropper,
   IconFill,
+  IconPaint,
   IconRedo,
   IconSelect,
   IconStamp,
@@ -103,16 +104,17 @@ const styles = stylex.create({
 
 // Every tool paints today except Select, which stays an honest stub until
 // region selection lands.
-const LIVE_TOOLS = new Set(['brush', 'erase', 'fill', 'text', 'stamp', 'pick']);
+const LIVE_TOOLS = new Set(['brush', 'paint', 'erase', 'fill', 'text', 'stamp', 'pick']);
 
 // Shared with the canvas: the mobile tool badge shows the active tool's
 // icon + label, so this list is the single source of truth. Order is the
-// toolbar order: text, brush, stamp, eraser, fill, eyedropper, then the
-// Colors button (rendered separately, right after the group).
+// toolbar order: brush, stamp, text, paint, eraser, fill, eyedropper, then
+// the Colors button (rendered separately, right after the group).
 export const TOOLS = [  { id: 'select', icon: <IconSelect />, label: 'Select' },
-  { id: 'text', icon: <IconText />, label: 'Text' },
   { id: 'brush', icon: <IconBrush />, label: 'Brush' },
   { id: 'stamp', icon: <IconStamp />, label: 'Stamp' },
+  { id: 'text', icon: <IconText />, label: 'Text' },
+  { id: 'paint', icon: <IconPaint />, label: 'Paint' },
   { id: 'erase', icon: <IconEraser />, label: 'Eraser' },
   { id: 'fill', icon: <IconFill />, label: 'Fill' },
   { id: 'pick', icon: <IconEyedropper />, label: 'Eyedropper' },
@@ -189,6 +191,7 @@ function ToolRail({
       // back out via the toolbar.)
       if (brush.tool === 'brush') setOpen(open === 'glyph' ? null : 'glyph');
       else if (brush.tool === 'stamp') setOpen(open === 'stamp' ? null : 'stamp');
+      else if (brush.tool === 'paint') setOpen(open === 'color' ? null : 'color');
       return;
     }
     onBrushChange({ tool: v as ToolId });
@@ -197,6 +200,7 @@ function ToolRail({
     // second tap (the open menu's light-dismiss eats the first click).
     if (v === 'brush') setOpen('glyph');
     else if (v === 'stamp') setOpen('stamp');
+    else if (v === 'paint') setOpen('color');
     else setOpen(null);
   };
 

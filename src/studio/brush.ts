@@ -3,6 +3,7 @@
 export type ToolId =
   | 'select'
   | 'brush'
+  | 'paint'
   | 'erase'
   | 'fill'
   | 'text'
