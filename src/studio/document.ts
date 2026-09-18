@@ -45,6 +45,8 @@ export interface DocState {
   name: string;
   /** Canvas theme id (background + dot grid) — chrome, not cell data. */
   themeId: string;
+  /** Canvas font id — display preference, like themeId. */
+  fontId: string;
   /** Canvas size in cells. Frames' cells arrays are always width*height. */
   width: number;
   height: number;

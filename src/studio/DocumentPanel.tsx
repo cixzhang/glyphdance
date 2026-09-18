@@ -17,6 +17,7 @@ import {
   type SyntaxTheme,
   type ThemeSwatch,
 } from './scene.ts';
+import { CANVAS_FONTS, type CanvasFont } from './canvasFonts.ts';
 import { seedDocument } from './seed.ts';
 import { clearAutosavedDoc } from './persist.ts';
 import {
@@ -96,6 +97,33 @@ function ThemeOption({
       </span>
       <Text type="label" size="3xs" color={selected ? 'accent' : 'secondary'}>
         {theme.name}
+      </Text>
+    </button>
+  );
+}
+
+function FontOption({
+  font,
+  selected,
+  onSelect,
+}: {
+  font: CanvasFont;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      {...stylex.props(styles.theme, selected && styles.themeActive)}
+      onClick={onSelect}
+      title={font.name}
+      aria-pressed={selected}
+    >
+      {/* Font name rendered in the font itself — WYSIWYG. */}
+      <span style={{ fontFamily: font.family, fontSize: 18 }} aria-hidden="true">
+        Ag
+      </span>
+      <Text type="label" size="3xs" color={selected ? 'accent' : 'secondary'}>
+        {font.name}
       </Text>
     </button>
   );
@@ -259,6 +287,21 @@ export default function DocumentPanel({
                 swatch={t[mode]}
                 selected={doc.themeId === t.id}
                 onSelect={() => dispatch({ type: 'setTheme', themeId: t.id })}
+              />
+            ))}
+          </div>
+        </VStack>
+        <VStack gap={1}>
+          <Text type="label" color="disabled">
+            Canvas font
+          </Text>
+          <div {...stylex.props(styles.optionRow)} role="group" aria-label="Canvas font">
+            {CANVAS_FONTS.map((f) => (
+              <FontOption
+                key={f.id}
+                font={f}
+                selected={doc.fontId === f.id}
+                onSelect={() => dispatch({ type: 'setFont', fontId: f.id })}
               />
             ))}
           </div>

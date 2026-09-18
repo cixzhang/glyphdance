@@ -110,6 +110,7 @@ export function deserializeDoc(json: string): DocState | null {
         ? o.active
         : 0;
     const themeId = typeof o.themeId === 'string' ? o.themeId : 'dracula';
+    const fontId = typeof o.fontId === 'string' ? o.fontId : 'cozette';
     const stamps: CustomStamp[] = [];
     if (Array.isArray(o.stamps)) {
       const seen = new Set<string>();
@@ -120,7 +121,7 @@ export function deserializeDoc(json: string): DocState | null {
         stamps.push(ss);
       }
     }
-    return { name: o.name, frames, active, themeId, stamps, width, height };
+    return { name: o.name, frames, active, themeId, fontId, stamps, width, height };
   } catch {
     return null;
   }
@@ -181,5 +182,6 @@ export function blankDoc(name = 'untitled'): DocState {
     active: 0,
     stamps: [],
     themeId: 'dracula',
+    fontId: 'cozette',
   };
 }

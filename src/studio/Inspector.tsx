@@ -14,6 +14,7 @@ import { MobileNav } from '@astryxdesign/core/MobileNav';
 import { IconCheck, IconSparkles } from './icons';
 import DocumentPanel from './DocumentPanel.tsx';
 import { downloadFramesGif } from './gif.ts';
+import { canvasFontById } from './canvasFonts.ts';
 import {
   downloadAllFramesText,
   downloadFramePng,
@@ -536,7 +537,9 @@ function ExportPanel({ doc, getActive }: { doc: DocState; getActive: () => numbe
   };
   const exportFramePng = () => {
     const i = getActive();
-    downloadFramePng(doc.name, i, doc.frames[i], doc.width, doc.height);
+    downloadFramePng(doc.name, i, doc.frames[i], doc.width, doc.height, {
+      fontFamily: canvasFontById(doc.fontId).family,
+    });
   };
   return (
     <Card padding={3}>
@@ -571,7 +574,11 @@ function ExportPanel({ doc, getActive }: { doc: DocState; getActive: () => numbe
             label="Download the animation as GIF"
             variant="secondary"
             size="sm"
-            onClick={() => downloadFramesGif(doc.name, doc.frames, doc.width, doc.height)}
+            onClick={() =>
+              downloadFramesGif(doc.name, doc.frames, doc.width, doc.height, {
+                fontFamily: canvasFontById(doc.fontId).family,
+              })
+            }
           >
             GIF · all frames
           </Button>

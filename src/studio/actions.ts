@@ -19,6 +19,7 @@ import {
   type Frame,
 } from './document.ts';
 import { SYNTAX_THEMES } from './scene.ts';
+import { CANVAS_FONTS } from './canvasFonts.ts';
 import { builtinStampIds, resolveStamp, stampCellsFor } from './stamps.ts';
 import { isSupportedGlyph } from './glyphs.ts';
 
@@ -41,6 +42,7 @@ export type Action =
   | { type: 'moveFrame'; from: number; to: number }
   | { type: 'setHold'; index: number; holdMs: number }
   | { type: 'setTheme'; themeId: string }
+  | { type: 'setFont'; fontId: string }
   | { type: 'rename'; name: string }
   /**
    * Resize the canvas. Existing art is re-centered by default (dx/dy
@@ -132,6 +134,10 @@ export function validate(doc: DocState, a: Action): string | null {
     case 'setTheme':
       if (!SYNTAX_THEMES.some((t) => t.id === a.themeId))
         return `unknown theme ${a.themeId}`;
+      return null;
+    case 'setFont':
+      if (!CANVAS_FONTS.some((f) => f.id === a.fontId))
+        return `unknown font ${a.fontId}`;
       return null;
     case 'resizeCanvas': {
       for (const [label, v] of [
@@ -354,6 +360,8 @@ export function applyAction(doc: DocState, a: Action): Applied {
     }
     case 'setTheme':
       return { doc: { ...doc, themeId: a.themeId }, inverse: { type: 'setTheme', themeId: doc.themeId } };
+    case 'setFont':
+      return { doc: { ...doc, fontId: a.fontId }, inverse: { type: 'setFont', fontId: doc.fontId } };
     case 'rename':
       return { doc: { ...doc, name: a.name }, inverse: { type: 'rename', name: doc.name } };
     case 'setActive':

@@ -36,6 +36,8 @@ export interface PngOptions {
   /** Page background when no cell bg and not transparent. */
   pageBg?: string;
   transparent?: boolean;
+  /** CSS font-family for glyphs — must match the canvas display font. */
+  fontFamily?: string;
 }
 
 /**
@@ -60,7 +62,7 @@ export function renderFrameToCanvas(
     ctx.fillStyle = opts.pageBg ?? '#1b1b1b';
     ctx.fillRect(0, 0, w, h);
   }
-  ctx.font = `${cellPx * scale}px "Cozette", "IBM VGA", monospace`;
+  ctx.font = `${cellPx * scale}px ${opts.fontFamily ?? '"Cozette", "IBM VGA", monospace'}`;
   ctx.textBaseline = 'top';
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {

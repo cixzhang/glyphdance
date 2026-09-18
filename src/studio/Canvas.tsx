@@ -17,6 +17,7 @@ import {
 import type { PaintCell } from './actions.ts';
 import { toSupportedText } from './glyphs.ts';
 import { themeById } from './scene.ts';
+import { canvasFontById } from './canvasFonts.ts';
 import { resolveStamp, kindSwatchKey } from './stamps.ts';
 import type { Brush, ToolId } from './brush.ts';
 
@@ -45,7 +46,7 @@ const styles = stylex.create({
     margin: 0,
   },
   grid: {
-    fontFamily: 'var(--font-family-code)',
+    fontFamily: 'var(--gd-font, var(--font-family-code))',
     // Cell size comes from --gd-cell (responsive), zoom multiplies it.
     // AsciiThumb overrides fontSize inline, so thumbnails are unaffected.
     '--gd-cell': 'clamp(10px, 1.9vw, 22px)',
@@ -65,39 +66,34 @@ const styles = stylex.create({
     },
   },
   // Cell grid lines drawn as a background: each tile is exactly one cell
-  // (0.5em wide — Cozette's advance, 1em tall), so the lines fall between
-  // characters. Using em instead of ch: ch is unreliable when the font
-  // hasn't loaded yet or falls back.
+  // (advanceEm wide — per-font, 1em tall), so the lines fall between
+  // characters.
   gridLines: {
     backgroundImage:
       'linear-gradient(to bottom, var(--gd-gridline) 1px, transparent 1px),' +
       'linear-gradient(to right, var(--gd-gridline) 1px, transparent 1px)',
-    backgroundSize: '0.5em 1em',
+    backgroundSize: 'var(--gd-advance, 0.5em) 1em',
   },
   row: { display: 'block', height: '1em' },
-  // Each cell is an inline-block tile exactly 0.5em × 1em — the same tile
+  // Each cell is an inline-block tile exactly advanceEm × 1em — the same tile
   // the grid-lines background and rows use — so painted backgrounds tile
   // seamlessly: no vertical gaps between rows, fills connect.
   cell: {
     display: 'inline-block',
-    width: '0.5em',
+    width: 'var(--gd-advance, 0.5em)',
     height: '1em',
     lineHeight: '1',
     textAlign: 'center',
     verticalAlign: 'top',
     overflow: 'hidden',
   },
+  // All view controls flat over the canvas — no toolbar card.
   fab: {
     position: 'absolute',
     top: 10,
-    right: 54,
+    right: 10,
     display: 'flex',
-    gap: 4,
-    backgroundColor: 'var(--gd-float)',
-    border: '1px solid var(--color-border)',
-    borderRadius: 8,
-    padding: 4,
-    backdropFilter: 'blur(6px)',
+    gap: 2,
     zIndex: 2,
   },
   // Mobile only: playback floats top-left so the timeline strip can give
@@ -134,15 +130,10 @@ const styles = stylex.create({
     pointerEvents: 'none',
     '@media (min-width: 761px)': { display: 'none' },
   },
-  // Mobile only: the control-panels toggle floats top-right as its own
-  // flat button over the canvas, outside the view-controls card.
-  panelsToggle: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    zIndex: 2,
+  // Shown only on mobile (inside the floating view bar).
+  mobileOnly: {
     display: 'none',
-    '@media (max-width: 760px)': { display: 'block' },
+    '@media (max-width: 760px)': { display: 'contents' },
   },
   textBar: {
     position: 'absolute',
@@ -833,6 +824,7 @@ export default function Canvas({
   onOpenControls,
 }: CanvasProps) {
   const theme = themeById(doc.themeId)[mode];
+  const canvasFont = canvasFontById(doc.fontId);
   const activeTool = TOOLS.find((t) => t.id === brush.tool) ?? TOOLS[1];
   return (
     <div
@@ -841,6 +833,8 @@ export default function Canvas({
         backgroundColor: theme.bg,
         backgroundImage: mode === 'dark' ? VIGNETTE_DARK : VIGNETTE_LIGHT,
         '--gd-gridline': mode === 'dark' ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.08)',
+        '--gd-font': canvasFont.family,
+        '--gd-advance': `${canvasFont.advanceEm}em`,
       } as CSSProperties}
     >
       <AsciiGrid
@@ -884,17 +878,17 @@ export default function Canvas({
           isDisabled={zoom >= 3}
           onClick={onZoomIn}
         />
-      </div>
-      {/* Mobile: control-panels toggle as its own flat button over the canvas. */}
-      <div {...stylex.props(styles.panelsToggle)}>
-        <IconButton
-          label="Control panels"
-          icon={<IconPanels />}
-          variant="ghost"
-          size="sm"
-          tooltip="Open the control panels"
-          onClick={onOpenControls}
-        />
+        {/* Mobile: control-panels toggle, flat with the rest. */}
+        <span {...stylex.props(styles.mobileOnly)}>
+          <IconButton
+            label="Control panels"
+            icon={<IconPanels />}
+            variant="ghost"
+            size="sm"
+            tooltip="Open the control panels"
+            onClick={onOpenControls}
+          />
+        </span>
       </div>
       {/* Mobile: playback floats top-left of the canvas. */}
       <div

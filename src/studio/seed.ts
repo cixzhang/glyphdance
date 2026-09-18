@@ -79,5 +79,5 @@ export function seedDocument(mode: 'light' | 'dark'): DocState {
     frames.push(frame);
   }
 
-  return { name: DOC_NAME, themeId: 'dracula', width: GRID_W, height: GRID_H, frames, active: 0, stamps: [] };
+  return { name: DOC_NAME, themeId: 'dracula', fontId: 'cozette', width: GRID_W, height: GRID_H, frames, active: 0, stamps: [] };
 }
