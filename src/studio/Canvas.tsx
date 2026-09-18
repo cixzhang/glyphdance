@@ -12,6 +12,7 @@ import {
   cellIndex,
   inBounds,
   type Cell,
+  type CustomStamp,
   type DocState,
 } from './document.ts';
 import type { PaintCell } from './actions.ts';
@@ -288,6 +289,7 @@ export function AsciiGrid({
   onPaint,
   onPick,
   onPlaceStamp,
+  onMakeStamp,
   playing,
   onTogglePlay,
 }: {
@@ -302,6 +304,8 @@ export function AsciiGrid({
   onPick: (cell: Cell) => void;
   /** Stamp tap: the App spreads the stamp's frames across document frames. */
   onPlaceStamp: (stampId: string, x: number, y: number, fg: string) => void;
+  /** Create a custom stamp from canvas art. */
+  onMakeStamp: (stamp: CustomStamp) => void;
   /** Pausing playback when a text session anchors (typing while frames
    *  advance strands keystrokes across frames). */
   playing: boolean;
@@ -341,6 +345,10 @@ export function AsciiGrid({
   const [selAnchor, setSelAnchor] = useState<[number, number] | null>(null);
   const [selCorner, setSelCorner] = useState<[number, number] | null>(null);
   const [clipboard, setClipboard] = useState<{ w: number; h: number; cells: Cell[] } | null>(null);
+  // Make-stamp dialog state.
+  const [stampDialog, setStampDialog] = useState(false);
+  const [stampName, setStampName] = useState('');
+  const [stampAllFrames, setStampAllFrames] = useState(false);
   const normSel = selAnchor && selCorner ? {
     x0: Math.min(selAnchor[0], selCorner[0]),
     y0: Math.min(selAnchor[1], selCorner[1]),
@@ -549,6 +557,50 @@ export function AsciiGrid({
     }
     if (out.length > 0) onPaint(out, nextStroke());
   }, [clipboard, W, H, onPaint]);
+
+  /** Build a CustomStamp from the selection; optionally one frame per doc frame. */
+  const makeStamp = useCallback(() => {
+    if (!normSel) return;
+    const name = stampName.trim() || 'My stamp';
+    const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'stamp';
+    // Capture one art frame per document frame (or just the active frame).
+    const frameIdxs = stampAllFrames ? doc.frames.map((_, i) => i) : [frame];
+    const frames: string[][] = [];
+    let fgCounts = new Map<string, number>();
+    for (const fi of frameIdxs) {
+      const fcells = doc.frames[fi].cells;
+      const rows: string[] = [];
+      for (let y = normSel.y0; y <= normSel.y1; y++) {
+        let row = '';
+        for (let x = normSel.x0; x <= normSel.x1; x++) {
+          const cell = fcells[cellIndex(x, y, W)];
+          row += cell.ch;
+          if (cell.ch !== ' ') fgCounts.set(cell.fg, (fgCounts.get(cell.fg) ?? 0) + 1);
+        }
+        rows.push(row);
+      }
+      // Trim empty trailing rows/cols for a tight stamp.
+      while (rows.length > 0 && rows[rows.length - 1].trim() === '') rows.pop();
+      let trimLeft = 0;
+      while (rows.length > 0 && rows.every(r => r[trimLeft] === ' ' || r[trimLeft] === undefined)) trimLeft++;
+      const trimmed = rows.map(r => r.slice(trimLeft).replace(/\s+$/, ''));
+      if (trimmed.some(r => r.trim() !== '')) frames.push(trimmed);
+    }
+    if (frames.length === 0) return;
+    // Most-used fg wins; fall back to the brush fg.
+    let fg = brush.fg;
+    let best = 0;
+    for (const [c, n] of fgCounts) if (n > best) { best = n; fg = c; }
+    // Ensure unique id.
+    let uid = id;
+    let n = 2;
+    const existing = new Set(doc.stamps.map(s => s.id));
+    while (existing.has(uid)) uid = `${id}-${n++}`;
+    onMakeStamp({ id: uid, fg, frames });
+    setStampDialog(false);
+    setStampName('');
+    clearSelection();
+  }, [normSel, stampName, stampAllFrames, doc, frame, W, brush.fg, onMakeStamp, clearSelection]);
 
   const beginStroke = (x: number, y: number) => {
     if (!inBounds(x, y, W, H)) return;
@@ -839,16 +891,44 @@ export function AsciiGrid({
           />
         </div>
       )}
-      {normSel !== null && brush.tool === 'select' && (
+      {normSel !== null && brush.tool === 'select' && !stampDialog && (
         <div {...stylex.props(styles.selBar)}>
           <Button size="sm" label="Cut" onClick={cutSelection}>Cut</Button>
           <Button size="sm" label="Copy" onClick={copySelection}>Copy</Button>
           <Button size="sm" label="Delete" onClick={deleteSelection}>Delete</Button>
+          <Button size="sm" label="Make stamp" onClick={() => setStampDialog(true)}>Make stamp</Button>
           <IconButton
             icon={<IconClose />}
             label="Clear selection"
             size="sm"
             onClick={clearSelection}
+          />
+        </div>
+      )}
+      {stampDialog && normSel !== null && (
+        <div {...stylex.props(styles.selBar)}>
+          <TextInput
+            label="Stamp name"
+            isLabelHidden
+            size="sm"
+            placeholder="Stamp name"
+            value={stampName}
+            onChange={setStampName}
+            onEnter={makeStamp}
+          />
+          <Button
+            size="sm"
+            label={stampAllFrames ? 'All frames' : 'This frame'}
+            onClick={() => setStampAllFrames(v => !v)}
+          >
+            {stampAllFrames ? 'All frames' : 'This frame'}
+          </Button>
+          <Button size="sm" label="Create stamp" onClick={makeStamp}>Create</Button>
+          <IconButton
+            icon={<IconClose />}
+            label="Cancel"
+            size="sm"
+            onClick={() => setStampDialog(false)}
           />
         </div>
       )}
@@ -926,6 +1006,8 @@ interface CanvasProps {
   onPick: (cell: Cell) => void;
   /** Stamp tap: the App spreads the stamp's frames across document frames. */
   onPlaceStamp: (stampId: string, x: number, y: number, fg: string) => void;
+  /** Create a custom stamp from canvas art. */
+  onMakeStamp: (stamp: CustomStamp) => void;
   onOpenAgent: () => void;
   /** Mobile only: the playback transport floats top-left of the canvas. */
   playing: boolean;
@@ -951,6 +1033,7 @@ export default function Canvas({
   onPaint,
   onPick,
   onPlaceStamp,
+  onMakeStamp,
   onOpenAgent,
   playing,
   onJumpStart,
@@ -985,6 +1068,7 @@ export default function Canvas({
         onPaint={onPaint}
         onPick={onPick}
         onPlaceStamp={onPlaceStamp}
+        onMakeStamp={onMakeStamp}
         playing={playing}
         onTogglePlay={onTogglePlay}
       />

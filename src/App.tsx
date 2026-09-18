@@ -20,7 +20,7 @@ import {
 } from './studio/persist.ts';
 import { DEFAULT_BRUSH, type Brush, type ToolId } from './studio/brush.ts';
 import { resolveStamp } from './studio/stamps.ts';
-import type { Cell } from './studio/document.ts';
+import type { Cell, CustomStamp } from './studio/document.ts';
 import type { PaintCell } from './studio/actions.ts';
 
 const styles = stylex.create({
@@ -220,6 +220,10 @@ export default function App() {
   // frame to the end, cycling — so a ghost wobbles through the whole
   // timeline instead of sitting static on one frame. Each frame's paint
   // stays its own undo step, via the validated placeStamp action.
+  const onMakeStamp = useCallback(
+    (stamp: CustomStamp) => dispatch({ type: 'addStamp', stamp }),
+    [dispatch],
+  );
   const onPlaceStamp = useCallback(
     (stampId: string, x: number, y: number, fg: string) => {
       const stamp = resolveStamp(stampId, doc.stamps);
@@ -436,6 +440,7 @@ export default function App() {
           onPaint={onPaint}
           onPick={onPick}
           onPlaceStamp={onPlaceStamp}
+          onMakeStamp={onMakeStamp}
           onOpenAgent={openPanels}
           playing={playing}
           onJumpStart={jumpStart}
