@@ -93,12 +93,17 @@ const styles = stylex.create({
     boxShadow: 'inset 0 0 0 1px var(--gd-accent)',
   },
   // Selection action bar: floats above the canvas bottom.
-  selBar: {
+  // Single contextual action bar pattern: top-center of the canvas, clear
+  // of the status (top-left), view controls (top-right), transport
+  // (bottom-left) and tool badge (bottom-right). Used for selection
+  // actions and the text tool alike.
+  contextBar: {
     position: 'absolute',
-    bottom: 12,
+    top: 12,
     left: '50%',
     transform: 'translateX(-50%)',
     display: 'flex',
+    alignItems: 'center',
     gap: 6,
     padding: 6,
     borderRadius: 12,
@@ -107,6 +112,7 @@ const styles = stylex.create({
     borderStyle: 'solid',
     borderColor: 'var(--color-border)',
     zIndex: 3,
+    maxWidth: 'calc(100% - 20px)',
   },
   // All view controls flat over the canvas — no toolbar card.
   fab: {
@@ -180,21 +186,6 @@ const styles = stylex.create({
   mobileOnly: {
     display: 'none',
     '@media (max-width: 760px)': { display: 'contents' },
-  },
-  textBar: {
-    position: 'absolute',
-    bottom: 44,
-    left: '50%',
-    transform: 'translateX(-50%)',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'var(--gd-float)',
-    border: '1px solid var(--gd-accent)',
-    borderRadius: 8,
-    padding: 8,
-    zIndex: 2,
-    backdropFilter: 'blur(6px)',
   },
   textField: {
     width: 170,
@@ -766,7 +757,7 @@ export function AsciiGrid({
         ))}
       </pre>
       {textAnchor !== null && (
-        <div {...stylex.props(styles.textBar)}>
+        <div {...stylex.props(styles.contextBar)}>
           <TextInput
             label="Text to place on the canvas"
             isLabelHidden
@@ -922,7 +913,7 @@ export function AsciiGrid({
         </div>
       )}
       {normSel !== null && brush.tool === 'select' && !stampDialog && (
-        <div {...stylex.props(styles.selBar)}>
+        <div {...stylex.props(styles.contextBar)}>
           <Button size="sm" label="Cut" onClick={cutSelection}>Cut</Button>
           <Button size="sm" label="Copy" onClick={copySelection}>Copy</Button>
           <Button size="sm" label="Delete" onClick={deleteSelection}>Delete</Button>
@@ -936,7 +927,7 @@ export function AsciiGrid({
         </div>
       )}
       {stampDialog && normSel !== null && (
-        <div {...stylex.props(styles.selBar)}>
+        <div {...stylex.props(styles.contextBar)}>
           <TextInput
             label="Stamp name"
             isLabelHidden
@@ -963,7 +954,7 @@ export function AsciiGrid({
         </div>
       )}
       {clipboard !== null && normSel === null && brush.tool === 'select' && (
-        <div {...stylex.props(styles.selBar)}>
+        <div {...stylex.props(styles.contextBar)}>
           <Text size="sm">Tap the canvas to place</Text>
           <IconButton
             icon={<IconClose />}
@@ -974,7 +965,7 @@ export function AsciiGrid({
         </div>
       )}
       {normSel !== null && brush.tool !== 'select' && (
-        <div {...stylex.props(styles.selBar)}>
+        <div {...stylex.props(styles.contextBar)}>
           <Text size="sm">Selection masks paint</Text>
           <IconButton
             icon={<IconClose />}
