@@ -7,6 +7,8 @@ import { Token } from '@astryxdesign/core/Token';
 import { VStack } from '@astryxdesign/core/Stack';
 import { Switch } from '@astryxdesign/core/Switch';
 import { IconButton } from '@astryxdesign/core/IconButton';
+import { ToggleButton } from '@astryxdesign/core/ToggleButton';
+import { SelectableCard } from '@astryxdesign/core/SelectableCard';
 import { IconClose } from './icons';
 import {
   ASCII_GLYPHS,
@@ -38,6 +40,8 @@ const styles = stylex.create({
     display: 'flex',
     flexDirection: 'column',
     gap: 10,
+    // Bottom sheets need breathing room at the edges.
+    paddingInline: 16,
     // The stamp library is long: cap the popover and scroll inside it.
     maxHeight: 'min(70dvh, 520px)',
     overflowY: 'auto',
@@ -48,19 +52,17 @@ const styles = stylex.create({
     gap: 4,
     minWidth: 264,
   },
-  glyph: {
-    appearance: 'none',
-    border: '1px solid transparent',
-    backgroundColor: 'var(--color-background-surface)',
-    color: 'var(--color-text-secondary)',
-    borderRadius: 6,
+  // ToggleButton restyle for the glyph grid: the character itself is the
+  // content, in the code font.
+  glyphToggle: {
     fontFamily: 'var(--font-family-code)',
     fontSize: 14,
-    height: 30,
-    cursor: 'pointer',
-    ':hover': { borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' },
   },
-  glyphActive: { borderColor: 'var(--gd-invader)', color: 'var(--gd-invader)' },
+  glyphChar: {
+    fontFamily: 'var(--font-family-code)',
+    fontSize: 14,
+    lineHeight: 1,
+  },
   swatchRow: { display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' },
   swatch: {
     appearance: 'none',
@@ -84,29 +86,7 @@ const styles = stylex.create({
       minWidth: 0,
     },
   },
-  stamp: {
-    appearance: 'none',
-    backgroundColor: 'var(--color-background-surface)',
-    border: '1px solid var(--color-border)',
-    borderRadius: 8,
-    padding: 8,
-    cursor: 'pointer',
-    textAlign: 'left',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 6,
-    ':hover': { borderColor: 'var(--color-text-disabled)' },
-    '@media (max-width: 760px)': {
-      padding: 6,
-      gap: 0,
-      borderRadius: 6,
-      alignItems: 'center',
-    },
-  },
-  stampActive: {
-    borderColor: 'var(--gd-accent)',
-    boxShadow: '0 0 0 1px var(--gd-accent)',
-  },
+
   stampArt: {
     fontFamily: 'var(--font-family-code)',
     fontSize: 11,
@@ -175,16 +155,20 @@ export function GlyphPopoverContent({
   }, [results, searching, brush.glyph]);
 
   const glyphButton = (g: SymbolGlyph) => (
-    <button
+    <ToggleButton
       key={g.ch}
-      {...stylex.props(styles.glyph, brush.glyph === g.ch && styles.glyphActive)}
-      onClick={() => onChange({ glyph: g.ch })}
-      title={g.name}
-      aria-label={`Glyph ${g.name}`}
-      aria-pressed={brush.glyph === g.ch}
+      label={`Glyph ${g.name}`}
+      tooltip={g.name}
+      isIconOnly
+      size="sm"
+      isPressed={brush.glyph === g.ch}
+      onPressedChange={(pressed) => {
+        if (pressed) onChange({ glyph: g.ch });
+      }}
+      xstyle={styles.glyphToggle}
     >
-      {g.ch}
-    </button>
+      <span {...stylex.props(styles.glyphChar)}>{g.ch}</span>
+    </ToggleButton>
   );
 
   return (
@@ -361,19 +345,19 @@ export function StampPopoverContent({
             {sec.sprites.map((s) => {
               const selected = brush.tool === 'stamp' && brush.stampId === s.id;
               return (
-                <button
+                <SelectableCard
                   key={s.id}
-                  {...stylex.props(styles.stamp, selected && styles.stampActive)}
-                  onClick={() => onBrushChange({ tool: 'stamp', stampId: s.id })}
-                  title={`Stamp: ${s.id}${s.frames.length > 1 ? ` — ${s.frames.length}-frame animated loop` : ''} — tap the canvas to place`}
-                  aria-label={`Stamp: ${s.id}${s.frames.length > 1 ? `, ${s.frames.length}-frame animated loop` : ''}`}
-                  aria-pressed={selected}
+                  label={`Stamp: ${s.id}${s.frames.length > 1 ? `, ${s.frames.length}-frame animated loop` : ''}`}
+                  isSelected={selected}
+                  onChange={(isSelected) => {
+                    if (isSelected) onBrushChange({ tool: 'stamp', stampId: s.id });
+                  }}
                 >
                   <StampArt frames={s.frames} color={sec.color} />
                   <span {...stylex.props(styles.stampName)}>
                     <Text type="label">{s.id}</Text>
                   </span>
-                </button>
+                </SelectableCard>
               );
             })}
           </div>
@@ -393,30 +377,19 @@ export function StampPopoverContent({
               const selected =
                 brush.tool === 'stamp' && brush.stampId === s.id;
               return (
-                <div
+                <SelectableCard
                   key={s.id}
-                  {...stylex.props(styles.stamp, selected && styles.stampActive)}
-                  style={{ position: 'relative' }}
+                  label={`Stamp: ${s.id}${s.frames.length > 1 ? `, ${s.frames.length}-frame animated loop` : ''}`}
+                  isSelected={selected}
+                  onChange={(isSelected) => {
+                    if (isSelected)
+                      onBrushChange({ tool: 'stamp', stampId: s.id });
+                  }}
                 >
-                  <button
-                    onClick={() =>
-                      onBrushChange({ tool: 'stamp', stampId: s.id })
-                    }
-                    title={`Stamp: ${s.id}${s.frames.length > 1 ? ` — ${s.frames.length}-frame animated loop` : ''} — tap the canvas to place`}
-                    aria-label={`Stamp: ${s.id}${s.frames.length > 1 ? `, ${s.frames.length}-frame animated loop` : ''}`}
-                    aria-pressed={selected}
-                    style={{
-                      all: 'unset',
-                      cursor: 'pointer',
-                      display: 'block',
-                      width: '100%',
-                    }}
-                  >
-                    <StampArt frames={s.frames} color={s.fg} />
-                    <span {...stylex.props(styles.stampName)}>
-                      <Text type="label">{s.id}</Text>
-                    </span>
-                  </button>
+                  <StampArt frames={s.frames} color={s.fg} />
+                  <span {...stylex.props(styles.stampName)}>
+                    <Text type="label">{s.id}</Text>
+                  </span>
                   <IconButton
                     label={`Delete stamp ${s.id}`}
                     icon={<IconClose />}
@@ -425,7 +398,7 @@ export function StampPopoverContent({
                     xstyle={styles.customDel}
                     onClick={() => dispatch({ type: 'deleteStamp', id: s.id })}
                   />
-                </div>
+                </SelectableCard>
               );
             })}
           </div>

@@ -59,6 +59,7 @@ const styles = stylex.create({
     display: 'flex',
     flexDirection: 'column',
     gap: 10,
+    paddingInline: 16,
     paddingBottom: 8,
   },
   // The MobileNav drawer's content area scrolls on its own — this stacks the
