@@ -546,8 +546,10 @@ function ExportPanel({ doc, getActive }: { doc: DocState; getActive: () => numbe
   };
   const exportFramePng = () => {
     const i = getActive();
+    const font = canvasFontById(doc.fontId);
     downloadFramePng(doc.name, i, doc.frames[i], doc.width, doc.height, {
-      fontFamily: canvasFontById(doc.fontId).family,
+      fontFamily: font.family,
+      advanceEm: font.advanceEm,
     });
   };
   return (
@@ -583,11 +585,13 @@ function ExportPanel({ doc, getActive }: { doc: DocState; getActive: () => numbe
             label="Download the animation as GIF"
             variant="secondary"
             size="sm"
-            onClick={() =>
+            onClick={() => {
+              const font = canvasFontById(doc.fontId);
               downloadFramesGif(doc.name, doc.frames, doc.width, doc.height, {
-                fontFamily: canvasFontById(doc.fontId).family,
-              })
-            }
+                fontFamily: font.family,
+                advanceEm: font.advanceEm,
+              });
+            }}
           >
             GIF · all frames
           </Button>

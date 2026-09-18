@@ -127,6 +127,9 @@ export interface PngOptions {
   transparent?: boolean;
   /** CSS font-family for glyphs — must match the canvas display font. */
   fontFamily?: string;
+  /** Font advance width in em (0.5 for Cozette/IBM VGA, 0.6 for JetBrains/System).
+      Used to match the display's cell aspect ratio (1ch × 1.35em). */
+  advanceEm?: number;
 }
 
 /**
@@ -141,8 +144,13 @@ export function renderFrameToCanvas(
 ): HTMLCanvasElement {
   const cellPx = opts.cellPx ?? 16;
   const scale = opts.scale ?? 2;
-  const w = width * cellPx * scale;
-  const h = height * cellPx * scale;
+  // Match the display's cell aspect ratio: 1ch wide × 1.35em tall.
+  // advanceEm is the font's width (0.5 for Cozette, 0.6 for JetBrains Mono).
+  const adv = opts.advanceEm ?? 0.5;
+  const cw = cellPx * adv * scale;
+  const ch = cellPx * 1.35 * scale;
+  const w = Math.round(width * cw);
+  const h = Math.round(height * ch);
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
@@ -156,11 +164,11 @@ export function renderFrameToCanvas(
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const cell = frame.cells[cellIndex(x, y, width)];
-      const px = x * cellPx * scale;
-      const py = y * cellPx * scale;
+      const px = x * cw;
+      const py = y * ch;
       if (cell.bg) {
         ctx.fillStyle = cell.bg;
-        ctx.fillRect(px, py, cellPx * scale, cellPx * scale);
+        ctx.fillRect(px, py, cw, ch);
       }
       if (cell.ch !== ' ') {
         ctx.fillStyle = cell.fg;
