@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>glyphdance renderer demo</title>
+<style>
+  body {
+    background: #101215;
+    color: #e8e6df;
+    font-family: system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 32px 16px;
+    margin: 0;
+  }
+  h1 { font-size: 20px; margin: 0; }
+  p { max-width: 560px; text-align: center; color: #9aa0a8; font-size: 14px; }
+  code { background: #1d2126; padding: 2px 6px; border-radius: 4px; }
+  #stage { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+  figure { margin: 0; text-align: center; }
+  figcaption { margin-top: 8px; font-size: 12px; color: #9aa0a8; }
+  canvas { border: 1px solid #2b3138; border-radius: 8px; }
+  .controls { display: flex; gap: 8px; }
+  button {
+    background: #2b3138; color: #e8e6df; border: none;
+    padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;
+  }
+  button:hover { background: #3a4149; }
+</style>
+</head>
+<body>
+  <h1>glyphdance renderer demo</h1>
+  <p>
+    Drop a <code>*-frames.json</code> file (exported from glyphdance via
+    <strong>JSON · all frames</strong>) anywhere on this page to preview it.
+    The renderer is a single dependency-free module:
+    <code>renderer/glyphdance-renderer.ts</code>.
+  </p>
+  <div class="controls">
+    <button id="pause">Pause</button>
+    <button id="resume">Play</button>
+  </div>
+  <div id="stage">
+    <figure>
+      <canvas id="animated"></canvas>
+      <figcaption>animated</figcaption>
+    </figure>
+    <figure>
+      <canvas id="static"></canvas>
+      <figcaption>frame 0</figcaption>
+    </figure>
+  </div>
+
+  <script type="module">
+    import { renderFrames, playFrames } from './glyphdance-renderer.js';
+
+    // Built-in sample: a two-frame twinkling star, in the glyphdance-frames format.
+    const sample = {
+      kind: 'glyphdance-frames',
+      name: 'twinkle',
+      width: 7,
+      height: 5,
+      fontId: 'cozette',
+      frames: [
+        ['       ', '   ✦   ', '  ✦✦✦  ', '   ✦   ', '       '],
+        ['       ', '       ', '   ✦   ', '       ', '       '],
+      ],
+      holdMs: [400, 400],
+      fg: '#ffd75e',
+      bg: null,
+      fgMap: [
+        [['','','','','','',''], ['','','','#ffd75e','','',''], ['','','#ffd75e','#ffd75e','#ffd75e','',''], ['','','','#ffd75e','','',''], ['','','','','','','']],
+        [['','','','','','',''], ['','','','','','',''], ['','','','#ffd75e','','',''], ['','','','','','',''], ['','','','','','','']],
+      ],
+      bgMap: [
+        [['','','','','','',''], ['','','','','','',''], ['','','','','','',''], ['','','','','','',''], ['','','','','','','']],
+        [['','','','','','',''], ['','','','','','',''], ['','','','','','',''], ['','','','','','',''], ['','','','','','','']],
+      ],
+      palette: { fg: ['#ffd75e'], bg: [] },
+    };
+
+    let player = null;
+    const animated = document.getElementById('animated');
+    const staticCanvas = document.getElementById('static');
+
+    function load(data) {
+      if (player) player.stop();
+      renderFrames(staticCanvas, data, { frame: 0 });
+      player = playFrames(animated, data);
+    }
+    load(sample);
+
+    document.getElementById('pause').onclick = () => player && player.stop();
+    document.getElementById('resume').onclick = () => {
+      if (player) player.stop();
+      player = playFrames(animated, window._lastData || sample);
+    };
+
+    // Drag-and-drop a *-frames.json file to preview it.
+    window.addEventListener('dragover', (e) => e.preventDefault());
+    window.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (!file) return;
+      try {
+        const data = JSON.parse(await file.text());
+        if (data.kind !== 'glyphdance-frames') {
+          alert('Not a glyphdance-frames JSON file.');
+          return;
+        }
+        window._lastData = data;
+        load(data);
+      } catch (err) {
+        alert('Could not parse JSON: ' + err.message);
+      }
+    });
+  </script>
+</body>
+</html>
