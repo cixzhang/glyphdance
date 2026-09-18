@@ -13,14 +13,16 @@ import type { Action } from './actions.ts';
 const styles = stylex.create({
   bar: {
     display: 'flex',
-    alignItems: 'stretch',
-    gap: 12,
+    flexDirection: 'column',
+    gap: 8,
     height: '100%',
     padding: '10px 14px',
     // Exact canvas bg, like the top nav (see --gd-chrome-bg).
     backgroundColor: 'var(--gd-chrome-bg, var(--color-background-surface))',
     borderTop: '1px solid var(--color-border)',
     '@media (max-width: 760px)': {
+      flexDirection: 'row',
+      alignItems: 'stretch',
       gap: 8,
       padding: '8px 10px',
       // On mobile the bar sits in an auto-sized grid row; height:100%
@@ -42,13 +44,23 @@ const styles = stylex.create({
   hideOnMobile: {
     '@media (max-width: 760px)': { display: 'none' },
   },
-  // Frame ops + onion skin stack vertically on the right edge.
+  // Desktop: transport + frame ops share a row above the filmstrip, so the
+  // divider line isn't needed. Mobile: contents (children join the bar row).
+  controlsRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    '@media (max-width: 760px)': { display: 'contents' },
+  },
+  // Frame ops + onion skin: horizontal in the desktop controls row,
+  // vertical on the right edge on mobile.
   sideCluster: {
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
+    '@media (max-width: 760px)': { flexDirection: 'column' },
   },
   // Frame-rate / range readouts — hidden on mobile where every pixel counts.
   meta: {
@@ -65,6 +77,9 @@ const styles = stylex.create({
     overflowX: 'auto',
     padding: '2px',
     minWidth: 0,
+    // Mobile: controlsRow is display:contents, so the filmstrip and the
+    // frame-ops cluster are siblings — frames first, ops on the right.
+    '@media (max-width: 760px)': { order: -1 },
     // Let touch do what it expects: horizontal pans scroll the strip,
     // vertical pans scroll the page. Without this the strip competes with
     // the browser's gesture handling and swipe-scrolling feels stuck.
@@ -107,13 +122,6 @@ const styles = stylex.create({
     minWidth: 56,
     scrollMarginInline: 12,
     ':hover': { borderColor: 'var(--gd-accent)', color: 'var(--gd-accent)' },
-  },
-  playhead: {
-    width: 3,
-    alignSelf: 'stretch',
-    backgroundColor: 'var(--gd-theme-accent, var(--gd-invader))',
-    borderRadius: 2,
-    opacity: 0.85,
   },
 });
 
@@ -162,17 +170,59 @@ export default function Timeline(props: TimelineProps) {
       style={{ '--gd-theme-accent': swatch.invader } as React.CSSProperties}
       aria-label="Frame timeline"
     >
-      <div {...stylex.props(styles.cluster, styles.hideOnMobile)}>
-        <Transport
-          playing={playing}
-          onJumpStart={props.onJumpStart}
-          onStepBack={props.onStepBack}
-          onTogglePlay={props.onTogglePlay}
-          onStepFwd={props.onStepFwd}
-          onJumpEnd={props.onJumpEnd}
-        />
+      <div {...stylex.props(styles.controlsRow)}>
+        <div {...stylex.props(styles.cluster, styles.hideOnMobile)}>
+          <Transport
+            playing={playing}
+            onJumpStart={props.onJumpStart}
+            onStepBack={props.onStepBack}
+            onTogglePlay={props.onTogglePlay}
+            onStepFwd={props.onStepFwd}
+            onJumpEnd={props.onJumpEnd}
+          />
+        </div>
+      <div {...stylex.props(styles.sideCluster)}>
+              <IconButton
+                label="Duplicate frame"
+                icon={<IconDuplicate />}
+                variant="ghost"
+                size="sm"
+                tooltip="Duplicate the current frame"
+                onClick={() => dispatch({ type: 'duplicateFrame', index: active })}
+              />
+              <IconButton
+                label="Delete frame"
+                icon={<IconTrash />}
+                variant="ghost"
+                size="sm"
+                tooltip={
+                  doc.frames.length > 1
+                    ? 'Delete the current frame'
+                    : 'Cannot delete the last frame'
+                }
+                isDisabled={doc.frames.length <= 1}
+                onClick={() => dispatch({ type: 'deleteFrame', index: active })}
+              />
+              {/* Onion skinning is persistent binary state — a ToggleButton. */}
+              <ToggleButton
+                label="Toggle onion skinning"
+                icon={<IconOnion />}
+                isPressed={onionOn}
+                onPressedChange={() => props.onToggleOnion()}
+                size="sm"
+                tooltip="Toggle onion skinning"
+                isIconOnly
+              />
+              <div {...stylex.props(styles.meta)}>
+                <Text type="code" size="3xs" color="disabled">
+                  12 fps
+                </Text>
+                <Text type="code" size="3xs" color="disabled">
+                  1–{doc.frames.length}
+                </Text>
+              </div>
+            </div>
       </div>
-      <div {...stylex.props(styles.playhead)} aria-hidden="true" />
       <div
         {...stylex.props(styles.filmstrip)}
         role="listbox"
@@ -210,47 +260,6 @@ export default function Timeline(props: TimelineProps) {
           <IconPlus />
         </button>
       </div>
-      <div {...stylex.props(styles.sideCluster)}>
-        <IconButton
-          label="Duplicate frame"
-          icon={<IconDuplicate />}
-          variant="ghost"
-          size="sm"
-          tooltip="Duplicate the current frame"
-          onClick={() => dispatch({ type: 'duplicateFrame', index: active })}
-        />
-        <IconButton
-          label="Delete frame"
-          icon={<IconTrash />}
-          variant="ghost"
-          size="sm"
-          tooltip={
-            doc.frames.length > 1
-              ? 'Delete the current frame'
-              : 'Cannot delete the last frame'
-          }
-          isDisabled={doc.frames.length <= 1}
-          onClick={() => dispatch({ type: 'deleteFrame', index: active })}
-        />
-        {/* Onion skinning is persistent binary state — a ToggleButton. */}
-        <ToggleButton
-          label="Toggle onion skinning"
-          icon={<IconOnion />}
-          isPressed={onionOn}
-          onPressedChange={() => props.onToggleOnion()}
-          size="sm"
-          tooltip="Toggle onion skinning"
-          isIconOnly
-        />
-        <div {...stylex.props(styles.meta)}>
-          <Text type="code" size="3xs" color="disabled">
-            12 fps
-          </Text>
-          <Text type="code" size="3xs" color="disabled">
-            1–{doc.frames.length}
-          </Text>
-        </div>
-      </div>
-    </div>
+          </div>
   );
 }
