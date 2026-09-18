@@ -25,11 +25,15 @@ import type { PaintCell } from './studio/actions.ts';
 
 const styles = stylex.create({
   root: {
-    // Full-viewport app shell. The html/body/#root chain uses
-    // -webkit-fill-available (see index.css), so height:100% fills the
-    // actual visible viewport in iOS PWA. No position:fixed needed.
+    // Full-viewport app shell. position:fixed keeps the grid layout stable;
+    // -webkit-fill-available on height fixes the iOS PWA dead band
+    // (inset:0 alone leaves the root 74pt short of the visual viewport).
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '-webkit-fill-available',
     width: '100%',
-    height: '100%',
     // Explicit fallback: if the theme variable doesn't resolve (scoped
     // theme CSS), the root must still be opaque.
     backgroundColor: 'var(--color-background-body, #1b1b1b)',
