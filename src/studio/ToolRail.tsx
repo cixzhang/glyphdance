@@ -116,9 +116,9 @@ export const TOOLS = [  { id: 'select', icon: <IconSelect />, label: 'Select' },
   { id: 'stamp', icon: <IconStamp />, label: 'Stamp' },
   { id: 'text', icon: <IconText />, label: 'Text' },
   { id: 'paint', icon: <IconPaint />, label: 'Paint' },
-  { id: 'erase', icon: <IconEraser />, label: 'Eraser' },
   { id: 'fill', icon: <IconFill />, label: 'Fill' },
   { id: 'pick', icon: <IconEyedropper />, label: 'Eyedropper' },
+  { id: 'erase', icon: <IconEraser />, label: 'Eraser' },
 ] as const;
 
 export function ColorSwatchIcon({ fg, bg }: { fg: string; bg: string }) {
