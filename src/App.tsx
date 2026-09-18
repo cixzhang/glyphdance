@@ -66,7 +66,6 @@ const styles = stylex.create({
     gridArea: 'inspector',
     minHeight: 0,
     minWidth: 0,
-    '@media (max-width: 760px)': { display: 'contents' },
   },
   timeline: { gridArea: 'timeline', minWidth: 0 },
 });
@@ -333,6 +332,33 @@ export default function App() {
     [doc.active, frameCount],
   );
 
+  // On mobile the Inspector is only overlays (Panels drawer + Agent sheet),
+  // both fixed-position. Rendering it inside the grid creates an implicit
+  // grid track (its gridArea doesn't exist in the mobile template), which
+  // manifests as a dead band below the toolbar. Render it outside the grid
+  // on mobile; on desktop it stays in the sidebar area.
+  const inspectorEl = (
+    <Inspector
+      isMobile={isMobile}
+      agentOpen={agentOpen}
+      onToggleAgent={toggleAgent}
+      sheetOpen={sheetOpen}
+      onSheetOpenChange={setSheetOpen}
+      drawerOpen={drawerOpen}
+      onDrawerOpenChange={setDrawerOpen}
+      doc={doc}
+      dispatch={dispatch}
+      brush={brush}
+      onBrushChange={patchBrush}
+      mode={mode}
+      onAgentDone={handleAgentDone}
+      scrollToMessage={scrollToMessage}
+      onAgentScrolled={handleAgentScrolled}
+      onSelectStamp={selectStamp}
+      onWorkingChange={setAgentWorking}
+    />
+  );
+
   return (
     <Theme theme={glyphdanceTheme} mode={mode}>
     <ToastViewport position="bottomEnd" inset={{ bottom: isMobile ? 210 : 170 }}>
@@ -393,27 +419,9 @@ export default function App() {
           onOpenControls={() => setDrawerOpen(true)}
         />
       </div>
-      <div {...stylex.props(styles.inspector)}>
-        <Inspector
-          isMobile={isMobile}
-          agentOpen={agentOpen}
-          onToggleAgent={toggleAgent}
-          sheetOpen={sheetOpen}
-          onSheetOpenChange={setSheetOpen}
-          drawerOpen={drawerOpen}
-          onDrawerOpenChange={setDrawerOpen}
-          doc={doc}
-          dispatch={dispatch}
-          brush={brush}
-          onBrushChange={patchBrush}
-          mode={mode}
-          onAgentDone={handleAgentDone}
-          scrollToMessage={scrollToMessage}
-          onAgentScrolled={handleAgentScrolled}
-          onSelectStamp={selectStamp}
-          onWorkingChange={setAgentWorking}
-        />
-      </div>
+      {!isMobile && (
+        <div {...stylex.props(styles.inspector)}>{inspectorEl}</div>
+      )}
       <div {...stylex.props(styles.timeline)}>
         <Timeline
           doc={doc}
@@ -430,6 +438,7 @@ export default function App() {
         />
       </div>
       </div>
+      {isMobile && inspectorEl}
     </ToastViewport>
     </Theme>
   );
