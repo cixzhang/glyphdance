@@ -41,9 +41,10 @@ const styles = stylex.create({
     display: 'flex',
     flexDirection: 'column',
     gap: 10,
-    // Bottom sheets need breathing room at the edges.
+    // Bottom sheets need breathing room at the edges. The top padding
+    // clears the drag handle.
     paddingInline: 16,
-    paddingTop: 8,
+    paddingTop: 20,
     // The stamp library is long: cap the popover and scroll inside it.
     maxHeight: 'min(70dvh, 520px)',
     overflowY: 'auto',
@@ -143,12 +144,9 @@ const ASCII_ENTRIES: readonly SymbolGlyph[] = [...ASCII_GLYPHS].map((ch) => ({
 export function GlyphPopoverContent({
   brush,
   onChange,
-  hideHeading,
 }: {
   brush: Brush;
   onChange: (patch: Partial<Brush>) => void;
-  /** When true (inside a BottomSheet), skip the heading — the sheet shows its own label. */
-  hideHeading?: boolean;
 }) {
   const [query, setQuery] = useState('');
   const searching = query.trim() !== '';
@@ -178,7 +176,7 @@ export function GlyphPopoverContent({
 
   return (
     <div {...stylex.props(styles.pop)}>
-      {!hideHeading && <Heading level={4}>Brush glyph</Heading>}
+      <Heading level={4}>Brush glyph</Heading>
       <TextInput
         label="Search glyphs"
         isLabelHidden
@@ -220,17 +218,14 @@ export function GlyphPopoverContent({
 export function ColorPopoverContent({
   brush,
   onChange,
-  hideHeading,
 }: {
   brush: Brush;
   onChange: (patch: Partial<Brush>) => void;
-  /** When true (inside a BottomSheet), skip the heading — the sheet shows its own label. */
-  hideHeading?: boolean;
 }) {
   const transparentBg = brush.bg === '';
   return (
     <div {...stylex.props(styles.pop)}>
-      {!hideHeading && <Heading level={4}>Colors</Heading>}
+      <Heading level={4}>Colors</Heading>
       <VStack gap={1}>
         <Text type="label" color="disabled">
           FG
@@ -317,15 +312,12 @@ export function StampPopoverContent({
   doc,
   dispatch,
   mode,
-  hideHeading,
 }: {
   brush: Brush;
   onBrushChange: (patch: Partial<Brush>) => void;
   doc: DocState;
   dispatch: (a: Action) => void;
   mode: 'light' | 'dark';
-  /** When true (inside a BottomSheet), skip the heading — the sheet shows its own label. */
-  hideHeading?: boolean;
 }) {
   // Previews use the canvas theme's actor colors so what you see is what
   // placing the stamp paints: invaders in the theme's invader color, ships
@@ -341,7 +333,7 @@ export function StampPopoverContent({
   ];
   return (
     <div {...stylex.props(styles.pop)}>
-      {!hideHeading && <Heading level={4}>Stamps</Heading>}
+      <Heading level={4}>Stamps</Heading>
       <Text type="supporting" color="disabled">
         Pick a stamp, then tap the canvas to place it. Multi-frame stamps
         animate — one tap paints the loop across your frames from here to the

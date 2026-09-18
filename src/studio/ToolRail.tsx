@@ -263,10 +263,10 @@ function ToolRail({
             height="hug"
           >
             {open === 'glyph' && (
-              <GlyphPopoverContent brush={brush} onChange={onBrushChange} hideHeading />
+              <GlyphPopoverContent brush={brush} onChange={onBrushChange} />
             )}
             {open === 'color' && (
-              <ColorPopoverContent brush={brush} onChange={onBrushChange} hideHeading />
+              <ColorPopoverContent brush={brush} onChange={onBrushChange} />
             )}
             {open === 'stamp' && (
               <StampPopoverContent
@@ -275,7 +275,6 @@ function ToolRail({
                 doc={doc}
                 dispatch={dispatch}
                 mode={mode}
-                hideHeading
               />
             )}
           </BottomSheet>

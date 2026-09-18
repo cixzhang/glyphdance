@@ -60,6 +60,8 @@ const styles = stylex.create({
     flexDirection: 'column',
     gap: 10,
     paddingInline: 16,
+    // Clear the drag handle at the top of the sheet.
+    paddingTop: 20,
     paddingBottom: 8,
   },
   // The MobileNav drawer's content area scrolls on its own — this stacks the
@@ -484,11 +486,13 @@ function AgentPanel({
   onWorkingChange: (working: boolean) => void;
 }) {
   // Inside the mobile bottom sheet the card is always expanded — the sheet
-  // itself is the thing that opens and closes. The sheet already shows its
-  // own "Agent" label, so no duplicate heading here.
+  // itself is the thing that opens and closes.
   if (isMobile) {
     return (
       <VStack gap={2}>
+        <Heading level={4}>
+          <IconSparkles {...stylex.props(styles.agentName)} /> Agent
+        </Heading>
         <AgentBody
           doc={doc}
           dispatch={dispatch}
