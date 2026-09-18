@@ -211,15 +211,8 @@ export function validate(doc: DocState, a: Action): string | null {
       const sf = a.stampFrame ?? 0;
       if (!Number.isInteger(sf) || sf < 0 || sf >= stamp.frames.length)
         return `stamp ${a.stampId} has no frame ${sf}`;
-      // Reject clipped placements instead of silently cutting the stamp off:
-      // the repair loop can then move it inward.
-      const rows = stamp.frames[sf];
-      const w = Math.max(...rows.map((r) => [...r].length));
-      const h = rows.length;
-      const x0 = a.x - Math.floor(w / 2);
-      const y0 = a.y - Math.floor(h / 2);
-      if (x0 < 0 || y0 < 0 || x0 + w > doc.width || y0 + h > doc.height)
-        return `stamp "${a.stampId}" (${w}x${h}) centered at (${a.x},${a.y}) would be clipped by the canvas edge — center it further inward`;
+      // Clipped placements are allowed — stampCellsFor clips the art to the
+      // grid, so tapping near the edge partially applies the stamp.
       if (!/^#[0-9a-fA-F]{6}$/.test(a.fg)) return `bad fg ${a.fg}`;
       if (a.bg !== '' && !/^#[0-9a-fA-F]{6}$/.test(a.bg)) return `bad bg ${a.bg}`;
       return null;
