@@ -42,10 +42,11 @@ const styles = stylex.create({
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'flex-start',
-      gap: 6,
+      gap: 2,
       height: 'auto',
       // The app root already pads for the home indicator; don't double it.
-      padding: '8px 12px',
+      // Tight start padding so all tools fit without scrolling.
+      padding: '8px 4px',
       overflowX: 'auto',
       overflowY: 'hidden',
       borderRight: 'none',
