@@ -342,6 +342,13 @@ function AgentBody({
           </Text>
         </VStack>
       </Collapsible>
+      {messages.length === 0 && (
+        <Text type="supporting" color="secondary">
+          Describe the art you want — the agent draws it on your canvas with
+          real brush strokes you can undo, across one frame or many. It can
+          also create custom stamps to help you build the canvas.
+        </Text>
+      )}
       {messages.map((m) => (
         <div
           key={m.id}
@@ -484,11 +491,6 @@ function AgentPanel({
         <Heading level={4}>
           <IconSparkles {...stylex.props(styles.agentName)} /> Agent
         </Heading>
-        <Text type="supporting" color="secondary">
-          Describe the art you want — the agent draws it on your canvas with
-          real brush strokes you can undo, across one frame or many. It can
-          also create custom stamps to help you build the canvas.
-        </Text>
         <AgentBody
           doc={doc}
           dispatch={dispatch}
