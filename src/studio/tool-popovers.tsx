@@ -293,30 +293,37 @@ function StampArt({ frames, color, bg, fgMap, bgMap }: { frames: string[][]; col
   const hasColorMap = !!(fgMap?.[fi] || bgMap?.[fi]);
   return (
     <>
-      <pre
-        {...stylex.props(styles.stampArt)}
-        aria-hidden="true"
-        style={{ color, backgroundColor: bg }}
-      >
-        {hasColorMap
-          ? frames[fi].map((row, r) => (
-              <span key={r}>
-                {[...row].map((ch, c) => (
-                  <span
-                    key={c}
-                    style={{
-                      color: fgMap?.[fi]?.[r]?.[c] || color,
-                      backgroundColor: bgMap?.[fi]?.[r]?.[c] || bg,
-                    }}
-                  >
-                    {ch}
-                  </span>
-                ))}
-                {r < frames[fi].length - 1 ? '\n' : ''}
-              </span>
-            ))
-          : frames[fi].join('\n')}
-      </pre>
+      {hasColorMap ? (
+        <div
+          {...stylex.props(styles.stampArt)}
+          aria-hidden="true"
+          style={{ color, backgroundColor: bg }}
+        >
+          {frames[fi].map((row, r) => (
+            <div key={r} style={{ whiteSpace: 'pre' }}>
+              {[...row].map((ch, c) => (
+                <span
+                  key={c}
+                  style={{
+                    color: fgMap?.[fi]?.[r]?.[c] || color,
+                    backgroundColor: bgMap?.[fi]?.[r]?.[c] || bg,
+                  }}
+                >
+                  {ch}
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <pre
+          {...stylex.props(styles.stampArt)}
+          aria-hidden="true"
+          style={{ color, backgroundColor: bg }}
+        >
+          {frames[fi].join('\n')}
+        </pre>
+      )}
       {animated && (
         <span {...stylex.props(styles.loopBadge)}>
           <Token
