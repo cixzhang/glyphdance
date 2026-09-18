@@ -97,12 +97,15 @@ export default function App() {
   const isMobile = useIsMobile();
   // PWA viewport fix: CSS viewport units (dvh, -webkit-fill-available)
   // are unreliable in iOS standalone. Measure the actual visual viewport
-  // with JS and apply it explicitly to the root.
+  // with JS and apply it explicitly to the root. In PWA standalone, add
+  // the home indicator height (env() is unreliable).
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
   useEffect(() => {
     const update = () => {
       const h = window.visualViewport?.height ?? window.innerHeight;
-      setViewportHeight(h);
+      const isPWA = window.matchMedia('(display-mode: standalone)').matches;
+      // iPhone home indicator is 34pt; add it in PWA where env() fails
+      setViewportHeight(isPWA ? h + 34 : h);
     };
     update();
     window.visualViewport?.addEventListener('resize', update);
