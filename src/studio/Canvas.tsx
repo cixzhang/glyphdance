@@ -65,20 +65,22 @@ const styles = stylex.create({
     },
   },
   // Cell grid lines drawn as a background: each tile is exactly one cell
-  // (1ch wide, 1em tall), so the lines fall between characters.
+  // (0.5em wide — Cozette's advance, 1em tall), so the lines fall between
+  // characters. Using em instead of ch: ch is unreliable when the font
+  // hasn't loaded yet or falls back.
   gridLines: {
     backgroundImage:
       'linear-gradient(to bottom, var(--gd-gridline) 1px, transparent 1px),' +
       'linear-gradient(to right, var(--gd-gridline) 1px, transparent 1px)',
-    backgroundSize: '1ch 1em',
+    backgroundSize: '0.5em 1em',
   },
   row: { display: 'block', height: '1em' },
-  // Each cell is an inline-block tile exactly 1ch × 1em — the same tile
+  // Each cell is an inline-block tile exactly 0.5em × 1em — the same tile
   // the grid-lines background and rows use — so painted backgrounds tile
   // seamlessly: no vertical gaps between rows, fills connect.
   cell: {
     display: 'inline-block',
-    width: '1ch',
+    width: '0.5em',
     height: '1em',
     lineHeight: '1',
     textAlign: 'center',
