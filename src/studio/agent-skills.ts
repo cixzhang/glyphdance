@@ -60,6 +60,7 @@ export const GLYPH_ADVICE = `Glyph repertoire — the canvas font draws every st
 ${PALETTE}
 Use the palette above for stamp art and pixel-art glyphs; plain ASCII text ("hello.", "don't", "a,b") always works too. Anything outside the font's repertoire renders as an empty box.
 Watch out: ★ ☆ ❅ ❆ and emoji are NOT in the font — never use them (use ✦ instead of ★, ❄ instead of ❅/❆).
+Note: the document may use the IBM VGA canvas font instead of Cozette — IBM VGA lacks ● ◆ ★ ✦ ❄ ♥ and other symbols (it draws blocks, box-drawing, and arrows fine). When in doubt, stick to plain ASCII plus █ ▓ ▒ ░ ─ │ ┌ ┐ └ ┘ and arrows, which both fonts draw.
 
 Missing-character rule: when the user asks for a character, emoji, or symbol that isn't in the repertoire above, NEVER emit it — not in stamp art, not in paintCells. The action layer rejects unsupported characters, so emitting one means your edit fails. Instead invent a stamp that suggests what they asked for out of the glyphs you do have: addStamp it, then placeStamp it in the SAME reply. A 1-cell stamp (❄ for ❅, ✦ for ★, ♥ for an emoji heart) is a complete answer — create it, place it, done.
 

@@ -14,7 +14,13 @@ export const CANVAS_FONTS: CanvasFont[] = [
   {
     id: 'cozette',
     name: 'Cozette',
-    family: '"Cozette", "IBM VGA", monospace',
+    family: '"Cozette", monospace',
+    advanceEm: 0.5,
+  },
+  {
+    id: 'vga',
+    name: 'IBM VGA',
+    family: '"IBM VGA", monospace',
     advanceEm: 0.5,
   },
   {
