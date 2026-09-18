@@ -44,8 +44,9 @@ export type Action =
   | { type: 'rename'; name: string }
   /**
    * Resize the canvas. Existing art is re-centered by default (dx/dy
-   * override the placement offset; the inverse carries the negation so
-   * undo restores cells exactly). Crops art that doesn't fit.
+   * override the placement offset). Crops art that doesn't fit — the
+   * inverse carries a full cell snapshot so undo restores exactly,
+   * including cropped cells.
    */
   | {
       type: 'resizeCanvas';
@@ -53,6 +54,8 @@ export type Action =
       height: number;
       dx?: number;
       dy?: number;
+      /** Pre-resize cell snapshot (all frames) for exact undo. Internal. */
+      snapshot?: Cell[][];
     }
   /** Selection — applies, but is never recorded for undo. */
   | { type: 'setActive'; index: number }
@@ -390,19 +393,20 @@ export function applyAction(doc: DocState, a: Action): Applied {
     case 'resizeCanvas': {
       const dx = a.dx ?? Math.floor((a.width - doc.width) / 2);
       const dy = a.dy ?? Math.floor((a.height - doc.height) / 2);
-      const frames = doc.frames.map((f) => ({
+      // Snapshot the pre-resize cells for exact undo (cropping is lossy).
+      const snapshot = doc.frames.map((f) => f.cells.map((c) => ({ ...c })));
+      const frames = doc.frames.map((f, i) => ({
         ...f,
-        cells: resizeCells(f.cells, doc.width, doc.height, a.width, a.height, dx, dy),
+        cells: a.snapshot?.[i] ?? resizeCells(f.cells, doc.width, doc.height, a.width, a.height, dx, dy),
       }));
       const next: DocState = { ...doc, width: a.width, height: a.height, frames };
-      // Undo re-centers with the negated offset, restoring cells exactly —
-      // even for odd size differences, where centering isn't symmetric.
+      // Undo restores the exact pre-resize cells via snapshot, not by
+      // re-centering (which can't recover cropped cells).
       const inverse: Action = {
         type: 'resizeCanvas',
         width: doc.width,
         height: doc.height,
-        dx: -dx,
-        dy: -dy,
+        snapshot,
       };
       return { doc: next, inverse };
     }
