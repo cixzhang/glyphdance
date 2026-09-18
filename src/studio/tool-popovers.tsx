@@ -406,7 +406,7 @@ export function StampPopoverContent({
                   }}
                   xstyle={styles.stampCard}
                 >
-                  <StampArt frames={s.frames} color={sec.color} />
+                  <StampArt frames={s.frames} color={s.fg ?? sec.color} />
                   <span {...stylex.props(styles.stampName)}>
                     <Text type="label">{s.id}</Text>
                   </span>

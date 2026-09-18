@@ -82,7 +82,7 @@ export function resolveStamp(
       return {
         id: s.id,
         frames: s.frames,
-        fg: null,
+        fg: s.fg ?? null,
         builtin: true,
         kind: b.kind,
       };

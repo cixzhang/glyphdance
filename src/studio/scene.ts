@@ -8,6 +8,9 @@ export interface Sprite {
   name: string;
   /** Animation frames — ET sprites have two (leg positions), the player one. */
   frames: string[][];
+  /** Optional fixed foreground color (e.g. the yellow comet). If unset,
+      the stamp follows its kind's theme color. */
+  fg?: string;
 }
 
 /** The invader. Four classic arcade variants, each with a two-frame shuffle. */
@@ -328,6 +331,38 @@ export const NATURE_SPRITES: Sprite[] = [
 ];
 
 // OBJECTS — box-drawing style.
+
+/** The comet: yellow diamond with a trailing mote tail, 8-frame clockwise
+    loop. Generated (not hand-drawn) so the orbit stays smooth. */
+function cometFrames(): string[][] {
+  const S = 13; // grid size
+  const C = 6; // center
+  const R = 5; // orbit radius
+  const FOLLOW = ['·', '.', '*', '°'];
+  const frames: string[][] = [];
+  for (let f = 0; f < 8; f++) {
+    const grid: string[][] = Array.from({ length: S }, () => Array(S).fill(' '));
+    const leaderAngle = -Math.PI / 2 + (f / 8) * Math.PI * 2;
+    // Followers trail behind the diamond: dense near it, loose at the tip.
+    for (let i = 7; i >= 1; i--) {
+      const lag = 0.22 * i + Math.sin(f * 0.7 + i * 2.1) * 0.05 * i;
+      const angle = leaderAngle - lag;
+      const rj = Math.sin(f * 0.9 + i * 1.7) * (0.4 + i * 0.2);
+      const x = Math.round(C + Math.cos(angle) * (R + rj));
+      const y = Math.round(C + Math.sin(angle) * (R + rj));
+      if (x >= 0 && x < S && y >= 0 && y < S && grid[y][x] === ' ') {
+        const pulse = Math.sin(f * 1.1 + i * 2.3) > 0 ? 1 : 0;
+        grid[y][x] = FOLLOW[Math.max(0, Math.min(3, 2 - Math.floor(i / 3) + pulse))];
+      }
+    }
+    const dx = Math.round(C + Math.cos(leaderAngle) * R);
+    const dy = Math.round(C + Math.sin(leaderAngle) * R);
+    if (dx >= 0 && dx < S && dy >= 0 && dy < S) grid[dy][dx] = '◆';
+    frames.push(grid.map((row) => row.join('')));
+  }
+  return frames;
+}
+
 export const OBJECT_SPRITES: Sprite[] = [
   {
     id: 'robot',
@@ -384,6 +419,12 @@ export const OBJECT_SPRITES: Sprite[] = [
         '╰────┴────╯',
       ],
     ],
+  },
+  {
+    id: 'comet',
+    name: 'Comet',
+    frames: cometFrames(),
+    fg: '#f1fa8c',
   },
 ];
 
