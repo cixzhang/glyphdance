@@ -28,30 +28,31 @@ export function seedDocument(mode: 'light' | 'dark'): DocState {
 
   for (let f = 0; f < MOTES_PER_RING; f++) {
     const frame = blankFrame(holds[f]);
+    // The diamond's angle this frame — followers trail behind it.
+    const leaderAngle = -Math.PI / 2 + (f / MOTES_PER_RING) * Math.PI * 2;
     for (let i = 0; i < MOTES_PER_RING; i++) {
       if (i === 0) {
-        // Special mote: yellow diamond on dark yellow, clean clockwise
+        // Diamond leader: yellow diamond on dark yellow, clean clockwise
         // orbit (angle increases → top → right → bottom on screen).
-        const angle = -Math.PI / 2 + (f / MOTES_PER_RING) * Math.PI * 2;
-        const x = Math.round(cx + Math.cos(angle) * baseRadius);
-        const y = Math.round(cy + Math.sin(angle) * baseRadius * 0.7);
+        const x = Math.round(cx + Math.cos(leaderAngle) * baseRadius);
+        const y = Math.round(cy + Math.sin(leaderAngle) * baseRadius * 0.7);
         if (x >= 0 && x < GRID_W && y >= 0 && y < GRID_H) {
           frame.cells[cellIndex(x, y)] = { ch: '◆', fg: '#f1fa8c', bg: '#665500' };
         }
         continue;
       }
-      // Each mote orbits the ring at its own pace and bobs in and out —
-      // a loose dance, not a rigid rotation. Glyph size pulses with the
-      // bob for a lively feel.
-      const speed = 1 + (i % 3) * 0.5; // some motes lap faster
-      const step = (i + f * speed) / MOTES_PER_RING;
-      const angle = step * Math.PI * 2 - Math.PI / 2;
-      const bob = Math.sin((f * 0.9 + i * 1.7)) * 1.5; // in/out wobble
-      const radius = baseRadius + bob;
+      // Followers trail behind the diamond along its path: densest near
+      // the leader, spreading looser further back on its tail. Angular lag
+      // grows with i; jitter (angular + radial) grows too, so the tail
+      // feels loose, not rigid. Glyphs shrink toward the tail tip.
+      const lag = 0.22 * i + Math.sin(f * 0.7 + i * 2.1) * 0.05 * i;
+      const angle = leaderAngle - lag;
+      const radialJitter = Math.sin(f * 0.9 + i * 1.7) * (0.5 + i * 0.3);
+      const radius = baseRadius + radialJitter;
       const x = Math.round(cx + Math.cos(angle) * radius);
       const y = Math.round(cy + Math.sin(angle) * radius * 0.7);
       const pulse = Math.sin(f * 1.1 + i * 2.3) > 0 ? 1 : 0;
-      const ch = MOTES[(i + f + pulse) % MOTES.length];
+      const ch = MOTES[Math.max(0, Math.min(MOTES.length - 1, 2 - Math.floor(i / 3) + pulse))];
       const fg = colors[(i + f) % colors.length];
       if (x >= 0 && x < GRID_W && y >= 0 && y < GRID_H) {
         frame.cells[cellIndex(x, y)] = { ch, fg, bg: '' };
