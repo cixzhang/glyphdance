@@ -4,6 +4,7 @@ import { Button } from '@astryxdesign/core/Button';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { StatusDot } from '@astryxdesign/core/StatusDot';
 import { IconMoon, IconSparkles, IconSun } from './icons';
+import { GhostIcon } from './GhostIcon';
 import { Text } from '@astryxdesign/core/Text';
 import Transport from './Transport.tsx';
 import { DOC_NAME } from './document.ts';
@@ -102,7 +103,11 @@ export default function TopBar(props: TopBarProps) {
         heading={
           <TopNavHeading
             heading="glyphdance"
-            logo={<img src="/favicon.svg" alt="glyphdance" {...stylex.props(styles.logo)} />}
+            logo={
+              <span {...stylex.props(styles.logo)}>
+                <GhostIcon color={mode === 'dark' ? '#f2ecff' : '#1a1c24'} size={20} />
+              </span>
+            }
           />
         }
       startContent={
