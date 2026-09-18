@@ -678,7 +678,7 @@ function Inspector({
           isOpen={drawerOpen}
           onOpenChange={onDrawerOpenChange}
           side="end"
-          header="Panels"
+          header="Document"
         >
           <div {...stylex.props(styles.drawerContent)}>
             <DocumentPanel doc={doc} dispatch={dispatch} mode={mode} />

@@ -12,6 +12,7 @@ import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { Text } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { HStack, VStack } from '@astryxdesign/core/Stack';
+import { SelectableCard } from '@astryxdesign/core/SelectableCard';
 import {
   SYNTAX_THEMES,
   type SyntaxTheme,
@@ -36,22 +37,8 @@ const styles = stylex.create({
     flexWrap: 'wrap',
     gap: 6,
   },
-  theme: {
-    appearance: 'none',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 4,
-    padding: '6px 8px',
-    backgroundColor: 'var(--color-background-card)',
-    border: '1px solid var(--color-border)',
-    borderRadius: 8,
-    cursor: 'pointer',
-    minWidth: 64,
-  },
-  themeActive: {
-    borderColor: 'var(--gd-accent)',
-    backgroundColor: 'var(--color-background-muted)',
+  optionCard: {
+    minWidth: 72,
   },
   themeChip: {
     display: 'flex',
@@ -80,25 +67,30 @@ function ThemeOption({
   onSelect: () => void;
 }) {
   return (
-    <button
-      {...stylex.props(styles.theme, selected && styles.themeActive)}
-      onClick={onSelect}
-      title={theme.name}
-      aria-pressed={selected}
+    <SelectableCard
+      label={theme.name}
+      isSelected={selected}
+      onChange={(v) => {
+        if (v) onSelect();
+      }}
+      padding={2}
+      xstyle={styles.optionCard}
     >
-      <span
-        {...stylex.props(styles.themeChip)}
-        style={{ backgroundColor: swatch.bg }}
-        aria-hidden="true"
-      >
-        <span {...stylex.props(styles.dot)} style={{ backgroundColor: swatch.invader }} />
-        <span {...stylex.props(styles.dot)} style={{ backgroundColor: swatch.player }} />
-        <span {...stylex.props(styles.dot)} style={{ backgroundColor: swatch.star }} />
-      </span>
-      <Text type="label" size="3xs" color={selected ? 'accent' : 'secondary'}>
-        {theme.name}
-      </Text>
-    </button>
+      <VStack gap={1} align="center">
+        <span
+          {...stylex.props(styles.themeChip)}
+          style={{ backgroundColor: swatch.bg }}
+          aria-hidden="true"
+        >
+          <span {...stylex.props(styles.dot)} style={{ backgroundColor: swatch.invader }} />
+          <span {...stylex.props(styles.dot)} style={{ backgroundColor: swatch.player }} />
+          <span {...stylex.props(styles.dot)} style={{ backgroundColor: swatch.star }} />
+        </span>
+        <Text type="label" size="3xs" color={selected ? 'accent' : 'secondary'}>
+          {theme.name}
+        </Text>
+      </VStack>
+    </SelectableCard>
   );
 }
 
@@ -112,20 +104,25 @@ function FontOption({
   onSelect: () => void;
 }) {
   return (
-    <button
-      {...stylex.props(styles.theme, selected && styles.themeActive)}
-      onClick={onSelect}
-      title={font.name}
-      aria-pressed={selected}
+    <SelectableCard
+      label={font.name}
+      isSelected={selected}
+      onChange={(v) => {
+        if (v) onSelect();
+      }}
+      padding={2}
+      xstyle={styles.optionCard}
     >
-      {/* Font name rendered in the font itself — WYSIWYG. */}
-      <span style={{ fontFamily: font.family, fontSize: 18 }} aria-hidden="true">
-        Ag
-      </span>
-      <Text type="label" size="3xs" color={selected ? 'accent' : 'secondary'}>
-        {font.name}
-      </Text>
-    </button>
+      <VStack gap={1} align="center">
+        {/* Font name rendered in the font itself — WYSIWYG. */}
+        <span style={{ fontFamily: font.family, fontSize: 18 }} aria-hidden="true">
+          Ag
+        </span>
+        <Text type="label" size="3xs" color={selected ? 'accent' : 'secondary'}>
+          {font.name}
+        </Text>
+      </VStack>
+    </SelectableCard>
   );
 }
 

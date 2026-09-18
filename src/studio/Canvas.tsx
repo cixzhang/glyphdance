@@ -1139,11 +1139,11 @@ export default function Canvas({
         {/* Mobile: control-panels toggle, flat with the rest. */}
         <span {...stylex.props(styles.mobileOnly)}>
           <IconButton
-            label="Control panels"
+            label="Document"
             icon={<IconPanels />}
             variant="ghost"
             size="sm"
-            tooltip="Open the control panels"
+            tooltip="Open document settings"
             onClick={onOpenControls}
           />
         </span>
