@@ -87,6 +87,7 @@ const styles = stylex.create({
     margin: 0,
     minHeight: 44,
     display: 'flex',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     whiteSpace: 'pre',
@@ -290,40 +291,29 @@ function StampArt({ frames, color, bg, fgMap, bgMap }: { frames: string[][]; col
     return () => clearInterval(id);
   }, [animated]);
   const fi = animated ? tick % frames.length : 0;
-  const hasColorMap = !!(fgMap?.[fi] || bgMap?.[fi]);
+  // Background hugs the glyphs exactly like placement does: stampCellsFor
+  // skips space cells, so bg is only painted behind non-space characters —
+  // never the padding around the art.
   return (
     <>
-      {hasColorMap ? (
-        <div
-          {...stylex.props(styles.stampArt)}
-          aria-hidden="true"
-          style={{ color, backgroundColor: bg, flexDirection: 'column' }}
-        >
-          {frames[fi].map((row, r) => (
-            <div key={r} style={{ whiteSpace: 'pre', lineHeight: 'inherit' }}>
-              {[...row].map((ch, c) => (
-                <span
-                  key={c}
-                  style={{
-                    color: fgMap?.[fi]?.[r]?.[c] || color,
-                    backgroundColor: bgMap?.[fi]?.[r]?.[c] || bg,
-                  }}
-                >
-                  {ch}
-                </span>
-              ))}
-            </div>
-          ))}
-        </div>
-      ) : (
-        <pre
-          {...stylex.props(styles.stampArt)}
-          aria-hidden="true"
-          style={{ color, backgroundColor: bg }}
-        >
-          {frames[fi].join('\n')}
-        </pre>
-      )}
+      <div {...stylex.props(styles.stampArt)} aria-hidden="true" style={{ color }}>
+        {frames[fi].map((row, r) => (
+          <div key={r} style={{ whiteSpace: 'pre', lineHeight: 'inherit' }}>
+            {[...row].map((ch, c) => (
+              <span
+                key={c}
+                style={{
+                  color: fgMap?.[fi]?.[r]?.[c] || color,
+                  backgroundColor:
+                    ch === ' ' ? undefined : bgMap?.[fi]?.[r]?.[c] || bg || undefined,
+                }}
+              >
+                {ch}
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
       {animated && (
         <span {...stylex.props(styles.loopBadge)}>
           <Token
