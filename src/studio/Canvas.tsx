@@ -994,7 +994,7 @@ export function AsciiThumb({
   return (
     <pre
       {...stylex.props(styles.grid)}
-      style={{ fontSize: 4.5, lineHeight: 1.083, backgroundColor: bg }}
+      style={{ fontSize: 4.5, lineHeight: 1.083, backgroundColor: bg, touchAction: 'pan-x pan-y' }}
       aria-hidden="true"
     >
       {Array.from({ length: height }, (_, r) => (
