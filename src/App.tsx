@@ -447,7 +447,6 @@ export default function App() {
           onPlaceStamp={onPlaceStamp}
           onMakeStamp={onMakeStamp}
           onOpenAgent={openPanels}
-          onOpenColors={() => setColorOpen(true)}
           playing={playing}
           onJumpStart={jumpStart}
           onStepBack={stepBack}

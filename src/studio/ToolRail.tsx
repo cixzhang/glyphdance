@@ -247,6 +247,18 @@ function ToolRail({
           return toolButton(id, t.label, t.icon);
         })}
       </ToggleButtonGroup>
+      {/* Mobile: Colors lives in the toolbar (tappable), opening the sheet. */}
+      {isMobile && (
+        <IconButton
+          label="Colors"
+          icon={<ColorSwatchIcon fg={brush.fg} bg={brush.bg} />}
+          variant="ghost"
+          size="md"
+          tooltip={`Colors — FG ${brush.fg}, BG ${brush.bg === '' ? 'transparent' : brush.bg}`}
+          xstyle={styles.tool}
+          onClick={() => onColorOpenChange(!colorOpen)}
+        />
+      )}
       {/* Tool option menus: popovers anchored to their toolbar buttons on
           desktop, a bottom sheet on mobile. */}
       {isMobile ? (
@@ -376,7 +388,9 @@ export function toolRailEqual(prev: ToolRailProps, next: ToolRailProps): boolean
     prev.canUndo === next.canUndo &&
     prev.canRedo === next.canRedo &&
     prev.onUndo === next.onUndo &&
-    prev.onRedo === next.onRedo
+    prev.onRedo === next.onRedo &&
+    prev.colorOpen === next.colorOpen &&
+    prev.onColorOpenChange === next.onColorOpenChange
   );
 }
 

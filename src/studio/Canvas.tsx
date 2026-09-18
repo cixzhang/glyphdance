@@ -7,7 +7,7 @@ import { Text } from '@astryxdesign/core/Text';
 import { Kbd } from '@astryxdesign/core/Kbd';
 import { IconSparkles, IconGrid, IconZoomIn, IconZoomOut, IconPanels, IconClose } from './icons';
 import Transport from './Transport.tsx';
-import { TOOLS, ColorSwatchIcon } from './ToolRail.tsx';
+import { TOOLS } from './ToolRail.tsx';
 import {
   cellIndex,
   inBounds,
@@ -1039,8 +1039,6 @@ interface CanvasProps {
   /** Create a custom stamp from canvas art. */
   onMakeStamp: (stamp: CustomStamp) => void;
   onOpenAgent: () => void;
-  /** Mobile: open the color picker (trigger sits by the tool badge). */
-  onOpenColors: () => void;
   /** Mobile only: the playback transport floats top-left of the canvas. */
   playing: boolean;
   onJumpStart: () => void;
@@ -1067,7 +1065,6 @@ export default function Canvas({
   onPlaceStamp,
   onMakeStamp,
   onOpenAgent,
-  onOpenColors,
   playing,
   onJumpStart,
   onStepBack,
@@ -1164,13 +1161,6 @@ export default function Canvas({
       <div {...stylex.props(styles.toolBadge)} aria-live="polite">
         {activeTool.icon}
         <Text type="label">{activeTool.label}</Text>
-        <IconButton
-          label={`Colors — foreground ${brush.fg}, background ${brush.bg === '' ? 'transparent' : brush.bg}`}
-          icon={<ColorSwatchIcon fg={brush.fg} bg={brush.bg} />}
-          variant="ghost"
-          size="sm"
-          onClick={onOpenColors}
-        />
       </div>
       <Button
         label="Open the agent panel"
