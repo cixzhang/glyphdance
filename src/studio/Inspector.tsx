@@ -68,6 +68,13 @@ const styles = stylex.create({
     gap: 10,
     paddingBottom: 8,
   },
+  version: {
+    fontFamily: 'var(--font-family-code)',
+    fontSize: 10,
+    color: 'var(--color-text-secondary)',
+    textAlign: 'center',
+    paddingTop: 8,
+  },
   agentName: { color: 'var(--gd-accent)', fontWeight: 600 },
   opLog: {
     fontFamily: 'var(--font-family-code)',
@@ -639,6 +646,9 @@ function Inspector({
           <div {...stylex.props(styles.drawerContent)}>
             <DocumentPanel doc={doc} dispatch={dispatch} mode={mode} />
             <ExportPanel doc={doc} getActive={getActive} />
+            <div {...stylex.props(styles.version)}>
+              build {typeof __COMMIT_HASH__ !== 'undefined' ? __COMMIT_HASH__ : 'dev'}
+            </div>
           </div>
         </MobileNav>
         <BottomSheet
@@ -686,6 +696,9 @@ function Inspector({
             />
       <DocumentPanel doc={doc} dispatch={dispatch} mode={mode} />
       <ExportPanel doc={doc} getActive={getActive} />
+      <div {...stylex.props(styles.version)}>
+        build {typeof __COMMIT_HASH__ !== 'undefined' ? __COMMIT_HASH__ : 'dev'}
+      </div>
     </div>
   );
 }

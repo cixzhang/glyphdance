@@ -43,8 +43,7 @@ const styles = stylex.create({
     // Explicit fallback: if the theme variable doesn't resolve (scoped
     // theme CSS), the root must still be opaque or the PWA background
     // shows through as a dead band.
-    // DIAGNOSTIC: bright red to identify if the band is the root
-    backgroundColor: '#ff0000',
+    backgroundColor: 'var(--color-background-body, #1b1b1b)',
     color: 'var(--color-text-primary)',
     fontSize: 13,
     // Mobile: single column. The tool rail becomes a bottom strip ("tools")
