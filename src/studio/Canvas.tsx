@@ -154,23 +154,22 @@ const styles = stylex.create({
     padding: '5px 12px 5px 8px',
     backdropFilter: 'blur(6px)',
     zIndex: 2,
-    pointerEvents: 'none',
     '@media (min-width: 761px)': { display: 'none' },
   },
-  // The color swatch inside the tool badge re-enables pointer events so
-  // it's tappable (the badge itself stays non-interactive).
+  // The color swatch in the tool badge: tappable, opens the Colors sheet.
   badgeSwatch: {
-    pointerEvents: 'auto',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: 28,
-    height: 28,
+    width: 32,
+    height: 32,
     borderRadius: 999,
     cursor: 'pointer',
     padding: 0,
     borderWidth: 0,
     backgroundColor: 'transparent',
+    // iOS needs an explicit touch action for reliable taps.
+    touchAction: 'manipulation',
   },
   // Shown only on mobile (inside the floating view bar).
   mobileOnly: {
