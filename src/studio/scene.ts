@@ -199,8 +199,8 @@ export const CRITTER_SPRITES: Sprite[] = [
     ],
   },
   {
-    id: 'bird',
-    name: 'Bird',
+    id: 'songbird',
+    name: 'Songbird',
     frames: [['   __  ', ' <(o)__', '  \\_)  ']],
   },
   {
