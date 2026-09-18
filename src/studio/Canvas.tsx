@@ -653,6 +653,12 @@ export function AsciiGrid({
 
   const continueStroke = (x: number, y: number, buttons: number) => {
     if (!(buttons & 1)) return;
+    // Select drags track the marquee corner directly — they don't use
+    // strokeRef, so handle them before the null check below.
+    if (brush.tool === 'select' && selAnchor) {
+      setSelCorner([x, y]);
+      return;
+    }
     const s = strokeRef.current;
     if (s === null) return;
     if (brush.tool === 'stamp') {
@@ -662,9 +668,6 @@ export function AsciiGrid({
     if (brush.tool === 'brush' || brush.tool === 'erase' || brush.tool === 'paint') {
       paintFreehand(s.last[0], s.last[1], x, y, s.id, s.painted);
       s.last = [x, y];
-    }
-    if (brush.tool === 'select' && selAnchor) {
-      setSelCorner([x, y]);
     }
   };
 
