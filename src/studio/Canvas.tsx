@@ -151,6 +151,31 @@ const styles = stylex.create({
     pointerEvents: 'none',
     '@media (min-width: 761px)': { display: 'none' },
   },
+  // The color swatch inside the tool badge re-enables pointer events so
+  // it's tappable (the badge itself stays non-interactive).
+  badgeSwatch: {
+    pointerEvents: 'auto',
+    display: 'flex',
+    alignItems: 'center',
+    width: 28,
+    height: 28,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: 'var(--color-border)',
+    overflow: 'hidden',
+    cursor: 'pointer',
+    padding: 0,
+    backgroundColor: 'transparent',
+  },
+  badgeSwatchFg: {
+    width: '50%',
+    height: '100%',
+  },
+  badgeSwatchBg: {
+    width: '50%',
+    height: '100%',
+  },
   // Shown only on mobile (inside the floating view bar).
   mobileOnly: {
     display: 'none',
@@ -1025,6 +1050,8 @@ interface CanvasProps {
   /** Create a custom stamp from canvas art. */
   onMakeStamp: (stamp: CustomStamp) => void;
   onOpenAgent: () => void;
+  /** Mobile: open the color picker (trigger sits by the tool badge). */
+  onOpenColors: () => void;
   /** Mobile only: the playback transport floats top-left of the canvas. */
   playing: boolean;
   onJumpStart: () => void;
@@ -1051,6 +1078,7 @@ export default function Canvas({
   onPlaceStamp,
   onMakeStamp,
   onOpenAgent,
+  onOpenColors,
   playing,
   onJumpStart,
   onStepBack,
@@ -1142,10 +1170,29 @@ export default function Canvas({
           onJumpEnd={onJumpEnd}
         />
       </div>
-      {/* Mobile: what tool is active, as icon + label. */}
+      {/* Mobile: what tool is active, as icon + label, plus the color
+          modifier that paints with it. */}
       <div {...stylex.props(styles.toolBadge)} aria-live="polite">
         {activeTool.icon}
         <Text type="label">{activeTool.label}</Text>
+        <button
+          type="button"
+          aria-label={`Colors — foreground ${brush.fg}, background ${brush.bg === '' ? 'transparent' : brush.bg}`}
+          onClick={onOpenColors}
+          {...stylex.props(styles.badgeSwatch)}
+        >
+          <span
+            {...stylex.props(styles.badgeSwatchFg)}
+            style={{ backgroundColor: brush.fg }}
+          />
+          <span
+            {...stylex.props(styles.badgeSwatchBg)}
+            style={{
+              backgroundColor:
+                brush.bg === '' ? 'transparent' : brush.bg,
+            }}
+          />
+        </button>
       </div>
       <Button
         label="Open the agent panel"

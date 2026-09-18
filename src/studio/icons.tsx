@@ -18,6 +18,7 @@ import {
   LetterA,
   Minus,
   Pause,
+  SprayCan,
   Pipette,
   Play,
   Plus,
@@ -61,7 +62,7 @@ export const IconStepForward = px(ArrowRight);
 
 export const IconSelect = px(Pointer);
 export const IconBrush = px(Brush);
-export const IconPaint = px(ColorsSwatch);
+export const IconPaint = px(SprayCan);
 export const IconEraser = px(Eraser);
 export const IconFill = px(Potion);
 export const IconLine = px(Minus);

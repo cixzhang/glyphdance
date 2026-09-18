@@ -160,6 +160,8 @@ interface ToolRailProps {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
+  colorOpen: boolean;
+  onColorOpenChange: (open: boolean) => void;
 }
 
 function ToolRail({
@@ -173,8 +175,10 @@ function ToolRail({
   canRedo,
   onUndo,
   onRedo,
+  colorOpen,
+  onColorOpenChange,
 }: ToolRailProps) {
-  const [open, setOpen] = useState<'glyph' | 'color' | 'stamp' | null>(null);
+  const [open, setOpen] = useState<'glyph' | 'stamp' | null>(null);
   const brushRef = useRef<HTMLButtonElement>(null);
   const stampRef = useRef<HTMLButtonElement>(null);
   // Popover's anchorRef is typed RefObject<HTMLElement> and only reads
@@ -192,7 +196,7 @@ function ToolRail({
       // back out via the toolbar.)
       if (brush.tool === 'brush') setOpen(open === 'glyph' ? null : 'glyph');
       else if (brush.tool === 'stamp') setOpen(open === 'stamp' ? null : 'stamp');
-      else if (brush.tool === 'paint') setOpen(open === 'color' ? null : 'color');
+      else if (brush.tool === 'paint') onColorOpenChange(!colorOpen);
       return;
     }
     onBrushChange({ tool: v as ToolId });
@@ -201,8 +205,11 @@ function ToolRail({
     // second tap (the open menu's light-dismiss eats the first click).
     if (v === 'brush') setOpen('glyph');
     else if (v === 'stamp') setOpen('stamp');
-    else if (v === 'paint') setOpen('color');
-    else setOpen(null);
+    else if (v === 'paint') onColorOpenChange(true);
+    else {
+      setOpen(null);
+      onColorOpenChange(false);
+    }
   };
 
   const toolButton = (
@@ -244,25 +251,19 @@ function ToolRail({
           desktop, a bottom sheet on mobile. */}
       {isMobile ? (
         <>
-          <IconButton
-            label="Colors"
-            icon={<ColorSwatchIcon fg={brush.fg} bg={brush.bg} />}
-            variant="ghost"
-            size="md"
-            tooltip={`Colors — FG ${brush.fg}, BG ${brush.bg === '' ? 'transparent' : brush.bg}`}
-            xstyle={styles.tool}
-            onClick={() => setOpen('color')}
-          />
           <BottomSheet
-            isOpen={open !== null}
+            isOpen={open !== null || colorOpen}
             onOpenChange={(o) => {
-              if (!o) setOpen(null);
+              if (!o) {
+                setOpen(null);
+                onColorOpenChange(false);
+              }
             }}
             label={
-              open === 'glyph'
-                ? 'Brush glyph'
-                : open === 'color'
-                  ? 'Colors'
+              colorOpen
+                ? 'Colors'
+                : open === 'glyph'
+                  ? 'Brush glyph'
                   : 'Stamp library'
             }
             height="hug"
@@ -270,7 +271,7 @@ function ToolRail({
             {open === 'glyph' && (
               <GlyphPopoverContent brush={brush} onChange={onBrushChange} />
             )}
-            {open === 'color' && (
+            {colorOpen && (
               <ColorPopoverContent brush={brush} onChange={onBrushChange} />
             )}
             {open === 'stamp' && (
@@ -315,8 +316,8 @@ function ToolRail({
             }
           />
           <Popover
-            isOpen={open === 'color'}
-            onOpenChange={(o) => setOpen(o ? 'color' : null)}
+            isOpen={colorOpen}
+            onOpenChange={onColorOpenChange}
             placement={placement}
             alignment="start"
             label="Colors"
@@ -331,7 +332,7 @@ function ToolRail({
               size="md"
               tooltip={`Colors — FG ${brush.fg}, BG ${brush.bg === '' ? 'transparent' : brush.bg}`}
               xstyle={styles.tool}
-              onClick={() => setOpen('color')}
+              onClick={() => onColorOpenChange(true)}
             />
           </Popover>
         </>

@@ -145,6 +145,9 @@ export default function App() {
   const handleAgentScrolled = useCallback(() => setScrollToMessage(null), []);
   // The brush: active tool plus the glyph and colors it paints with.
   const [brush, setBrush] = useState<Brush>(DEFAULT_BRUSH);
+  // Color picker open state: the trigger lives next to the mobile tool
+  // badge (color modifies the active tool), the sheet lives in ToolRail.
+  const [colorOpen, setColorOpen] = useState(false);
   const patchBrush = useCallback(
     (patch: Partial<Brush>) => setBrush((b) => ({ ...b, ...patch })),
     [],
@@ -424,6 +427,8 @@ export default function App() {
           canRedo={canRedo}
           onUndo={undo}
           onRedo={redo}
+          colorOpen={colorOpen}
+          onColorOpenChange={setColorOpen}
         />
       </div>
       <div {...stylex.props(styles.canvas)}>
@@ -442,6 +447,7 @@ export default function App() {
           onPlaceStamp={onPlaceStamp}
           onMakeStamp={onMakeStamp}
           onOpenAgent={openPanels}
+          onOpenColors={() => setColorOpen(true)}
           playing={playing}
           onJumpStart={jumpStart}
           onStepBack={stepBack}
