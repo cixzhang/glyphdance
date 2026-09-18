@@ -13,8 +13,9 @@ import {
 } from './document.ts';
 import { themeById } from './scene.ts';
 
-// Mote glyphs, ordered small → large for a pulsing feel.
-const MOTES = ['°', 'o', 'O', '•'];
+// Follower mote glyphs: dots and asterisks, ordered small → large.
+// (The diamond leader keeps its own ◆.)
+const MOTES = ['·', '.', '*', '°'];
 const MOTES_PER_RING = 8;
 
 export function seedDocument(mode: 'light' | 'dark'): DocState {
