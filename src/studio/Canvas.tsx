@@ -87,6 +87,26 @@ const styles = stylex.create({
     verticalAlign: 'top',
     overflow: 'hidden',
   },
+  selCell: {
+    backgroundColor: 'color-mix(in srgb, var(--gd-accent) 30%, transparent)',
+    boxShadow: 'inset 0 0 0 1px var(--gd-accent)',
+  },
+  // Selection action bar: floats above the canvas bottom.
+  selBar: {
+    position: 'absolute',
+    bottom: 12,
+    left: '50%',
+    transform: 'translateX(-50%)',
+    display: 'flex',
+    gap: 6,
+    padding: 6,
+    borderRadius: 12,
+    backgroundColor: 'color-mix(in srgb, var(--color-popover) 92%, transparent)',
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: 'var(--color-border)',
+    zIndex: 3,
+  },
   // All view controls flat over the canvas — no toolbar card.
   fab: {
     position: 'absolute',
@@ -316,6 +336,17 @@ export function AsciiGrid({
   const textStroke = useRef<string | null>(null);
   const textOrig = useRef(new Map<string, Cell>());
   const textInputRef = useRef<HTMLInputElement>(null);
+  // Selection: {x0,y0} anchor, {x1,y1} current corner (unnormalized while
+  // dragging). Clipboard holds cut/copied cells for tap-to-place.
+  const [selAnchor, setSelAnchor] = useState<[number, number] | null>(null);
+  const [selCorner, setSelCorner] = useState<[number, number] | null>(null);
+  const [clipboard, setClipboard] = useState<{ w: number; h: number; cells: Cell[] } | null>(null);
+  const normSel = selAnchor && selCorner ? {
+    x0: Math.min(selAnchor[0], selCorner[0]),
+    y0: Math.min(selAnchor[1], selCorner[1]),
+    x1: Math.max(selAnchor[0], selCorner[0]),
+    y1: Math.max(selAnchor[1], selCorner[1]),
+  } : null;
   const clearTextSession = useCallback(() => {
     setTextAnchor(null);
     setTextValue('');
@@ -410,6 +441,11 @@ export function AsciiGrid({
         // Live paints stay — switching tools commits the text.
         commitText();
         break;
+      case 'select':
+        setSelAnchor(null);
+        setSelCorner(null);
+        setClipboard(null);
+        break;
     }
   };
   const prevToolRef = useRef<ToolId>(brush.tool);
@@ -452,6 +488,68 @@ export function AsciiGrid({
     onPlaceStamp(brush.stampId, x, y, fg);
   };
 
+  const clearSelection = useCallback(() => {
+    setSelAnchor(null);
+    setSelCorner(null);
+  }, []);
+
+  /** Capture the selected rect's cells into the clipboard. */
+  const captureSelection = useCallback(() => {
+    if (!normSel) return null;
+    const w = normSel.x1 - normSel.x0 + 1;
+    const h = normSel.y1 - normSel.y0 + 1;
+    const captured: Cell[] = [];
+    for (let y = normSel.y0; y <= normSel.y1; y++) {
+      for (let x = normSel.x0; x <= normSel.x1; x++) {
+        captured.push({ ...cells[cellIndex(x, y, W)] });
+      }
+    }
+    return { w, h, cells: captured };
+  }, [normSel, cells, W]);
+
+  const deleteSelection = useCallback(() => {
+    if (!normSel) return;
+    const out: PaintCell[] = [];
+    for (let y = normSel.y0; y <= normSel.y1; y++) {
+      for (let x = normSel.x0; x <= normSel.x1; x++) {
+        out.push({ x, y, cell: { ch: ' ', fg: brush.fg, bg: '' } });
+      }
+    }
+    if (out.length > 0) onPaint(out, nextStroke());
+    clearSelection();
+  }, [normSel, brush.fg, onPaint, clearSelection]);
+
+  const cutSelection = useCallback(() => {
+    const clip = captureSelection();
+    if (!clip) return;
+    setClipboard(clip);
+    deleteSelection();
+  }, [captureSelection, deleteSelection]);
+
+  const copySelection = useCallback(() => {
+    const clip = captureSelection();
+    if (!clip) return;
+    setClipboard(clip);
+    clearSelection();
+  }, [captureSelection, clearSelection]);
+
+  /** Paste the clipboard with its top-left at (x, y). */
+  const pasteClipboard = useCallback((x: number, y: number) => {
+    if (!clipboard) return;
+    const out: PaintCell[] = [];
+    for (let dy = 0; dy < clipboard.h; dy++) {
+      for (let dx = 0; dx < clipboard.w; dx++) {
+        const px = x + dx, py = y + dy;
+        if (!inBounds(px, py, W, H)) continue;
+        const src = clipboard.cells[dy * clipboard.w + dx];
+        // Skip blank source cells so pasting doesn't erase art underneath.
+        if (src.ch === ' ') continue;
+        out.push({ x: px, y: py, cell: { ...src } });
+      }
+    }
+    if (out.length > 0) onPaint(out, nextStroke());
+  }, [clipboard, W, H, onPaint]);
+
   const beginStroke = (x: number, y: number) => {
     if (!inBounds(x, y, W, H)) return;
     switch (brush.tool) {
@@ -482,6 +580,13 @@ export function AsciiGrid({
         return;
       }
       case 'select':
+        // Tap with a loaded clipboard pastes; otherwise start a marquee.
+        if (clipboard && !normSel) {
+          pasteClipboard(x, y);
+          return;
+        }
+        setSelAnchor([x, y]);
+        setSelCorner([x, y]);
         return;
       default: {
         // brush + erase + paint: freehand.
@@ -504,6 +609,9 @@ export function AsciiGrid({
     if (brush.tool === 'brush' || brush.tool === 'erase' || brush.tool === 'paint') {
       paintFreehand(s.last[0], s.last[1], x, y, s.id, s.painted);
       s.last = [x, y];
+    }
+    if (brush.tool === 'select' && selAnchor) {
+      setSelCorner([x, y]);
     }
   };
 
@@ -541,10 +649,13 @@ export function AsciiGrid({
                 textAnchor !== null &&
                 textAnchor[0] + textCaret === c &&
                 textAnchor[1] === r;
+              const inSel = normSel !== null &&
+                c >= normSel.x0 && c <= normSel.x1 &&
+                r >= normSel.y0 && r <= normSel.y1;
               return (
                 <span
                   key={c}
-                  {...stylex.props(styles.cell)}
+                  {...stylex.props(styles.cell, inSel && styles.selCell)}
                   onPointerDown={(e) => {
                     e.preventDefault();
                     beginStroke(c, r);
@@ -725,6 +836,30 @@ export function AsciiGrid({
             size="sm"
             tooltip="Discard the text"
             onClick={cancelText}
+          />
+        </div>
+      )}
+      {normSel !== null && brush.tool === 'select' && (
+        <div {...stylex.props(styles.selBar)}>
+          <Button size="sm" label="Cut" onClick={cutSelection}>Cut</Button>
+          <Button size="sm" label="Copy" onClick={copySelection}>Copy</Button>
+          <Button size="sm" label="Delete" onClick={deleteSelection}>Delete</Button>
+          <IconButton
+            icon={<IconClose />}
+            label="Clear selection"
+            size="sm"
+            onClick={clearSelection}
+          />
+        </div>
+      )}
+      {clipboard !== null && normSel === null && brush.tool === 'select' && (
+        <div {...stylex.props(styles.selBar)}>
+          <Text size="sm">Tap the canvas to place</Text>
+          <IconButton
+            icon={<IconClose />}
+            label="Discard clipboard"
+            size="sm"
+            onClick={() => setClipboard(null)}
           />
         </div>
       )}

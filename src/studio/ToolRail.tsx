@@ -104,7 +104,7 @@ const styles = stylex.create({
 
 // Every tool paints today except Select, which stays an honest stub until
 // region selection lands.
-const LIVE_TOOLS = new Set(['brush', 'paint', 'erase', 'fill', 'text', 'stamp', 'pick']);
+const LIVE_TOOLS = new Set(['select', 'brush', 'paint', 'erase', 'fill', 'text', 'stamp', 'pick']);
 
 // Shared with the canvas: the mobile tool badge shows the active tool's
 // icon + label, so this list is the single source of truth. Order is the
