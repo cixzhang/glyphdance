@@ -55,6 +55,10 @@ const styles = stylex.create({
     gap: 4,
     minWidth: 264,
   },
+  // Breathing room between the BG swatches and the transparent switch.
+  transparentSwitch: {
+    marginTop: 8,
+  },
   // The glyph character inside the toggle button, in the code font.
   glyphChar: {
     fontFamily: 'var(--font-family-code)',
@@ -266,6 +270,7 @@ export function ColorPopoverContent({
           value={transparentBg}
           onChange={(v) => onChange({ bg: v ? '' : BG[0] })}
           size="sm"
+          xstyle={styles.transparentSwitch}
         />
       </VStack>
     </div>
