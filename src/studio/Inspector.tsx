@@ -596,18 +596,18 @@ function ExportPanel({ doc, getActive }: { doc: DocState; getActive: () => numbe
             GIF · all frames
           </Button>
           <Button
-            label="Download frames as stamp JSON"
+            label="Download all frames as JSON"
             variant="secondary"
             size="sm"
             onClick={() => downloadStampJson(doc.name, doc.frames, doc.width, doc.height)}
           >
-            JSON · stamp
+            JSON · all frames
           </Button>
         </VStack>
         <Text type="supporting" color="disabled">
           PNG renders at 2× for crispness. GIF loops forever at each frame's
-          hold time. JSON crops to the art's bounding box — send it to the
-          agent to turn frames into a stamp.
+          hold time. JSON is a full representation of all frames — send it to
+          the agent to turn frames into a stamp.
         </Text>
       </VStack>
     </Card>
