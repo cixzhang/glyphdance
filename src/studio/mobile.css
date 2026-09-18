@@ -13,3 +13,13 @@
     font-size: 16px;
   }
 }
+
+/**
+ * PWA: the Panels drawer (Astryx MobileNav) has no safe-area handling, so
+ * its header tucks under the iOS status bar / notch in standalone mode.
+ * Push the drawer down by the top inset. The dialog carries
+ * aria-label="Panels" from the MobileNav header prop.
+ */
+dialog[aria-label='Panels'] > div {
+  padding-top: env(safe-area-inset-top);
+}

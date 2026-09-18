@@ -43,7 +43,8 @@ const styles = stylex.create({
       justifyContent: 'flex-start',
       gap: 6,
       height: 'auto',
-      padding: '8px 12px calc(8px + env(safe-area-inset-bottom))',
+      // The app root already pads for the home indicator; don't double it.
+      padding: '8px 12px',
       overflowX: 'auto',
       overflowY: 'hidden',
       borderRight: 'none',
