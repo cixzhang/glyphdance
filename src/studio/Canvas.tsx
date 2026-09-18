@@ -19,7 +19,7 @@ import type { PaintCell } from './actions.ts';
 import { toSupportedText } from './glyphs.ts';
 import { themeById } from './scene.ts';
 import { canvasFontById } from './canvasFonts.ts';
-import { resolveStamp, kindSwatchKey } from './stamps.ts';
+import { resolveStamp } from './stamps.ts';
 import type { Brush, ToolId } from './brush.ts';
 
 const styles = stylex.create({
@@ -488,7 +488,10 @@ export function AsciiGrid({
     if (!brush.stampId) return;
     const stamp = resolveStamp(brush.stampId, doc.stamps);
     if (!stamp) return;
-    const fg = stamp.fg ?? theme[kindSwatchKey(stamp.kind)];
+    // Monochrome stamps paint with the current swatch color — selecting a
+    // stamp sets the swatch to its signature color, but the user can change
+    // it afterwards.
+    const fg = brush.fg;
     // The App spreads the stamp's animation frames across the document
     // frames — one tap and the stamp animates to the end of the timeline.
     onPlaceStamp(brush.stampId, x, y, fg);

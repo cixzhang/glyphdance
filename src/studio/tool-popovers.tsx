@@ -366,7 +366,7 @@ export function StampPopoverContent({
                   isSelected={selected}
                   onChange={(isSelected) => {
                     if (isSelected)
-                      onBrushChange({ tool: 'stamp', stampId: s.id });
+                      onBrushChange({ tool: 'stamp', stampId: s.id, fg: s.fg });
                   }}
                   xstyle={styles.stampCard}
                 >
@@ -402,7 +402,7 @@ export function StampPopoverContent({
                   label={`Stamp: ${s.id}${s.frames.length > 1 ? `, ${s.frames.length}-frame animated loop` : ''}`}
                   isSelected={selected}
                   onChange={(isSelected) => {
-                    if (isSelected) onBrushChange({ tool: 'stamp', stampId: s.id });
+                    if (isSelected) onBrushChange({ tool: 'stamp', stampId: s.id, fg: s.fg ?? sec.color });
                   }}
                   xstyle={styles.stampCard}
                 >
