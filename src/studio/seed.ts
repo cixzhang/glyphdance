@@ -1,6 +1,6 @@
-// Starter document: the ghost mascot drifting over a mixed-style scene,
-// baked into real editable cells. New documents start here; "Reset demo"
-// in the Document panel re-seeds.
+// Starter document: circular motes dancing in a ring, baked into real
+// editable cells. New documents start here; "Reset demo" in the Document
+// panel re-seeds.
 
 import {
   GRID_W,
@@ -8,97 +8,37 @@ import {
   DOC_NAME,
   blankFrame,
   cellIndex,
-  inBounds,
   type DocState,
   type Frame,
 } from './document.ts';
-import {
-  ET_SPRITES,
-  NATURE_SPRITES,
-  CRITTER_SPRITES,
-  STARS,
-  spriteById,
-  themeById,
-} from './scene.ts';
+import { themeById } from './scene.ts';
 
-/**
- * Paint sprite art onto a frame, preserving each character as drawn.
- * (The old version replaced every glyph with a full block — fine for the
- * invader set, wrong for character-based art.)
- */
-function stampArt(
-  frame: Frame,
-  art: string[],
-  x0: number,
-  y0: number,
-  fg: string,
-): void {
-  for (let r = 0; r < art.length; r++) {
-    const line = art[r];
-    for (let c = 0; c < line.length; c++) {
-      const ch = line[c];
-      if (ch === ' ') continue;
-      const x = x0 + c;
-      const y = y0 + r;
-      if (!inBounds(x, y)) continue;
-      frame.cells[cellIndex(x, y)] = { ch, fg, bg: '' };
-    }
-  }
-}
+// Mote glyphs, ordered small → large for a pulsing feel.
+const MOTES = ['°', 'o', 'O', '•'];
+const MOTES_PER_RING = 8;
 
 export function seedDocument(mode: 'light' | 'dark'): DocState {
   const sw = themeById('dracula')[mode];
-  const ghost = spriteById(ET_SPRITES, 'ghost');
-  const cloud = spriteById(NATURE_SPRITES, 'cloud');
-  const pine = spriteById(NATURE_SPRITES, 'pine');
-  const cat = spriteById(CRITTER_SPRITES, 'cat');
-  const holds = [400, 400, 400, 400];
+  const colors = [sw.invader, sw.player, sw.star];
+  const cx = GRID_W / 2;
+  const cy = GRID_H / 2;
+  const radius = Math.min(GRID_W, GRID_H) / 2 - 2;
+  const holds = [300, 300, 300, 300, 300, 300, 300, 300];
   const frames: Frame[] = [];
 
-  const ghostW = Math.max(...ghost.frames[0].map((l) => l.length));
-  const cloudW = Math.max(...cloud.frames[0].map((l) => l.length));
-  const pineW = Math.max(...pine.frames[0].map((l) => l.length));
-  const catW = Math.max(...cat.frames[0].map((l) => l.length));
-
-  for (let f = 0; f < 4; f++) {
+  for (let f = 0; f < MOTES_PER_RING; f++) {
     const frame = blankFrame(holds[f]);
-
-    // The ghost mascot hovers center-stage, bobbing gently; its bottom
-    // wave alternates each frame.
-    const ghostArt = ghost.frames[f % ghost.frames.length];
-    const bob = [0, -1, 0, 1][f];
-    stampArt(
-      frame,
-      ghostArt,
-      Math.round((GRID_W - ghostW) / 2),
-      3 + bob,
-      sw.invader,
-    );
-
-    // A shaded cloud drifts across the top.
-    const cloudArt = cloud.frames[f % cloud.frames.length];
-    const drift = [0, 2, 4, 6][f];
-    stampArt(frame, cloudArt, 2 + drift, 1, sw.star);
-
-    // A pine anchors the bottom-left; a cat blinks beside it.
-    const pineArt = pine.frames[0];
-    stampArt(frame, pineArt, 2, GRID_H - pineArt.length - 1, sw.invader);
-    const catArt = cat.frames[f % cat.frames.length];
-    stampArt(
-      frame,
-      catArt,
-      4 + pineW,
-      GRID_H - catArt.length - 1,
-      sw.player,
-    );
-
-    // Stars twinkle over empty cells only, so they never stomp the actors.
-    for (const [sr, sc] of STARS) {
-      if (
-        frame.cells[cellIndex(sc, sr)].ch === ' ' &&
-        (sr * 7 + sc + f) % 3 > 0
-      ) {
-        frame.cells[cellIndex(sc, sr)] = { ch: '*', fg: sw.star, bg: '' };
+    for (let i = 0; i < MOTES_PER_RING; i++) {
+      // Each mote advances one step around the ring per frame — the ring
+      // appears to rotate. Glyph size pulses with position for a dance.
+      const step = (i + f) % MOTES_PER_RING;
+      const angle = (step / MOTES_PER_RING) * Math.PI * 2 - Math.PI / 2;
+      const x = Math.round(cx + Math.cos(angle) * radius);
+      const y = Math.round(cy + Math.sin(angle) * radius * 0.7);
+      const ch = MOTES[(i + f) % MOTES.length];
+      const fg = colors[(i + f) % colors.length];
+      if (x >= 0 && x < GRID_W && y >= 0 && y < GRID_H) {
+        frame.cells[cellIndex(x, y)] = { ch, fg, bg: '' };
       }
     }
     frames.push(frame);
