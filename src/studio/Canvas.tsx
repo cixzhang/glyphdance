@@ -50,12 +50,10 @@ const styles = stylex.create({
     // AsciiThumb overrides fontSize inline, so thumbnails are unaffected.
     '--gd-cell': 'clamp(10px, 1.9vw, 22px)',
     fontSize: 'calc(var(--gd-cell) * var(--gd-zoom, 1))',
-    // 1.083 = Cozette's natural line box: hhea ascent 853 + descent 256 over
-    // 1024 upm (USE_TYPO_METRICS is off, so `normal` resolves the same).
-    // Block/shade glyphs span the full box, so rows at exactly this height
-    // sit directly adjacent — fills connect vertically with no gaps — and
-    // nothing clips, because every glyph fits inside the hhea box.
-    lineHeight: 1.083,
+    // Tightened from 1.083 (Cozette's natural line box) to 1.0 — the glyphs
+    // looked vertically stretched. Block/shade glyphs may clip slightly at
+    // the extremes, but text glyphs look correct.
+    lineHeight: 1,
     letterSpacing: 0,
     margin: 'auto',
     userSelect: 'none',
@@ -67,23 +65,22 @@ const styles = stylex.create({
     },
   },
   // Cell grid lines drawn as a background: each tile is exactly one cell
-  // (1ch wide, 1.083em tall — Cozette's natural line box), so the lines
-  // fall between characters.
+  // (1ch wide, 1em tall), so the lines fall between characters.
   gridLines: {
     backgroundImage:
       'linear-gradient(to bottom, var(--gd-gridline) 1px, transparent 1px),' +
       'linear-gradient(to right, var(--gd-gridline) 1px, transparent 1px)',
-    backgroundSize: '1ch 1.083em',
+    backgroundSize: '1ch 1em',
   },
-  row: { display: 'block', height: '1.083em' },
-  // Each cell is an inline-block tile exactly 1ch × 1.083em — the same tile
+  row: { display: 'block', height: '1em' },
+  // Each cell is an inline-block tile exactly 1ch × 1em — the same tile
   // the grid-lines background and rows use — so painted backgrounds tile
   // seamlessly: no vertical gaps between rows, fills connect.
   cell: {
     display: 'inline-block',
     width: '1ch',
-    height: '1.083em',
-    lineHeight: '1.083',
+    height: '1em',
+    lineHeight: '1',
     textAlign: 'center',
     verticalAlign: 'top',
     overflow: 'hidden',
