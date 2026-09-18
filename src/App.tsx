@@ -25,12 +25,10 @@ import type { PaintCell } from './studio/actions.ts';
 
 const styles = stylex.create({
   root: {
-    // Full-viewport app shell. position:fixed + inset:0 plus explicit
-    // 100dvh: iOS standalone PWAs can misreport viewport sizing, so we
-    // belt-and-suspenders with both. The inset handles the positioning,
-    // dvh handles the sizing if inset is miscalculated.
-    position: 'fixed',
-    inset: 0,
+    // Full-viewport app shell. Normal flow with 100dvh: position:fixed
+    // has proven unreliable in iOS PWA (root ends 74pt short of the
+    // visual viewport, leaving a Dracula dead band). The body is
+    // overflow:hidden, so normal flow with dvh fills correctly.
     width: '100vw',
     height: '100dvh',
     // In the installed PWA there is no browser chrome: pad for the notch /
