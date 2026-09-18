@@ -34,7 +34,7 @@ const styles = stylex.create({
     height: '100%',
     paddingTop: 10,
     paddingBottom: 10,
-    backgroundColor: 'var(--color-background-surface)',
+    backgroundColor: 'var(--color-background-body)',
     borderRight: '1px solid var(--color-border)',
     // Mobile: the rail becomes a horizontal tool strip docked at the bottom.
     '@media (max-width: 760px)': {

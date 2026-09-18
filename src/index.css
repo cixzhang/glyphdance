@@ -39,7 +39,7 @@ body,
   --gd-accent: #7cc7ff;
   --gd-amber: #f5a524;
   --gd-bubble: #2b3a4a;
-  --gd-float: color-mix(in srgb, var(--color-background-popover) 88%, transparent);
+  --gd-float: color-mix(in srgb, var(--color-background-popover) 50%, transparent);
 }
 
 body {
