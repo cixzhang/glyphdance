@@ -58,7 +58,7 @@ Pushes to `main` deploy automatically via Vercel.
 ## Stack
 
 React 19 + Vite + TypeScript, Astryx UI, StyleX. Fonts: Cozette, IBM VGA,
-JetBrains Mono, System Mono.
+JetBrains Mono, System Mono. Built with Muse.
 
 ## License
 
