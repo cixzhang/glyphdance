@@ -60,6 +60,11 @@ SYMBOLS = [
     ("≥", "greater-than or equal to"), ("∞", "infinity"),
     ("√", "square root"), ("∑", "n-ary summation"),
     ("π", "greek small letter pi"),
+    # Arcs & rounded corners
+    ("╭", "arc top left"), ("╮", "arc top right"),
+    ("╰", "arc bottom left"), ("╯", "arc bottom right"),
+    ("◔", "arc quadrant top left"), ("◑", "arc quadrant top right"),
+    ("◒", "arc quadrant bottom left"), ("◓", "arc quadrant bottom right"),
     # Box drawing
     ("─", "box drawings light horizontal"),
     ("│", "box drawings light vertical"),
