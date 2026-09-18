@@ -5,11 +5,11 @@
 
 import {
   ET_SPRITES,
-  PLAYER_SPRITES,
   CRITTER_SPRITES,
-  SPACE_SPRITES,
   NATURE_SPRITES,
-  PLAY_SPRITES,
+  FACE_SPRITES,
+  ITEM_SPRITES,
+  OBJECT_SPRITES,
   type Sprite,
 } from './scene.ts';
 import { PALETTE } from './glyphs.ts';
@@ -26,16 +26,16 @@ function renderSprite(s: Sprite, kind: string): string {
 /** The built-in stamp catalog, generated from the real sprite data. */
 export const STAMP_CATALOG: string = [
   ...ET_SPRITES.map((s) => renderSprite(s, 'invader')),
-  ...PLAYER_SPRITES.map((s) => renderSprite(s, 'ship')),
   ...CRITTER_SPRITES.map((s) => renderSprite(s, 'critter')),
-  ...SPACE_SPRITES.map((s) => renderSprite(s, 'space')),
   ...NATURE_SPRITES.map((s) => renderSprite(s, 'nature')),
-  ...PLAY_SPRITES.map((s) => renderSprite(s, 'play')),
+  ...FACE_SPRITES.map((s) => renderSprite(s, 'face')),
+  ...ITEM_SPRITES.map((s) => renderSprite(s, 'item')),
+  ...OBJECT_SPRITES.map((s) => renderSprite(s, 'object')),
 ].join('\n\n');
 
 export const STAMP_SKILL = `Stamps
 Finding the right stamp — when the user names a thing ("add snowflakes", "put a ufo here"):
-1. SEARCH the built-in catalog below and their stamp list for a match — be generous with plurals and synonyms ("snowflakes"→no match; "kitty"→cat; "ufo"→saucer; "ship"→dart/rocket/dish; "ghost"→ghost).
+1. SEARCH the built-in catalog below and their stamp list for a match — be generous with plurals and synonyms ("snowflakes"→no match; "kitty"→cat; "ufo"→saucer; "ghost"→ghost; "smiley"→happy).
 2. Match found → placeStamp it. Never re-create a stamp that already exists.
 3. No match → CREATE it with addStamp, designing the art from the glyph advice below, then placeStamp it in the SAME reply so the user sees it immediately.
    If the user named a specific character, emoji, or symbol that ISN'T in the glyph repertoire (e.g. 🐉, ★, ❅), do NOT emit that character anywhere — it renders as an empty box and the action layer will reject it. Instead invent a custom stamp that evokes it using ONLY supported glyphs (a dragon from █ ▲ ● ~, a star from ✦, a snowflake from ❄), then addStamp + placeStamp it in the SAME reply.
@@ -43,7 +43,7 @@ Finding the right stamp — when the user names a thing ("add snowflakes", "put 
 
 To USE a stamp from the catalog, emit a placeStamp action — never hand-draw a stamp's cells:
 {"type":"placeStamp","stampId":"crab","frame":0,"x":12,"y":7,"fg":"<invader color>","bg":""}
-x,y is the CENTER of the stamp on the canvas (size is in the document description above), and the WHOLE stamp must fit inside the canvas — placements that would clip at the edge are rejected, so keep the full stamp extent in bounds. bg "" keeps the background transparent. Use the theme's stamp colors given above for fg so stamps match the scene (invaders/nature: invader color; ships/play: player color; critters/space: star color).
+x,y is the CENTER of the stamp on the canvas (size is in the document description above), and the WHOLE stamp must fit inside the canvas — placements that would clip at the edge are rejected, so keep the full stamp extent in bounds. bg "" keeps the background transparent. Use the theme's stamp colors given above for fg so stamps match the scene (invaders/nature: invader color; items/objects: player color; critters/faces: star color).
 
 To CREATE a new stamp the user can keep and reuse from their Stamps panel, emit addStamp:
 {"type":"addStamp","stamp":{"id":"cat","fg":"#ffd75e","frames":[[" /\\\\_/\\\\ ","( o.o )"," > ^ < "],[" /\\\\_/\\\\ ","( -.- )"," > ^ < "]]}}
@@ -94,13 +94,13 @@ When the user names one small thing ("a star", "snowflakes"), a 1-cell stamp str
 export const COLOR_SKILL = `Color — paint in color, always.
 - Every paintCells cell carries fg (and optional bg); placeStamp takes fg/bg too. A whole piece in a single fg is unfinished — never do it.
 - Give every element its own fg from the theme palette: silhouette in one theme color, interior details, eyes, highlights, shadows, and motion trails in 2-4 other theme colors.
-- The document description above lists the current theme and its stamp colors (invaders/nature, ships/play, critters/space, background). Default to those so new art matches the scene.
+- The document description above lists the current theme and its stamp colors (invaders/nature, items/objects, critters/faces, background). Default to those so new art matches the scene.
 - bg "" keeps cells transparent so the theme background shows through; set bg only for solid fills or glow effects.
 - setTheme switches the whole palette — use it only when the user asks for a different mood or names a palette, never unprompted.`;
 
 export const PIXEL_ART_SKILL = `Pixel-art technique (canvas size is in the document description above — x is 0..width-1, y is 0..height-1)
 - Sketch before you emit: plan the full layout on coordinates first. Keep subjects 5-10 cells wide so they read; the grid is small.
-- Symmetry is your friend: creatures and ships read best mirrored left/right.
+- Symmetry is your friend: creatures and faces read best mirrored left/right.
 - Batch ALL cells for one frame into ONE paintCells action. Never emit one cell per action.
 - Animate with tiny changes: duplicate a frame, then move the subject 1-2 cells or toggle 2-3 cells (blink = eyes open/closed, bounce = shift down 1 cell and back). 2-4 frames is usually enough.
 - Outlines beat detail: a clear silhouette in one glyph (█) with 2-3 accent glyphs reads better than fiddly interiors.

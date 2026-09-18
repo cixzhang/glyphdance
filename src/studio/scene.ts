@@ -113,62 +113,182 @@ export const ET_SPRITES: Sprite[] = [
       ],
     ],
   },
-];
-
-/** The player. Little ships, one frame each. */
-export const PLAYER_SPRITES: Sprite[] = [
-  {
-    id: 'dart',
-    name: 'Dart',
-    frames: [
-      ['   █   ', '  ███  ', ' █████ ', '██ █ ██'],
-    ],
-  },
-  {
-    id: 'rocket',
-    name: 'Rocket',
-    frames: [
-      ['  █  ', ' ███ ', ' ███ ', '█████', ' █ █ ', ' █ █ '],
-    ],
-  },
-  {
-    id: 'dish',
-    name: 'Dish',
-    frames: [
-      ['     ███     ', '  █████████  ', '█████████████'],
-    ],
-  },
-];
-
-// Critters — pale things (theme's star color): a wobbling ghost, a blinking
-// cat, and a spotted mushroom.
-export const CRITTER_SPRITES: Sprite[] = [
   {
     id: 'ghost',
     name: 'Ghost',
     frames: [
       [
-        ' █████ ',
-        '███████',
-        '█ ██ ██',
-        '███████',
-        '██ █ ██',
+        '   █████   ',
+        ' █████████ ',
+        '███████████',
+        '██  ███  ██',
+        '██  ███  ██',
+        '███████████',
+        '███████████',
+        '██ ██ ██ ██',
       ],
       [
-        ' █████ ',
-        '███████',
-        '█ ██ ██',
-        '███████',
-        '█ ██ █ ',
+        '   █████   ',
+        ' █████████ ',
+        '███████████',
+        '██  ███  ██',
+        '██  ███  ██',
+        '███████████',
+        '███████████',
+        ' ██ ██ ██  ',
       ],
     ],
   },
+];
+
+// FACES — kaomoji style, safe glyphs only.
+export const FACE_SPRITES: Sprite[] = [
+  {
+    id: 'happy',
+    name: 'Happy',
+    frames: [['(*^_^*)']],
+  },
+  {
+    id: 'shrug',
+    name: 'Shrug',
+    frames: [['¯\\_(.)_/¯']],
+  },
+  {
+    id: 'bear',
+    name: 'Bear',
+    frames: [['()   ()', '( o.o )']],
+  },
+  {
+    id: 'wow',
+    name: 'Wow',
+    frames: [['\\(°o°)/']],
+  },
+];
+
+// CRITTERS — oldskool outline + Joan Stark line art.
+export const CRITTER_SPRITES: Sprite[] = [
   {
     id: 'cat',
     name: 'Cat',
     frames: [
-      [' /\\_/\\ ', '( o.o )', ' > ^ < '],
-      [' /\\_/\\ ', '( -.- )', ' > ^ < '],
+      ['|\\___/|', '| o o |', ' \\_^_/ '],
+      ['|\\___/|', '| - - |', ' \\_^_/ '],
+    ],
+  },
+  {
+    id: 'bird',
+    name: 'Bird',
+    frames: [['   __  ', ' <(o)__', '  \\_)  ']],
+  },
+  {
+    id: 'rabbit',
+    name: 'Rabbit',
+    frames: [['/\\   /\\', '( o.o )', ' \\___/ ']],
+  },
+  {
+    id: 'frog',
+    name: 'Frog',
+    frames: [
+      [' (o) (o) ', '(   ^   )', ' \\_____/ '],
+      [' (-) (-) ', '(   ^   )', ' \\_____/ '],
+    ],
+  },
+];
+
+// ITEMS — Stone Story game-sprite method.
+export const ITEM_SPRITES: Sprite[] = [
+  {
+    id: 'sword',
+    name: 'Sword',
+    frames: [
+      [
+        '    /\\   ',
+        '    ||   ',
+        '    ||   ',
+        '    ||   ',
+        ' --||--  ',
+        '    ||   ',
+        '    ()   ',
+      ],
+    ],
+  },
+  {
+    id: 'potion',
+    name: 'Potion',
+    frames: [
+      ['  __  ', '  ||  ', ' /__\\ ', ' |  | ', ' | o| ', ' \\__/ '],
+      ['  __  ', '  ||  ', ' /__\\ ', ' | o| ', ' |  | ', ' \\__/ '],
+    ],
+  },
+  {
+    id: 'key',
+    name: 'Key',
+    frames: [
+      [
+        ' __   ',
+        '/  \\  ',
+        '|  |  ',
+        '\\__/  ',
+        ' |    ',
+        ' |--  ',
+        ' |    ',
+      ],
+    ],
+  },
+  {
+    id: 'shield',
+    name: 'Shield',
+    frames: [
+      [
+        ' _______ ',
+        '/       \\',
+        '|       |',
+        '|   +   |',
+        '|       |',
+        ' \\     / ',
+        '  \\___/  ',
+      ],
+    ],
+  },
+];
+
+// NATURE — line art + density shading.
+export const NATURE_SPRITES: Sprite[] = [
+  {
+    id: 'flower',
+    name: 'Flower',
+    frames: [['  \\|/  ', '  -o-  ', '  /|\\  ', '   |   ', '  / \\  ']],
+  },
+  {
+    id: 'cloud',
+    name: 'Cloud',
+    frames: [
+      [
+        '    ____      ',
+        ' __(    )__   ',
+        '(            )',
+        ' ▒▒▒▒▒▒▒▒▒▒▒  ',
+      ],
+      [
+        '     ____     ',
+        '  __(    )__  ',
+        ' (           )',
+        '  ▒▒▒▒▒▒▒▒▒▒▒ ',
+      ],
+    ],
+  },
+  {
+    id: 'pine',
+    name: 'Pine',
+    frames: [
+      [
+        '    ^    ',
+        '   /|\\   ',
+        '  /_|_\\  ',
+        ' /__|__\\ ',
+        '/___|___\\',
+        '    |    ',
+      ],
     ],
   },
   {
@@ -176,168 +296,77 @@ export const CRITTER_SPRITES: Sprite[] = [
     name: 'Mushroom',
     frames: [
       [
-        ' █████ ',
-        '███████',
-        '██ █ ██',
-        '  ███  ',
-        '  ███  ',
+        '  _____  ',
+        ' /     \\ ',
+        '| o   o |',
+        ' \\_____/ ',
+        '   | |   ',
+        '   |_|   ',
       ],
     ],
   },
 ];
 
-// Space — celestial bodies (theme's star color): a ringed planet with a
-// shimmering ring and a comet with a flickering tail.
-export const SPACE_SPRITES: Sprite[] = [
+// OBJECTS — box-drawing style.
+export const OBJECT_SPRITES: Sprite[] = [
   {
-    id: 'planet',
-    name: 'Planet',
+    id: 'robot',
+    name: 'Robot',
     frames: [
       [
-        '   ███   ',
-        '  █████  ',
-        '█████████',
-        '  █████  ',
-        '   ███   ',
-      ],
-      [
-        '   ███   ',
-        '  █████  ',
-        ' ███████ ',
-        '  █████  ',
-        '   ███   ',
+        '   │   ',
+        '   o   ',
+        '┌─────┐',
+        '│ o o │',
+        '│ \\_/ │',
+        '└─────┘',
       ],
     ],
   },
   {
-    id: 'comet',
-    name: 'Comet',
+    id: 'mug',
+    name: 'Mug',
     frames: [
       [
-        '     ● ',
-        '   ██  ',
-        ' ████  ',
-        '██████ ',
-      ],
-      [
-        '     ● ',
-        '    ██ ',
-        '  ████ ',
-        ' ██████',
-      ],
-    ],
-  },
-];
-
-// Nature — green things (theme's invader color): a tree and a swaying flower.
-export const NATURE_SPRITES: Sprite[] = [
-  {
-    id: 'tree',
-    name: 'Tree',
-    frames: [
-      [
-        '   █   ',
-        '  ███  ',
-        ' █████ ',
-        '███████',
-        '   █   ',
-        '   █   ',
+        '  ~  ~   ',
+        '┌─────┐  ',
+        '│     │╭╮',
+        '│     │││',
+        '└─────┘╰╯',
       ],
     ],
   },
   {
-    id: 'flower',
-    name: 'Flower',
+    id: 'tv',
+    name: 'TV',
     frames: [
       [
-        '  █ █  ',
-        ' █████ ',
-        '  ███  ',
-        '   █   ',
-        '   █   ',
-        '   █   ',
+        '  \\     /  ',
+        '   \\   /   ',
+        '┌─────────┐',
+        '│ ┌───┐   │',
+        '│ │   │ o │',
+        '│ └───┘   │',
+        '└─────────┘',
       ],
+    ],
+  },
+  {
+    id: 'chest',
+    name: 'Chest',
+    frames: [
       [
-        '   █ █ ',
-        '  █████',
-        '   ███ ',
-        '   █   ',
-        '    █  ',
-        '    █  ',
+        '╭─────────╮',
+        '│         │',
+        '├────┬────┤',
+        '│    │    │',
+        '│    │    │',
+        '╰────┴────╯',
       ],
     ],
   },
 ];
 
-// Play — candy-colored toys (theme's player color): a chomping pac, a
-// pulsing heart, and a bobbing balloon.
-export const PLAY_SPRITES: Sprite[] = [
-  {
-    id: 'pac',
-    name: 'Pac',
-    frames: [
-      [
-        ' ████ ',
-        '████  ',
-        '██    ',
-        '████  ',
-        ' ████ ',
-      ],
-      [
-        ' ████ ',
-        '██████',
-        '██████',
-        '██████',
-        ' ████ ',
-      ],
-    ],
-  },
-  {
-    id: 'heart',
-    name: 'Heart',
-    frames: [
-      [
-        ' ██ ██ ',
-        '███████',
-        '███████',
-        ' █████ ',
-        '  ███  ',
-        '   █   ',
-      ],
-      [
-        '       ',
-        ' █   █ ',
-        ' █████ ',
-        ' █████ ',
-        '  ███  ',
-        '   █   ',
-      ],
-    ],
-  },
-  {
-    id: 'balloon',
-    name: 'Balloon',
-    frames: [
-      [
-        ' ███ ',
-        '█████',
-        '█████',
-        ' ███ ',
-        '  █  ',
-        '  █  ',
-      ],
-      [
-        ' ███ ',
-        '█████',
-        '█████',
-        ' ███ ',
-        '  █  ',
-        '  █  ',
-        '  █  ',
-      ],
-    ],
-  },
-];
 
 export interface ThemeSwatch {
   bg: string;
@@ -357,7 +386,6 @@ export interface SyntaxTheme {
   dark: ThemeSwatch;
   light: ThemeSwatch;
 }
-
 
 /** Palettes borrowed from popular editor syntax themes. */
 export const SYNTAX_THEMES: SyntaxTheme[] = [

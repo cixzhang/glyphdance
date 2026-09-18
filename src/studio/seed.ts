@@ -1,6 +1,6 @@
-// Starter document: the old demo scene (drifting invader, bobbing player,
-// twinkling stars) baked into real editable cells. New documents start here;
-// "Reset demo" in the Document panel re-seeds.
+// Starter document: the ghost mascot drifting over a mixed-style scene,
+// baked into real editable cells. New documents start here; "Reset demo"
+// in the Document panel re-seeds.
 
 import {
   GRID_W,
@@ -14,12 +14,18 @@ import {
 } from './document.ts';
 import {
   ET_SPRITES,
-  PLAYER_SPRITES,
+  NATURE_SPRITES,
+  CRITTER_SPRITES,
   STARS,
   spriteById,
   themeById,
 } from './scene.ts';
 
+/**
+ * Paint sprite art onto a frame, preserving each character as drawn.
+ * (The old version replaced every glyph with a full block — fine for the
+ * invader set, wrong for character-based art.)
+ */
 function stampArt(
   frame: Frame,
   art: string[],
@@ -30,40 +36,59 @@ function stampArt(
   for (let r = 0; r < art.length; r++) {
     const line = art[r];
     for (let c = 0; c < line.length; c++) {
-      if (line[c] === ' ') continue;
+      const ch = line[c];
+      if (ch === ' ') continue;
       const x = x0 + c;
       const y = y0 + r;
       if (!inBounds(x, y)) continue;
-      frame.cells[cellIndex(x, y)] = { ch: '█', fg, bg: '' };
+      frame.cells[cellIndex(x, y)] = { ch, fg, bg: '' };
     }
   }
 }
 
 export function seedDocument(mode: 'light' | 'dark'): DocState {
   const sw = themeById('dracula')[mode];
-  const et = spriteById(ET_SPRITES, 'crab');
-  const player = spriteById(PLAYER_SPRITES, 'dart');
-  const holds = [400, 150, 400, 150];
+  const ghost = spriteById(ET_SPRITES, 'ghost');
+  const cloud = spriteById(NATURE_SPRITES, 'cloud');
+  const pine = spriteById(NATURE_SPRITES, 'pine');
+  const cat = spriteById(CRITTER_SPRITES, 'cat');
+  const holds = [400, 400, 400, 400];
   const frames: Frame[] = [];
+
+  const ghostW = Math.max(...ghost.frames[0].map((l) => l.length));
+  const cloudW = Math.max(...cloud.frames[0].map((l) => l.length));
+  const pineW = Math.max(...pine.frames[0].map((l) => l.length));
+  const catW = Math.max(...cat.frames[0].map((l) => l.length));
 
   for (let f = 0; f < 4; f++) {
     const frame = blankFrame(holds[f]);
 
-    // ET drifts gently across the top, legs shuffling each frame.
-    const etArt = et.frames[f % et.frames.length];
-    const etW = Math.max(...etArt.map((l) => l.length));
-    const drift = [0, 1, 2, 1][f];
-    stampArt(frame, etArt, Math.round((GRID_W - etW) / 2) + drift, 2, sw.invader);
-
-    // The player bobs along the bottom.
-    const pArt = player.frames[0];
-    const pW = Math.max(...pArt.map((l) => l.length));
-    const bob = [0, 1, 0, -1][f];
+    // The ghost mascot hovers center-stage, bobbing gently; its bottom
+    // wave alternates each frame.
+    const ghostArt = ghost.frames[f % ghost.frames.length];
+    const bob = [0, -1, 0, 1][f];
     stampArt(
       frame,
-      pArt,
-      Math.round((GRID_W - pW) / 2) + bob,
-      GRID_H - pArt.length - 1,
+      ghostArt,
+      Math.round((GRID_W - ghostW) / 2),
+      3 + bob,
+      sw.invader,
+    );
+
+    // A shaded cloud drifts across the top.
+    const cloudArt = cloud.frames[f % cloud.frames.length];
+    const drift = [0, 2, 4, 6][f];
+    stampArt(frame, cloudArt, 2 + drift, 1, sw.star);
+
+    // A pine anchors the bottom-left; a cat blinks beside it.
+    const pineArt = pine.frames[0];
+    stampArt(frame, pineArt, 2, GRID_H - pineArt.length - 1, sw.invader);
+    const catArt = cat.frames[f % cat.frames.length];
+    stampArt(
+      frame,
+      catArt,
+      4 + pineW,
+      GRID_H - catArt.length - 1,
       sw.player,
     );
 

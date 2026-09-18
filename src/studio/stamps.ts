@@ -4,11 +4,11 @@
 
 import {
   ET_SPRITES,
-  PLAYER_SPRITES,
   CRITTER_SPRITES,
-  SPACE_SPRITES,
   NATURE_SPRITES,
-  PLAY_SPRITES,
+  FACE_SPRITES,
+  ITEM_SPRITES,
+  OBJECT_SPRITES,
   type Sprite,
 } from './scene.ts';
 import {
@@ -20,11 +20,11 @@ import type { PaintCell } from './actions.ts';
 
 export type StampKind =
   | 'invader'
-  | 'player'
   | 'critter'
-  | 'space'
   | 'nature'
-  | 'play'
+  | 'face'
+  | 'item'
+  | 'object'
   | 'custom';
 
 export interface ResolvedStamp {
@@ -38,28 +38,28 @@ export interface ResolvedStamp {
 
 const BUILTIN: Array<{ sprites: Sprite[]; kind: StampKind }> = [
   { sprites: ET_SPRITES, kind: 'invader' },
-  { sprites: PLAYER_SPRITES, kind: 'player' },
   { sprites: CRITTER_SPRITES, kind: 'critter' },
-  { sprites: SPACE_SPRITES, kind: 'space' },
   { sprites: NATURE_SPRITES, kind: 'nature' },
-  { sprites: PLAY_SPRITES, kind: 'play' },
+  { sprites: FACE_SPRITES, kind: 'face' },
+  { sprites: ITEM_SPRITES, kind: 'item' },
+  { sprites: OBJECT_SPRITES, kind: 'object' },
 ];
 
 /**
  * Which theme-swatch role paints a stamp kind — the single source of truth
  * for panel previews and canvas placement, so built-ins always follow the
- * document's theme: critters/space read pale (star), nature reads green
- * (invader), play reads candy (player).
+ * document's theme: critters/faces read pale (star), nature reads green
+ * (invader), items/objects read candy (player).
  */
 export function kindSwatchKey(kind: StampKind): 'invader' | 'player' | 'star' {
   switch (kind) {
-    case 'player':
-    case 'play':
+    case 'item':
+    case 'object':
       return 'player';
     case 'nature':
       return 'invader';
     case 'critter':
-    case 'space':
+    case 'face':
       return 'star';
     default:
       return 'invader';

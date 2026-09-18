@@ -20,11 +20,11 @@ import {
 } from './glyphs.ts';
 import {
   ET_SPRITES,
-  PLAYER_SPRITES,
   CRITTER_SPRITES,
-  SPACE_SPRITES,
   NATURE_SPRITES,
-  PLAY_SPRITES,
+  FACE_SPRITES,
+  ITEM_SPRITES,
+  OBJECT_SPRITES,
   themeById,
 } from './scene.ts';
 import { kindSwatchKey } from './stamps.ts';
@@ -325,16 +325,17 @@ export function StampPopoverContent({
   mode: 'light' | 'dark';
 }) {
   // Previews use the canvas theme's actor colors so what you see is what
-  // placing the stamp paints: invaders in the theme's invader color, ships
-  // in the player color. (Custom stamps below keep their own fg.)
+  // placing the stamp paints: invaders in the theme's invader color, items
+  // and objects in the player color, critters and faces pale. (Custom stamps
+  // below keep their own fg.)
   const swatch = themeById(doc.themeId)[mode];
   const sections = [
     { title: 'Invaders', sprites: ET_SPRITES, color: swatch[kindSwatchKey('invader')] },
-    { title: 'Ships', sprites: PLAYER_SPRITES, color: swatch[kindSwatchKey('player')] },
     { title: 'Critters', sprites: CRITTER_SPRITES, color: swatch[kindSwatchKey('critter')] },
-    { title: 'Space', sprites: SPACE_SPRITES, color: swatch[kindSwatchKey('space')] },
     { title: 'Nature', sprites: NATURE_SPRITES, color: swatch[kindSwatchKey('nature')] },
-    { title: 'Play', sprites: PLAY_SPRITES, color: swatch[kindSwatchKey('play')] },
+    { title: 'Faces', sprites: FACE_SPRITES, color: swatch[kindSwatchKey('face')] },
+    { title: 'Items', sprites: ITEM_SPRITES, color: swatch[kindSwatchKey('item')] },
+    { title: 'Objects', sprites: OBJECT_SPRITES, color: swatch[kindSwatchKey('object')] },
   ];
   return (
     <div {...stylex.props(styles.pop)}>
