@@ -160,6 +160,7 @@ You edit ONLY by emitting actions as JSON. Reply with exactly one JSON object an
 Action types (every field required):
 - {"type":"paintCells","frame":0,"cells":[{"x":1,"y":2,"cell":{"ch":"█","fg":"#4ade80","bg":""}},{"x":2,"y":2,"cell":{"ch":"█","fg":"#4ade80","bg":""}},{"x":1,"y":3,"cell":{"ch":"●","fg":"#f472b6","bg":""}}]}
   ch must be exactly one character. x is 0..${doc.width - 1}, y is 0..${doc.height - 1}. Batch ALL painted cells for one frame into ONE paintCells action. Notice the fg values differ per element — paint in color, never a whole piece in one fg.
+- {"type":"recolorCells","frame":0,"cells":[{"x":1,"y":2,"fg":"#4ade80","bg":""},{"x":2,"y":2,"fg":"#f472b6","bg":""}]} — change ONLY the colors of existing cells, keeping their characters. Use this to recolor art that's already drawn (like the Paint tool).
 - {"type":"addFrame","after":1} — insert a blank frame after the given frame index.
 - {"type":"resizeCanvas","width":32,"height":20} — resize the canvas (width 4-64, height 4-48); existing art is re-centered on the new canvas, art that doesn't fit is cropped. Use when the user asks for a bigger/smaller canvas.
 - {"type":"duplicateFrame","index":1}
@@ -283,6 +284,13 @@ export function summarizeAction(a: Action): OpLine {
           frameTok(a.frame),
         ],
       };
+    case 'recolorCells':
+      return {
+        segments: [
+          t(`recolored ${a.cells.length} cell${a.cells.length === 1 ? '' : 's'} on `),
+          frameTok(a.frame),
+        ],
+      };
     case 'addFrame':
       return { segments: [t('added '), frameTok(a.after + 1)] };
     case 'duplicateFrame':
@@ -367,6 +375,8 @@ function describeAction(a: Action): string {
   switch (a.type) {
     case 'paintCells':
       return `paintCells(frame ${a.frame}, ${a.cells.length} cells)`;
+    case 'recolorCells':
+      return `recolorCells(frame ${a.frame}, ${a.cells.length} cells)`;
     case 'placeStamp':
       return `placeStamp("${a.stampId}" frame ${a.frame} at ${a.x},${a.y})`;
     case 'addStamp':

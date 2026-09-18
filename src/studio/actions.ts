@@ -29,9 +29,18 @@ export interface PaintCell {
   cell: Cell;
 }
 
+export interface RecolorCell {
+  x: number;
+  y: number;
+  fg: string;
+  bg: string;
+}
+
 export type Action =
   /** Paint cells (brush stroke, eraser, fill, line, stamp — batched). */
   | { type: 'paintCells'; frame: number; cells: PaintCell[]; stroke?: string }
+  /** Recolor cells without changing their characters (the Paint tool). */
+  | { type: 'recolorCells'; frame: number; cells: RecolorCell[]; stroke?: string }
   | { type: 'addFrame'; after: number }
   /** Inverse-only: re-insert a previously removed frame. */
   | { type: 'insertFrame'; at: number; frame: Frame; active: number }
@@ -104,6 +113,14 @@ export function validate(doc: DocState, a: Action): string | null {
         // exist.
         if (!isSupportedGlyph(ch))
           return `cell (${c.x},${c.y}) uses "${ch}", which the canvas font can't draw — design a custom stamp from supported glyphs with addStamp instead of painting it directly`;
+      }
+      return null;
+    case 'recolorCells':
+      if (!validFrame(doc, a.frame)) return `no frame ${a.frame}`;
+      if (a.cells.length === 0) return 'nothing to recolor';
+      for (const c of a.cells) {
+        if (!inBounds(c.x, c.y, doc.width, doc.height))
+          return `cell (${c.x},${c.y}) out of bounds`;
       }
       return null;
     case 'addFrame':
@@ -281,6 +298,25 @@ export function applyAction(doc: DocState, a: Action): Applied {
       const next = setCells(doc, a.frame, a.cells);
       const inverse: Action = {
         type: 'paintCells',
+        frame: a.frame,
+        cells: before,
+        stroke: a.stroke,
+      };
+      return { doc: next, inverse };
+    }
+    case 'recolorCells': {
+      const frame = doc.frames[a.frame];
+      const before: RecolorCell[] = a.cells.map((c) => {
+        const cell = frame.cells[cellIndex(c.x, c.y, doc.width)];
+        return { x: c.x, y: c.y, fg: cell.fg, bg: cell.bg };
+      });
+      const painted: PaintCell[] = a.cells.map((c) => {
+        const cell = frame.cells[cellIndex(c.x, c.y, doc.width)];
+        return { x: c.x, y: c.y, cell: { ...cell, fg: c.fg, bg: c.bg } };
+      });
+      const next = setCells(doc, a.frame, painted);
+      const inverse: Action = {
+        type: 'recolorCells',
         frame: a.frame,
         cells: before,
         stroke: a.stroke,
