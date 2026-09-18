@@ -21,6 +21,20 @@ import {
   COLOR_SKILL,
 } from './agent-skills.ts';
 import { themeById } from './scene.ts';
+import { canvasFontById } from './canvasFonts.ts';
+
+/** Per-font glyph limitation notes for the agent's prompt. */
+function fontNote(fontId: string): string {
+  switch (fontId) {
+    case 'vga':
+      return 'cannot draw ● ◆ ★ ✦ ❄ ♥ — stick to ASCII plus █ ▓ ▒ ░ ─ │ ┌ ┐ └ ┘ and arrows';
+    case 'jetbrains':
+    case 'system':
+      return 'cannot draw ★ ☆ ❅ ❆ ✦ — use ❄ for snowflakes; all other palette glyphs fine';
+    default:
+      return 'widest repertoire — all palette glyphs fine except ★ ☆ ❅ ❆ (use ✦ for ★, ❄ for snowflakes)';
+  }
+}
 
 export interface ChatMessage {
   id: string;
@@ -110,11 +124,13 @@ export function describeDocument(
   mode: 'light' | 'dark' = 'dark',
 ): string {
   const theme = themeById(doc.themeId)[mode];
+  const font = canvasFontById(doc.fontId);
   const parts = [
     `name: ${doc.name}`,
     `canvas: ${doc.width} wide x ${doc.height} tall cells (x is 0..${doc.width - 1}, y is 0..${doc.height - 1})`,
     `frames: ${doc.frames.length}, active: frame ${doc.active + 1} (in actions, use index ${doc.active})`,
     `theme: ${doc.themeId} (background ${theme.bg}; stamp colors: invaders/nature ${theme.invader}, ships/play ${theme.player}, critters/space ${theme.star})`,
+    `canvas font: ${font.name} — ${fontNote(doc.fontId)}`,
     `user-created stamps: ${doc.stamps.length > 0 ? doc.stamps.map((s) => s.id).join(', ') : '(none yet)'}`,
     '',
     ...doc.frames.flatMap((f, i) => [
