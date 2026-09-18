@@ -90,8 +90,8 @@ const styles = stylex.create({
     ':hover': { borderColor: 'var(--color-text-disabled)' },
   },
   thumbActive: {
-    borderColor: 'var(--gd-invader)',
-    boxShadow: '0 0 0 1px var(--gd-invader)',
+    borderColor: 'var(--gd-theme-accent, var(--gd-invader))',
+    boxShadow: '0 0 0 1px var(--gd-theme-accent, var(--gd-invader))',
   },
   // The "add frame" cell: reads as a frame, but it's a + button.
   addFrame: {
@@ -111,7 +111,7 @@ const styles = stylex.create({
   playhead: {
     width: 3,
     alignSelf: 'stretch',
-    backgroundColor: 'var(--gd-invader)',
+    backgroundColor: 'var(--gd-theme-accent, var(--gd-invader))',
     borderRadius: 2,
     opacity: 0.85,
   },
@@ -157,7 +157,11 @@ export default function Timeline(props: TimelineProps) {
   };
 
   return (
-    <div {...stylex.props(styles.bar)} aria-label="Frame timeline">
+    <div
+      {...stylex.props(styles.bar)}
+      style={{ '--gd-theme-accent': swatch.invader } as React.CSSProperties}
+      aria-label="Frame timeline"
+    >
       <div {...stylex.props(styles.cluster, styles.hideOnMobile)}>
         <Transport
           playing={playing}
