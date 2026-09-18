@@ -144,10 +144,11 @@ export function renderFrameToCanvas(
 ): HTMLCanvasElement {
   const cellPx = opts.cellPx ?? 16;
   const scale = opts.scale ?? 2;
-  // Match the display's cell aspect ratio: 1ch wide × 1.35em tall.
-  // advanceEm is the font's width (0.5 for Cozette, 0.6 for JetBrains Mono).
-  const adv = opts.advanceEm ?? 0.5;
-  const cw = cellPx * adv * scale;
+  // Match the display's cell aspect ratio. The canvas uses 1ch × 1.35em
+  // tiles; the browser's ch unit renders wider than the font's nominal
+  // advance, so we use a calibrated width factor (tuned against the
+  // on-screen canvas, not the font metrics alone).
+  const cw = cellPx * 0.6 * scale;
   const ch = cellPx * 1.35 * scale;
   const w = Math.round(width * cw);
   const h = Math.round(height * ch);
