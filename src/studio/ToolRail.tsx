@@ -6,7 +6,6 @@ import { BottomSheet } from '@astryxdesign/core/BottomSheet';
 import { ToggleButton, ToggleButtonGroup } from '@astryxdesign/core/ToggleButton';
 import {
   IconBrush,
-  IconClose,
   IconEraser,
   IconEyedropper,
   IconFill,
@@ -28,12 +27,6 @@ import { docContentEqual } from './document.ts';
 import type { Action } from './actions.ts';
 
 const styles = stylex.create({
-  // Close button row at the top of the mobile bottom sheet.
-  sheetClose: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    padding: '4px 8px 0',
-  },
   rail: {
     display: 'flex',
     flexDirection: 'column',
@@ -280,6 +273,7 @@ function ToolRail({
             onOpenChange={(o) => {
               if (!o) closeSheet();
             }}
+            purpose="info"
             label={
               colorOpen
                 ? 'Colors'
@@ -289,15 +283,6 @@ function ToolRail({
             }
             height="hug"
           >
-            <div {...stylex.props(styles.sheetClose)}>
-              <IconButton
-                label="Close"
-                icon={<IconClose />}
-                variant="ghost"
-                size="sm"
-                onClick={closeSheet}
-              />
-            </div>
             {open === 'glyph' && (
               <GlyphPopoverContent brush={brush} onChange={onBrushChange} />
             )}
