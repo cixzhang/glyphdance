@@ -93,6 +93,25 @@ function initialMode(): ThemeMode {
 
 export default function App() {
   const isMobile = useIsMobile();
+  // PWA viewport fix: CSS viewport units (dvh, -webkit-fill-available)
+  // are unreliable in iOS standalone. Measure the actual visual viewport
+  // with JS and apply it explicitly to the root.
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  useEffect(() => {
+    const update = () => {
+      const h = window.visualViewport?.height ?? window.innerHeight;
+      setViewportHeight(h);
+    };
+    update();
+    window.visualViewport?.addEventListener('resize', update);
+    window.addEventListener('resize', update);
+    window.addEventListener('orientationchange', update);
+    return () => {
+      window.visualViewport?.removeEventListener('resize', update);
+      window.removeEventListener('resize', update);
+      window.removeEventListener('orientationchange', update);
+    };
+  }, []);
   const [mode, setMode] = useState<ThemeMode>(initialMode);
   const toggleMode = useCallback(() => {
     setMode((m) => {
@@ -371,7 +390,10 @@ export default function App() {
   return (
     <Theme theme={glyphdanceTheme} mode={mode}>
     <ToastViewport position="bottomEnd" inset={{ bottom: isMobile ? 210 : 170 }}>
-    <div {...stylex.props(styles.root)}>
+    <div
+      {...stylex.props(styles.root)}
+      style={viewportHeight ? { height: viewportHeight } : undefined}
+    >
       <div {...stylex.props(styles.topbar)}>
         <TopBar
           isMobile={isMobile}
