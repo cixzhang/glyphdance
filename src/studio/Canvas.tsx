@@ -22,8 +22,11 @@ import type { Brush, ToolId } from './brush.ts';
 
 const styles = stylex.create({
   wrap: {
-    position: 'relative',
-    height: '100%',
+    // Fill the grid area exactly. height:100% can resolve against the
+    // viewport in iOS PWA, making the canvas viewport-tall and its
+    // Dracula background show as a dead band below the toolbar.
+    position: 'absolute',
+    inset: 0,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',

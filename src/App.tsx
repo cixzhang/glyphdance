@@ -37,6 +37,7 @@ const styles = stylex.create({
     paddingTop: 'env(safe-area-inset-top)',
     paddingBottom: 'env(safe-area-inset-bottom)',
     display: 'grid',
+    overflow: 'hidden',
     gridTemplateRows: '52px minmax(0, 1fr) 148px',
     gridTemplateColumns: '60px minmax(0, 1fr) 300px',
     gridTemplateAreas: '"topbar topbar topbar" "rail canvas inspector" "timeline timeline timeline"',
@@ -61,7 +62,12 @@ const styles = stylex.create({
     minHeight: 0,
     '@media (max-width: 760px)': { gridArea: 'tools', minHeight: 'auto' },
   },
-  canvas: { gridArea: 'canvas', minWidth: 0, minHeight: 0 },
+  canvas: {
+    gridArea: 'canvas',
+    minWidth: 0,
+    minHeight: 0,
+    position: 'relative',
+  },
   inspector: {
     gridArea: 'inspector',
     minHeight: 0,
