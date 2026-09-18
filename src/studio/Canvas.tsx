@@ -682,6 +682,21 @@ export function AsciiGrid({
     strokeRef.current = null;
   };
 
+  // Touch drags don't fire pointerenter on new cells (the pointer is
+  // captured to the start cell), so resolve the cell under the pointer
+  // from coordinates on every move.
+  const moveStroke = (e: React.PointerEvent) => {
+    if (e.buttons === 0) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const cell = el?.closest('[data-x][data-y]');
+    if (!cell) return;
+    const x = Number(cell.getAttribute('data-x'));
+    const y = Number(cell.getAttribute('data-y'));
+    if (Number.isInteger(x) && Number.isInteger(y)) {
+      continueStroke(x, y, e.buttons);
+    }
+  };
+
   const cursor =
     brush.tool === 'text' ? 'text' : brush.tool === 'pick' ? 'copy' : 'crosshair';
 
@@ -693,6 +708,7 @@ export function AsciiGrid({
         aria-label="Animation canvas"
         onPointerUp={endStroke}
         onPointerLeave={endStroke}
+        onPointerMove={moveStroke}
         onDragStart={(e) => e.preventDefault()}
       >
         {Array.from({ length: H }, (_, r) => (
@@ -718,6 +734,8 @@ export function AsciiGrid({
               return (
                 <span
                   key={c}
+                  data-x={c}
+                  data-y={r}
                   {...stylex.props(styles.cell, inSel && styles.selCell)}
                   onPointerDown={(e) => {
                     e.preventDefault();
