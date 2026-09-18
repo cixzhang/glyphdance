@@ -21,9 +21,10 @@ const styles = stylex.create({
     height: '100%',
   },
   logo: {
-    color: 'var(--gd-invader)',
-    fontSize: 16,
-    lineHeight: 1,
+    width: 20,
+    height: 20,
+    display: 'inline-block',
+    verticalAlign: '-4px',
   },
   doc: {
     display: 'flex',
@@ -101,7 +102,7 @@ export default function TopBar(props: TopBarProps) {
         heading={
           <TopNavHeading
             heading="glyphdance"
-            logo={<span {...stylex.props(styles.logo)}>◈</span>}
+            logo={<img src="/favicon.svg" alt="glyphdance" {...stylex.props(styles.logo)} />}
           />
         }
       startContent={
