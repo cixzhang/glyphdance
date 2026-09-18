@@ -1,6 +1,16 @@
 // Ghost logo — pixel-art ghost from the favicon, transparent background.
 // Color adapts to theme (light ghost on dark, dark ghost on light).
-export function GhostIcon({ color = '#f2ecff', size = 20 }: { color?: string; size?: number }) {
+// In light mode, eyes and mouth get an explicit fill so they're visible
+// against the dark body (they're transparent gaps in the pixel art).
+export function GhostIcon({
+  color = '#f2ecff',
+  detailColor,
+  size = 20,
+}: {
+  color?: string;
+  detailColor?: string;
+  size?: number;
+}) {
   return (
     <svg width={size} height={size} viewBox="0 0 192 192" shapeRendering="crispEdges" aria-hidden="true">
     <rect x="70" y="18" width="13" height="13" fill={color}/>
@@ -121,6 +131,15 @@ export function GhostIcon({ color = '#f2ecff', size = 20 }: { color?: string; si
     <rect x="109" y="161" width="13" height="13" fill={color}/>
     <rect x="148" y="161" width="13" height="13" fill={color}/>
     <rect x="161" y="161" width="13" height="13" fill={color}/>
+    {detailColor && (
+      <>
+        {/* Eyes */}
+        <rect x="39" y="65" width="26" height="13" fill={detailColor}/>
+        <rect x="117" y="65" width="26" height="13" fill={detailColor}/>
+        {/* Mouth */}
+        <rect x="78" y="117" width="26" height="13" fill={detailColor}/>
+      </>
+    )}
     </svg>
   );
 }

@@ -105,7 +105,11 @@ export default function TopBar(props: TopBarProps) {
             heading="glyphdance"
             logo={
               <span {...stylex.props(styles.logo)}>
-                <GhostIcon color={mode === 'dark' ? '#f2ecff' : '#1a1c24'} size={20} />
+                <GhostIcon
+                  color={mode === 'dark' ? '#f2ecff' : '#1a1c24'}
+                  detailColor={mode === 'dark' ? undefined : '#ffffff'}
+                  size={20}
+                />
               </span>
             }
           />
