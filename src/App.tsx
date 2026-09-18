@@ -228,7 +228,7 @@ export default function App() {
     [dispatch],
   );
   const onPlaceStamp = useCallback(
-    (stampId: string, x: number, y: number, fg: string) => {
+    (stampId: string, x: number, y: number, fg: string, bg: string) => {
       const stamp = resolveStamp(stampId, doc.stamps);
       if (!stamp) return;
       const n = stamp.frames.length;
@@ -240,7 +240,7 @@ export default function App() {
           x,
           y,
           fg,
-          bg: '',
+          bg,
           stampFrame: (f - doc.active) % n,
         });
       }

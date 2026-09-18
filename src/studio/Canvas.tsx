@@ -297,7 +297,7 @@ export function AsciiGrid({
   onPaint: (cells: PaintCell[], stroke: string) => void;
   onPick: (cell: Cell) => void;
   /** Stamp tap: the App spreads the stamp's frames across document frames. */
-  onPlaceStamp: (stampId: string, x: number, y: number, fg: string) => void;
+  onPlaceStamp: (stampId: string, x: number, y: number, fg: string, bg: string) => void;
   /** Create a custom stamp from canvas art. */
   onMakeStamp: (stamp: CustomStamp) => void;
   /** Pausing playback when a text session anchors (typing while frames
@@ -488,13 +488,14 @@ export function AsciiGrid({
     if (!brush.stampId) return;
     const stamp = resolveStamp(brush.stampId, doc.stamps);
     if (!stamp) return;
-    // Monochrome stamps paint with the current swatch color — selecting a
-    // stamp sets the swatch to its signature color, but the user can change
-    // it afterwards.
-    const fg = brush.fg;
+    // Stamps with a fixed fg (comet yellow, cloud white) use it; others
+    // paint with the current swatch color. Fixed bg (cloud blue) applies
+    // when present.
+    const fg = stamp.fg ?? brush.fg;
+    const bg = stamp.bg ?? '';
     // The App spreads the stamp's animation frames across the document
     // frames — one tap and the stamp animates to the end of the timeline.
-    onPlaceStamp(brush.stampId, x, y, fg);
+    onPlaceStamp(brush.stampId, x, y, fg, bg);
   };
 
   const clearSelection = useCallback(() => {
@@ -1041,7 +1042,7 @@ interface CanvasProps {
   onPaint: (cells: PaintCell[], stroke: string) => void;
   onPick: (cell: Cell) => void;
   /** Stamp tap: the App spreads the stamp's frames across document frames. */
-  onPlaceStamp: (stampId: string, x: number, y: number, fg: string) => void;
+  onPlaceStamp: (stampId: string, x: number, y: number, fg: string, bg: string) => void;
   /** Create a custom stamp from canvas art. */
   onMakeStamp: (stamp: CustomStamp) => void;
   onOpenAgent: () => void;

@@ -11,6 +11,9 @@ export interface Sprite {
   /** Optional fixed foreground color (e.g. the yellow comet). If unset,
       the stamp follows its kind's theme color. */
   fg?: string;
+  /** Optional fixed background color (e.g. the clouds' blue). If unset,
+      the stamp paints with a transparent background. */
+  bg?: string;
 }
 
 /** The invader. Four classic arcade variants, each with a two-frame shuffle. */
@@ -287,32 +290,36 @@ export const NATURE_SPRITES: Sprite[] = [
     name: 'Cloud ←',
     frames: [
       [
-        ' ¬ ◆ ◆ ◆ ◆ ¬',
-        ' [ ✚ ✚ ❄ ❄ ❄ ✚ ◆ ❄ ]',
-        ' ... ... ... ... ... ...',
+        '       ╭◆◆◆◆╮',
+        '     ╭✚✚❄❄❄✚◆❄╮',
+        '     ╰……………………╯',
       ],
       [
-        '¬ ◆ ◆ ◆ ◆ ¬',
-        '[ ✚ ✚ ❄ ❄ ❄ ✚ ◆ ❄ ]',
-        '... ... ... ... ... ...',
+        '      ╭◆◆◆◆╮',
+        '    ╭✚✚❄❄❄✚◆❄╮',
+        '    ╰……………………╯',
       ],
     ],
+    fg: '#ffffff',
+    bg: '#2b3a55',
   },
   {
     id: 'cloud-right',
     name: 'Cloud →',
     frames: [
       [
-        '¬ ✚ ✚ ✚ ✚ ¬ ✚ ✚ ✚ ¬',
-        '[ ✚ ✚ ❄ ❄ ❄ ✚ ❄ ... ... ❄ ]',
-        '... ... ... ... ... ... ... ...',
+        '       ╭✚✚✚✚╭✚✚✚╮',
+        '      ╭✚✚❄❄❄✚❄……❄╮',
+        '      ╰…………………………╯',
       ],
       [
-        ' ¬ ✚ ✚ ✚ ✚ ¬ ✚ ✚ ✚ ¬',
-        ' [ ✚ ✚ ❄ ❄ ❄ ✚ ❄ ... ... ❄ ]',
-        ' ... ... ... ... ... ... ... ...',
+        '        ╭✚✚✚✚╭✚✚✚╮',
+        '       ╭✚✚❄❄❄✚❄……❄╮',
+        '       ╰…………………………╯',
       ],
     ],
+    fg: '#ffffff',
+    bg: '#2b3a55',
   },
   {
     id: 'pine',

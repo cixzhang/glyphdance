@@ -32,6 +32,8 @@ export interface ResolvedStamp {
   frames: string[][];
   /** Null for built-ins (they use theme invader/player colors). */
   fg: string | null;
+  /** Fixed background, or null for transparent. */
+  bg: string | null;
   builtin: boolean;
   kind: StampKind;
 }
@@ -83,13 +85,14 @@ export function resolveStamp(
         id: s.id,
         frames: s.frames,
         fg: s.fg ?? null,
+        bg: s.bg ?? null,
         builtin: true,
         kind: b.kind,
       };
   }
   const c = custom.find((s) => s.id === id);
   if (c)
-    return { id: c.id, frames: c.frames, fg: c.fg, builtin: false, kind: 'custom' };
+    return { id: c.id, frames: c.frames, fg: c.fg, bg: null, builtin: false, kind: 'custom' };
   return null;
 }
 

@@ -281,7 +281,7 @@ export function ColorPopoverContent({
 
 /** Stamp artwork preview: multi-frame stamps cycle their art on a timer so
  *  the loop is visible before placement, with a frame-count badge. */
-function StampArt({ frames, color }: { frames: string[][]; color: string }) {
+function StampArt({ frames, color, bg }: { frames: string[][]; color: string; bg?: string }) {
   const animated = frames.length > 1;
   const [tick, setTick] = useState(0);
   useEffect(() => {
@@ -294,7 +294,7 @@ function StampArt({ frames, color }: { frames: string[][]; color: string }) {
       <pre
         {...stylex.props(styles.stampArt)}
         aria-hidden="true"
-        style={{ color }}
+        style={{ color, backgroundColor: bg }}
       >
         {frames[animated ? tick % frames.length : 0].join('\n')}
       </pre>
@@ -406,7 +406,7 @@ export function StampPopoverContent({
                   }}
                   xstyle={styles.stampCard}
                 >
-                  <StampArt frames={s.frames} color={s.fg ?? sec.color} />
+                  <StampArt frames={s.frames} color={s.fg ?? sec.color} bg={s.bg ?? undefined} />
                   <span {...stylex.props(styles.stampName)}>
                     <Text type="label">{s.id}</Text>
                   </span>
