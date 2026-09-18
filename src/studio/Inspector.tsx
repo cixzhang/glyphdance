@@ -484,13 +484,11 @@ function AgentPanel({
   onWorkingChange: (working: boolean) => void;
 }) {
   // Inside the mobile bottom sheet the card is always expanded — the sheet
-  // itself is the thing that opens and closes.
+  // itself is the thing that opens and closes. The sheet already shows its
+  // own "Agent" label, so no duplicate heading here.
   if (isMobile) {
     return (
       <VStack gap={2}>
-        <Heading level={4}>
-          <IconSparkles {...stylex.props(styles.agentName)} /> Agent
-        </Heading>
         <AgentBody
           doc={doc}
           dispatch={dispatch}
