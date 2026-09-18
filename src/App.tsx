@@ -25,13 +25,14 @@ import type { PaintCell } from './studio/actions.ts';
 
 const styles = stylex.create({
   root: {
-    // Full-viewport app shell. position:fixed + inset:0 sizes directly to
-    // the real visible viewport: iOS standalone PWAs misreport 100dvh
-    // (leaving a dead band below the app), and -webkit-fill-available
-    // needs a definite-height parent chain that Astryx's Theme /
-    // ToastViewport wrappers don't provide.
+    // Full-viewport app shell. position:fixed + inset:0 plus explicit
+    // 100dvh: iOS standalone PWAs can misreport viewport sizing, so we
+    // belt-and-suspenders with both. The inset handles the positioning,
+    // dvh handles the sizing if inset is miscalculated.
     position: 'fixed',
     inset: 0,
+    width: '100vw',
+    height: '100dvh',
     // In the installed PWA there is no browser chrome: pad for the notch /
     // status bar and the home indicator. Zero elsewhere.
     paddingTop: 'env(safe-area-inset-top)',
