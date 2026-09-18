@@ -1,3 +1,13 @@
+/* PWA: the html element always fills the viewport. Match the app background
+   so any area below a short root (home indicator zone) is invisible
+   instead of a visible dead band. */
+html {
+  background-color: #1b1b1b;
+}
+html[data-theme='light'] {
+  background-color: #ffffff;
+}
+
 html,
 body,
 #root {
