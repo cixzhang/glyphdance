@@ -648,10 +648,6 @@ function Inspector({
             <ExportPanel doc={doc} getActive={getActive} />
             <div {...stylex.props(styles.version)}>
               build {typeof __COMMIT_HASH__ !== 'undefined' ? __COMMIT_HASH__ : 'dev'}
-              <br />
-              vv:{Math.round(window.visualViewport?.height ?? 0)} in:{window.innerHeight}{' '}
-              doc:{document.documentElement.clientHeight} sai-b:
-              {getComputedStyle(document.documentElement).getPropertyValue('--sai-b') || 'n/a'}
             </div>
           </div>
         </MobileNav>
@@ -702,9 +698,6 @@ function Inspector({
       <ExportPanel doc={doc} getActive={getActive} />
       <div {...stylex.props(styles.version)}>
         build {typeof __COMMIT_HASH__ !== 'undefined' ? __COMMIT_HASH__ : 'dev'}
-        <br />
-        vv:{Math.round(window.visualViewport?.height ?? 0)} in:{window.innerHeight}{' '}
-        doc:{document.documentElement.clientHeight}
       </div>
     </div>
   );

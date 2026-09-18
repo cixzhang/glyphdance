@@ -25,28 +25,18 @@ import type { PaintCell } from './studio/actions.ts';
 
 const styles = stylex.create({
   root: {
-    // Full-viewport app shell. position:fixed + inset:0 stretches to the
-    // viewport; min-height -webkit-fill-available fixes iOS PWA where
-    // inset:0 alone leaves the root short of the visual viewport.
+    // Full-viewport app shell. Baseline: position:fixed + inset:0.
     position: 'fixed',
     inset: 0,
-    minHeight: '-webkit-fill-available',
-    width: '100%',
     // Explicit fallback: if the theme variable doesn't resolve (scoped
     // theme CSS), the root must still be opaque.
     backgroundColor: 'var(--color-background-body, #1b1b1b)',
     // In the installed PWA there is no browser chrome: pad for the notch /
-    // status bar at the top and the home indicator at the bottom. The JS
-    // viewport height (812) excludes the home indicator area; the padding
-    // extends the root to cover the full screen.
+    // status bar at the top and the home indicator at the bottom.
     paddingTop: 'env(safe-area-inset-top)',
     paddingBottom: 'env(safe-area-inset-bottom)',
     display: 'grid',
     overflow: 'hidden',
-    // PWA standalone: ensure the root fills the full screen viewport.
-    '@media (display-mode: standalone)': {
-      minHeight: '-webkit-fill-available',
-    },
     gridTemplateRows: '52px minmax(0, 1fr) 148px',
     gridTemplateColumns: '60px minmax(0, 1fr) 300px',
     gridTemplateAreas: '"topbar topbar topbar" "rail canvas inspector" "timeline timeline timeline"',
@@ -95,28 +85,6 @@ function initialMode(): ThemeMode {
 
 export default function App() {
   const isMobile = useIsMobile();
-  // PWA viewport fix: CSS viewport units (dvh, -webkit-fill-available)
-  // are unreliable in iOS standalone. Measure the actual visual viewport
-  // with JS and apply it explicitly to the root. In PWA standalone, add
-  // the home indicator height (env() is unreliable).
-  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
-  useEffect(() => {
-    const update = () => {
-      const h = window.visualViewport?.height ?? window.innerHeight;
-      const isPWA = window.matchMedia('(display-mode: standalone)').matches;
-      // iPhone home indicator is 34pt; add it in PWA where env() fails
-      setViewportHeight(isPWA ? h + 34 : h);
-    };
-    update();
-    window.visualViewport?.addEventListener('resize', update);
-    window.addEventListener('resize', update);
-    window.addEventListener('orientationchange', update);
-    return () => {
-      window.visualViewport?.removeEventListener('resize', update);
-      window.removeEventListener('resize', update);
-      window.removeEventListener('orientationchange', update);
-    };
-  }, []);
   const [mode, setMode] = useState<ThemeMode>(initialMode);
   const toggleMode = useCallback(() => {
     setMode((m) => {
@@ -395,10 +363,7 @@ export default function App() {
   return (
     <Theme theme={glyphdanceTheme} mode={mode}>
     <ToastViewport position="bottomEnd" inset={{ bottom: isMobile ? 210 : 170 }}>
-    <div
-      {...stylex.props(styles.root)}
-      style={viewportHeight ? { height: viewportHeight } : undefined}
-    >
+    <div {...stylex.props(styles.root)}>
       <div {...stylex.props(styles.topbar)}>
         <TopBar
           isMobile={isMobile}
