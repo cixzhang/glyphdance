@@ -20,7 +20,7 @@ export interface Brush {
 }
 
 export const DEFAULT_BRUSH: Brush = {
-  tool: 'text',
+  tool: 'brush',
   glyph: '█',
   fg: '#f8f8f2',
   bg: '',
