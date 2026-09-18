@@ -89,14 +89,14 @@ export const IconSun = px(Sun);
 export const IconMoon = px(Moon);
 
 // Pixelated GitHub mark, drawn on a 16x16 grid to match the pixelarticons
-// aesthetic. Simplified octocat silhouette.
+// aesthetic. Octocat silhouette: pointed ears, round head, tentacle body.
 export function IconGithub(props: IconProps) {
-  // 16x16 pixel map: 1 = filled. Simplified GitHub octocat head.
+  // 16x16 pixel map: █ = filled. Based on the GitHub mark silhouette.
   const rows = [
     '                ',
-    '                ',
+    '  █          █  ',
     '  ██        ██  ',
-    '  ████    ████  ',
+    '  ███      ███  ',
     '  ████████████  ',
     '   ██████████   ',
     '   ██████████   ',
@@ -104,10 +104,10 @@ export function IconGithub(props: IconProps) {
     '    ████████    ',
     '    ████████    ',
     '     ██████     ',
-    '     ██████     ',
-    '      ████      ',
-    '                ',
-    '                ',
+    '   ██████████   ',
+    '  ███ ████ ███  ',
+    '  ██   ██   ██  ',
+    '       ██       ',
     '                ',
   ];
   return (
