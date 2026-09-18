@@ -9,6 +9,7 @@ import { Switch } from '@astryxdesign/core/Switch';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { ToggleButton } from '@astryxdesign/core/ToggleButton';
 import { SelectableCard } from '@astryxdesign/core/SelectableCard';
+import { Carousel } from '@astryxdesign/core/Carousel';
 import { IconClose } from './icons';
 import {
   ASCII_GLYPHS,
@@ -70,18 +71,7 @@ const styles = stylex.create({
     padding: 0,
   },
   swatchActive: { outline: '2px solid var(--color-text-primary)', outlineOffset: 1 },
-  stampGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: 8,
-    minWidth: 280,
-    // Mobile: 4-up so a whole category fits in a row or two.
-    '@media (max-width: 760px)': {
-      gridTemplateColumns: 'repeat(4, 1fr)',
-      gap: 6,
-      minWidth: 0,
-    },
-  },
+
 
   stampArt: {
     fontFamily: 'var(--font-family-code)',
@@ -106,12 +96,29 @@ const styles = stylex.create({
   stampName: {
     '@media (max-width: 760px)': { display: 'none' },
   },
-  // Frame-count badge under animated stamp art.
+  // Stamp cards have fixed dimensions so rows don't shift as animated
+  // previews cycle. The loop badge is pinned to the bottom.
+  stampCard: {
+    position: 'relative',
+    width: 120,
+    height: 148,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 8,
+    flexShrink: 0,
+  },
+  // Frame-count badge pinned to the card bottom — doesn't move with the
+  // animation above it.
   loopBadge: {
+    position: 'absolute',
+    bottom: 8,
+    left: 0,
+    right: 0,
     display: 'flex',
     justifyContent: 'center',
-    paddingTop: 2,
-    paddingBottom: 2,
+    pointerEvents: 'none',
   },
   // Delete control on a custom stamp card: positioned overlay.
   customDel: {
@@ -341,7 +348,7 @@ export function StampPopoverContent({
             me a cat stamp" — and it'll appear here.
           </Text>
         ) : (
-          <div {...stylex.props(styles.stampGrid)}>
+          <Carousel aria-label="Your stamps" gap={2} hasButtons={false}>
             {doc.stamps.map((s) => {
               const selected =
                 brush.tool === 'stamp' && brush.stampId === s.id;
@@ -354,6 +361,7 @@ export function StampPopoverContent({
                     if (isSelected)
                       onBrushChange({ tool: 'stamp', stampId: s.id });
                   }}
+                  xstyle={styles.stampCard}
                 >
                   <StampArt frames={s.frames} color={s.fg} />
                   <span {...stylex.props(styles.stampName)}>
@@ -370,7 +378,7 @@ export function StampPopoverContent({
                 </SelectableCard>
               );
             })}
-          </div>
+          </Carousel>
         )}
       </VStack>
       {sections.map((sec) => (
@@ -378,7 +386,7 @@ export function StampPopoverContent({
           <Text type="label" color="disabled">
             {sec.title}
           </Text>
-          <div {...stylex.props(styles.stampGrid)}>
+          <Carousel aria-label={`${sec.title} stamps`} gap={2} hasButtons={false}>
             {sec.sprites.map((s) => {
               const selected = brush.tool === 'stamp' && brush.stampId === s.id;
               return (
@@ -389,6 +397,7 @@ export function StampPopoverContent({
                   onChange={(isSelected) => {
                     if (isSelected) onBrushChange({ tool: 'stamp', stampId: s.id });
                   }}
+                  xstyle={styles.stampCard}
                 >
                   <StampArt frames={s.frames} color={sec.color} />
                   <span {...stylex.props(styles.stampName)}>
@@ -397,7 +406,7 @@ export function StampPopoverContent({
                 </SelectableCard>
               );
             })}
-          </div>
+          </Carousel>
         </VStack>
       ))}
     </div>
