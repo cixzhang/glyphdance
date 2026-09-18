@@ -25,14 +25,12 @@ import type { PaintCell } from './studio/actions.ts';
 
 const styles = stylex.create({
   root: {
-    // Full-viewport app shell. position:fixed keeps the grid layout stable;
-    // -webkit-fill-available on height fixes the iOS PWA dead band
-    // (inset:0 alone leaves the root 74pt short of the visual viewport).
+    // Full-viewport app shell. position:fixed + inset:0 stretches to the
+    // viewport; min-height -webkit-fill-available fixes iOS PWA where
+    // inset:0 alone leaves the root short of the visual viewport.
     position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '-webkit-fill-available',
+    inset: 0,
+    minHeight: '-webkit-fill-available',
     width: '100%',
     // Explicit fallback: if the theme variable doesn't resolve (scoped
     // theme CSS), the root must still be opaque.
@@ -45,7 +43,6 @@ const styles = stylex.create({
     overflow: 'hidden',
     // PWA standalone: ensure the root fills the full screen viewport.
     '@media (display-mode: standalone)': {
-      height: '-webkit-fill-available',
       minHeight: '-webkit-fill-available',
     },
     gridTemplateRows: '52px minmax(0, 1fr) 148px',
