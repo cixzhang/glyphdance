@@ -283,39 +283,65 @@ export default function App() {
   // way, so the deep link is never lost.
   const showToast = useToast();
   const lastToastedId = useRef<string | null>(null);
+  // If the agent finishes while the app is backgrounded, the toast would
+  // auto-hide unseen. Defer it until the app is active again.
+  const pendingToast = useRef<{ id: string; summary: string; error?: boolean } | null>(null);
+  const showAgentToast = useCallback(
+    (info: { id: string; summary: string; error?: boolean }) => {
+      if (lastToastedId.current === info.id) return;
+      lastToastedId.current = info.id;
+      const dismiss = showToast({
+        type: info.error ? 'error' : 'info',
+        body: (
+          <span
+            style={{
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
+            {info.error ? info.summary : `Agent finished: ${info.summary}`}
+          </span>
+        ),
+        endContent: (
+          <Button
+            label="View agent result"
+            size="sm"
+            onClick={() => {
+              dismiss();
+              viewAgentDone();
+            }}
+          >
+            View
+          </Button>
+        ),
+        isAutoHide: !info.error,
+        autoHideDuration: 12000,
+      });
+    },
+    [showToast, viewAgentDone],
+  );
   useEffect(() => {
-    if (!agentDone || lastToastedId.current === agentDone.id) return;
-    lastToastedId.current = agentDone.id;
-    const dismiss = showToast({
-      type: agentDone.error ? 'error' : 'info',
-      body: (
-        <span
-          style={{
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-          }}
-        >
-          {agentDone.error ? agentDone.summary : `Agent finished: ${agentDone.summary}`}
-        </span>
-      ),
-      endContent: (
-        <Button
-          label="View agent result"
-          size="sm"
-          onClick={() => {
-            dismiss();
-            viewAgentDone();
-          }}
-        >
-          View
-        </Button>
-      ),
-      isAutoHide: !agentDone.error,
-      autoHideDuration: 12000,
-    });
-  }, [agentDone, showToast, viewAgentDone]);
+    if (!agentDone) return;
+    // App backgrounded: stash the completion, replay when active again.
+    if (document.hidden) {
+      pendingToast.current = agentDone;
+      return;
+    }
+    showAgentToast(agentDone);
+  }, [agentDone, showAgentToast]);
+  useEffect(() => {
+    const onVisibility = () => {
+      if (!document.hidden && pendingToast.current) {
+        const info = pendingToast.current;
+        pendingToast.current = null;
+        showAgentToast(info);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [showAgentToast]);
 
   // Playback honors each frame's hold time.
   useEffect(() => {
