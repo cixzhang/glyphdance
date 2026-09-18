@@ -156,21 +156,6 @@ const styles = stylex.create({
     zIndex: 2,
     '@media (min-width: 761px)': { display: 'none' },
   },
-  // The color swatch in the tool badge: tappable, opens the Colors sheet.
-  badgeSwatch: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 32,
-    height: 32,
-    borderRadius: 999,
-    cursor: 'pointer',
-    padding: 0,
-    borderWidth: 0,
-    backgroundColor: 'transparent',
-    // iOS needs an explicit touch action for reliable taps.
-    touchAction: 'manipulation',
-  },
   // Shown only on mobile (inside the floating view bar).
   mobileOnly: {
     display: 'none',
@@ -1179,14 +1164,13 @@ export default function Canvas({
       <div {...stylex.props(styles.toolBadge)} aria-live="polite">
         {activeTool.icon}
         <Text type="label">{activeTool.label}</Text>
-        <button
-          type="button"
-          aria-label={`Colors — foreground ${brush.fg}, background ${brush.bg === '' ? 'transparent' : brush.bg}`}
+        <IconButton
+          label={`Colors — foreground ${brush.fg}, background ${brush.bg === '' ? 'transparent' : brush.bg}`}
+          icon={<ColorSwatchIcon fg={brush.fg} bg={brush.bg} />}
+          variant="ghost"
+          size="sm"
           onClick={onOpenColors}
-          {...stylex.props(styles.badgeSwatch)}
-        >
-          <ColorSwatchIcon fg={brush.fg} bg={brush.bg} />
-        </button>
+        />
       </div>
       <Button
         label="Open the agent panel"
