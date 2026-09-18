@@ -87,3 +87,44 @@ export const IconZoomOut = px(ZoomOut);
 export const IconDownload = px(Download);
 export const IconSun = px(Sun);
 export const IconMoon = px(Moon);
+
+// Pixelated GitHub mark, drawn on a 16x16 grid to match the pixelarticons
+// aesthetic. Simplified octocat silhouette.
+export function IconGithub(props: IconProps) {
+  // 16x16 pixel map: 1 = filled. Simplified GitHub octocat head.
+  const rows = [
+    '                ',
+    '                ',
+    '  ██        ██  ',
+    '  ████    ████  ',
+    '  ████████████  ',
+    '   ██████████   ',
+    '   ██████████   ',
+    '    ████████    ',
+    '    ████████    ',
+    '    ████████    ',
+    '     ██████     ',
+    '     ██████     ',
+    '      ████      ',
+    '                ',
+    '                ',
+    '                ',
+  ];
+  return (
+    <svg
+      width={12}
+      height={12}
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+      {...props}
+    >
+      {rows.map((row, y) =>
+        [...row].map((ch, x) =>
+          ch === '█' ? (
+            <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill="currentColor" />
+          ) : null,
+        ),
+      )}
+    </svg>
+  );
+}

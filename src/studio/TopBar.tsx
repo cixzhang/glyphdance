@@ -3,7 +3,7 @@ import { TopNav, TopNavHeading, TopNavRenderContext } from '@astryxdesign/core/T
 import { Button } from '@astryxdesign/core/Button';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { StatusDot } from '@astryxdesign/core/StatusDot';
-import { IconMoon, IconSparkles, IconSun } from './icons';
+import { IconMoon, IconSparkles, IconSun, IconGithub } from './icons';
 import { GhostIcon } from './GhostIcon';
 import { Text } from '@astryxdesign/core/Text';
 import Transport from './Transport.tsx';
@@ -62,6 +62,16 @@ const styles = stylex.create({
     '@media (max-width: 760px)': { display: 'none' },
   },
   agentWrap: { position: 'relative', display: 'inline-flex' },
+  github: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    color: 'var(--color-foreground-secondary)',
+    ':hover': { color: 'var(--color-foreground)', backgroundColor: 'var(--color-background-muted)' },
+  },
   // Badge dot: the agent finished while the chat was closed. Astryx
   // StatusDot with positioning; the label keeps it accessible.
   agentDot: {
@@ -139,6 +149,16 @@ export default function TopBar(props: TopBarProps) {
       }
       endContent={
         <div {...stylex.props(styles.end)}>
+          <a
+            href="https://github.com/cixzhang/glyphdance"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="glyphdance on GitHub"
+            title="glyphdance on GitHub"
+            {...stylex.props(styles.github)}
+          >
+            <IconGithub />
+          </a>
           <IconButton
             label={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             icon={mode === 'dark' ? <IconSun /> : <IconMoon />}
