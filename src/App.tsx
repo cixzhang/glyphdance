@@ -39,6 +39,11 @@ const styles = stylex.create({
     paddingBottom: 'env(safe-area-inset-bottom)',
     display: 'grid',
     overflow: 'hidden',
+    // PWA standalone: ensure the root fills the full screen viewport.
+    '@media (display-mode: standalone)': {
+      height: '-webkit-fill-available',
+      minHeight: '-webkit-fill-available',
+    },
     gridTemplateRows: '52px minmax(0, 1fr) 148px',
     gridTemplateColumns: '60px minmax(0, 1fr) 300px',
     gridTemplateAreas: '"topbar topbar topbar" "rail canvas inspector" "timeline timeline timeline"',

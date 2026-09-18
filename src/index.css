@@ -7,6 +7,17 @@ body,
   height: -webkit-fill-available;
 }
 
+/* PWA standalone mode: no browser chrome, viewport is the full screen.
+   Ensure the chain fills it exactly. */
+@media (display-mode: standalone) {
+  html,
+  body,
+  #root {
+    height: -webkit-fill-available;
+    min-height: -webkit-fill-available;
+  }
+}
+
 /* Studio color system: generic chrome uses Astryx design tokens
    (--color-*, --font-*) from the built theme (src/studio/glyphdance.css),
    which follow html[data-theme] via color-scheme. Only domain-specific
