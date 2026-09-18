@@ -334,6 +334,9 @@ export function AsciiGrid({
   // One stroke = one undo step: the store merges paintCells actions that
   // share a stroke id into a single history entry.
   const strokeRef = useRef<{ id: string; painted: Set<string>; last: [number, number] } | null>(null);
+  // Tracks whether the pointer is down for drags. e.buttons is unreliable
+  // for touch on iOS, so we track it ourselves.
+  const dragRef = useRef(false);
   const strokeSeq = useRef(0);
   const nextStroke = () => `s${++strokeSeq.current}`;
 
@@ -679,20 +682,21 @@ export function AsciiGrid({
 
   const endStroke = () => {
     strokeRef.current = null;
+    dragRef.current = false;
   };
 
   // Touch drags don't fire pointerenter on new cells (the pointer is
   // captured to the start cell), so resolve the cell under the pointer
   // from coordinates on every move.
   const moveStroke = (e: React.PointerEvent) => {
-    if (e.buttons === 0) return;
+    if (!dragRef.current) return;
     const el = document.elementFromPoint(e.clientX, e.clientY);
     const cell = el?.closest('[data-x][data-y]');
     if (!cell) return;
     const x = Number(cell.getAttribute('data-x'));
     const y = Number(cell.getAttribute('data-y'));
     if (Number.isInteger(x) && Number.isInteger(y)) {
-      continueStroke(x, y, e.buttons);
+      continueStroke(x, y, 1);
     }
   };
 
@@ -707,6 +711,7 @@ export function AsciiGrid({
         aria-label="Animation canvas"
         onPointerUp={endStroke}
         onPointerLeave={endStroke}
+        onPointerCancel={endStroke}
         onPointerMove={moveStroke}
         onDragStart={(e) => e.preventDefault()}
       >
@@ -738,6 +743,7 @@ export function AsciiGrid({
                   {...stylex.props(styles.cell, inSel && styles.selCell)}
                   onPointerDown={(e) => {
                     e.preventDefault();
+                    dragRef.current = true;
                     beginStroke(c, r);
                   }}
                   onPointerEnter={(e) => continueStroke(c, r, e.buttons)}
