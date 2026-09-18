@@ -14,6 +14,10 @@ export interface Sprite {
   /** Optional fixed background color (e.g. the clouds' blue). If unset,
       the stamp paints with a transparent background. */
   bg?: string;
+  /** Optional per-cell colors, parallel to frames: [frame][row][col].
+      When present, these override fg/bg for multicolor stamps. */
+  fgMap?: string[][][];
+  bgMap?: string[][][];
 }
 
 /** The invader. Four classic arcade variants, each with a two-frame shuffle. */

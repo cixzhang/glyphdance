@@ -34,6 +34,9 @@ export interface ResolvedStamp {
   fg: string | null;
   /** Fixed background, or null for transparent. */
   bg: string | null;
+  /** Per-cell colors for multicolor stamps, parallel to frames. */
+  fgMap: string[][][] | null;
+  bgMap: string[][][] | null;
   builtin: boolean;
   kind: StampKind;
 }
@@ -86,19 +89,22 @@ export function resolveStamp(
         frames: s.frames,
         fg: s.fg ?? null,
         bg: s.bg ?? null,
+        fgMap: s.fgMap ?? null,
+        bgMap: s.bgMap ?? null,
         builtin: true,
         kind: b.kind,
       };
   }
   const c = custom.find((s) => s.id === id);
   if (c)
-    return { id: c.id, frames: c.frames, fg: c.fg, bg: null, builtin: false, kind: 'custom' };
+    return { id: c.id, frames: c.frames, fg: c.fg, bg: null, fgMap: null, bgMap: null, builtin: false, kind: 'custom' };
   return null;
 }
 
 /**
  * Expand one stamp art frame into painted cells, centered on (cx, cy).
- * Spaces are transparent; art is clipped to the grid.
+ * Spaces are transparent; art is clipped to the grid. If fgMap/bgMap are
+ * provided (parallel to rows), per-cell colors override the single fg/bg.
  */
 export function stampCellsFor(
   rows: string[],
@@ -108,6 +114,8 @@ export function stampCellsFor(
   bg: string,
   w: number = GRID_W,
   h: number = GRID_H,
+  fgMap?: string[][] | null,
+  bgMap?: string[][] | null,
 ): PaintCell[] {
   const out: PaintCell[] = [];
   const startY = cy - Math.floor(rows.length / 2);
@@ -120,7 +128,9 @@ export function stampCellsFor(
       const x = startX + c;
       const y = startY + r;
       if (x < 0 || y < 0 || x >= w || y >= h) continue;
-      out.push({ x, y, cell: { ch, fg, bg } });
+      const cellFg = fgMap?.[r]?.[c] || fg;
+      const cellBg = bgMap?.[r]?.[c] || bg;
+      out.push({ x, y, cell: { ch, fg: cellFg, bg: cellBg } });
     }
   }
   return out;

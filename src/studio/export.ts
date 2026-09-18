@@ -31,8 +31,8 @@ export function docToText(
 /**
  * Frames as stamp-ready JSON: cropped to the bounding box of non-empty
  * cells (shared across frames so animation alignment is preserved), with
- * the dominant fg/bg colors. Paste this to the agent to turn art into a
- * stamp.
+ * per-cell fg/bg colors plus the dominant colors. Paste this to the agent
+ * to turn art into a stamp.
  */
 export function framesToStampJson(
   name: string,
@@ -71,6 +71,10 @@ export function framesToStampJson(
     frames: string[][];
     fg: string | null;
     bg: string | null;
+    /** Per-cell colors, parallel to frames: [frame][row] = string of fg/bg
+        chars? No — parallel 2D arrays of color strings, '' = default. */
+    fgMap: string[][][];
+    bgMap: string[][][];
     palette: { fg: string[]; bg: string[] };
   } = {
     kind: 'glyphdance-stamp',
@@ -80,6 +84,8 @@ export function framesToStampJson(
     frames: [],
     fg: top(fgCount),
     bg: top(bgCount),
+    fgMap: [],
+    bgMap: [],
     palette: { fg: [...fgCount.keys()], bg: [...bgCount.keys()] },
   };
   if (x1 >= x0) {
@@ -87,14 +93,25 @@ export function framesToStampJson(
     out.height = y1 - y0 + 1;
     for (const f of frames) {
       const rows: string[] = [];
+      const fgRows: string[][] = [];
+      const bgRows: string[][] = [];
       for (let y = y0; y <= y1; y++) {
         let row = '';
+        const fgRow: string[] = [];
+        const bgRow: string[] = [];
         for (let x = x0; x <= x1; x++) {
-          row += f.cells[cellIndex(x, y, width)].ch;
+          const c = f.cells[cellIndex(x, y, width)];
+          row += c.ch;
+          fgRow.push(c.ch === ' ' ? '' : c.fg);
+          bgRow.push(c.ch === ' ' ? '' : c.bg || '');
         }
         rows.push(row);
+        fgRows.push(fgRow);
+        bgRows.push(bgRow);
       }
       out.frames.push(rows);
+      out.fgMap.push(fgRows);
+      out.bgMap.push(bgRows);
     }
   }
   return JSON.stringify(out, null, 2);

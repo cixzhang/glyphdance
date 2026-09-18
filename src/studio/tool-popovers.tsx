@@ -281,7 +281,7 @@ export function ColorPopoverContent({
 
 /** Stamp artwork preview: multi-frame stamps cycle their art on a timer so
  *  the loop is visible before placement, with a frame-count badge. */
-function StampArt({ frames, color, bg }: { frames: string[][]; color: string; bg?: string }) {
+function StampArt({ frames, color, bg, fgMap, bgMap }: { frames: string[][]; color: string; bg?: string; fgMap?: string[][][] | null; bgMap?: string[][][] | null }) {
   const animated = frames.length > 1;
   const [tick, setTick] = useState(0);
   useEffect(() => {
@@ -289,6 +289,8 @@ function StampArt({ frames, color, bg }: { frames: string[][]; color: string; bg
     const id = setInterval(() => setTick((t) => t + 1), 400);
     return () => clearInterval(id);
   }, [animated]);
+  const fi = animated ? tick % frames.length : 0;
+  const hasColorMap = !!(fgMap?.[fi] || bgMap?.[fi]);
   return (
     <>
       <pre
@@ -296,7 +298,24 @@ function StampArt({ frames, color, bg }: { frames: string[][]; color: string; bg
         aria-hidden="true"
         style={{ color, backgroundColor: bg }}
       >
-        {frames[animated ? tick % frames.length : 0].join('\n')}
+        {hasColorMap
+          ? frames[fi].map((row, r) => (
+              <span key={r}>
+                {[...row].map((ch, c) => (
+                  <span
+                    key={c}
+                    style={{
+                      color: fgMap?.[fi]?.[r]?.[c] || color,
+                      backgroundColor: bgMap?.[fi]?.[r]?.[c] || bg,
+                    }}
+                  >
+                    {ch}
+                  </span>
+                ))}
+                {r < frames[fi].length - 1 ? '\n' : ''}
+              </span>
+            ))
+          : frames[fi].join('\n')}
       </pre>
       {animated && (
         <span {...stylex.props(styles.loopBadge)}>
@@ -370,7 +389,7 @@ export function StampPopoverContent({
                   }}
                   xstyle={styles.stampCard}
                 >
-                  <StampArt frames={s.frames} color={s.fg} />
+                  <StampArt frames={s.frames} color={s.fg} fgMap={null} bgMap={null} />
                   <span {...stylex.props(styles.stampName)}>
                     <Text type="label">{s.id}</Text>
                   </span>
@@ -406,7 +425,7 @@ export function StampPopoverContent({
                   }}
                   xstyle={styles.stampCard}
                 >
-                  <StampArt frames={s.frames} color={s.fg ?? sec.color} bg={s.bg ?? undefined} />
+                  <StampArt frames={s.frames} color={s.fg ?? sec.color} bg={s.bg ?? undefined} fgMap={s.fgMap ?? null} bgMap={s.bgMap ?? null} />
                   <span {...stylex.props(styles.stampName)}>
                     <Text type="label">{s.id}</Text>
                   </span>

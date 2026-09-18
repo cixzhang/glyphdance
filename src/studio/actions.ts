@@ -418,8 +418,9 @@ export function applyAction(doc: DocState, a: Action): Applied {
     }
     case 'placeStamp': {
       const stamp = resolveStamp(a.stampId, doc.stamps)!;
-      const rows = stamp.frames[a.stampFrame ?? 0];
-      const cells = stampCellsFor(rows, a.x, a.y, a.fg, a.bg, doc.width, doc.height);
+      const frameIdx = a.stampFrame ?? 0;
+      const rows = stamp.frames[frameIdx];
+      const cells = stampCellsFor(rows, a.x, a.y, a.fg, a.bg, doc.width, doc.height, stamp.fgMap?.[frameIdx], stamp.bgMap?.[frameIdx]);
       if (cells.length === 0) {
         // Stamp is all transparent — a legal no-op.
         const noop: Action = { type: 'paintCells', frame: a.frame, cells: [] };
