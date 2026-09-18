@@ -7,6 +7,8 @@ stamps, and compose full scenes.
 
 **Try it:** [glyphdance.vercel.app](https://glyphdance.vercel.app)
 
+![glyphdance studio](screenshot.png)
+
 ## What it does
 
 - **Character-grid canvas** — paint with 2,700+ Cozette glyphs across 4 monospace fonts
