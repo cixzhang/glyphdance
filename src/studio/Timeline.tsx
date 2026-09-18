@@ -23,6 +23,10 @@ const styles = stylex.create({
     '@media (max-width: 760px)': {
       gap: 8,
       padding: '8px 10px',
+      // On mobile the bar sits in an auto-sized grid row; height:100%
+      // can resolve against the grid container and stretch the Dracula
+      // background into a dead band below the toolbar. Size to content.
+      height: 'auto',
     },
   },
   cluster: {

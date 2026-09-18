@@ -40,7 +40,10 @@ const styles = stylex.create({
     gridTemplateRows: '52px minmax(0, 1fr) 148px',
     gridTemplateColumns: '60px minmax(0, 1fr) 300px',
     gridTemplateAreas: '"topbar topbar topbar" "rail canvas inspector" "timeline timeline timeline"',
-    backgroundColor: 'var(--color-background-body)',
+    // Explicit fallback: if the theme variable doesn't resolve (scoped
+    // theme CSS), the root must still be opaque or the PWA background
+    // shows through as a dead band.
+    backgroundColor: 'var(--color-background-body, #1b1b1b)',
     color: 'var(--color-text-primary)',
     fontSize: 13,
     // Mobile: single column. The tool rail becomes a bottom strip ("tools")
