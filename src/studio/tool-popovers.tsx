@@ -297,10 +297,10 @@ function StampArt({ frames, color, bg, fgMap, bgMap }: { frames: string[][]; col
         <div
           {...stylex.props(styles.stampArt)}
           aria-hidden="true"
-          style={{ color, backgroundColor: bg }}
+          style={{ color, backgroundColor: bg, flexDirection: 'column' }}
         >
           {frames[fi].map((row, r) => (
-            <div key={r} style={{ whiteSpace: 'pre' }}>
+            <div key={r} style={{ whiteSpace: 'pre', lineHeight: 'inherit' }}>
               {[...row].map((ch, c) => (
                 <span
                   key={c}
