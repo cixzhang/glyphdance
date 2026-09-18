@@ -34,10 +34,23 @@
   font-display: swap;
 }
 
+/* Canvas face: JetBrains Mono — the code-editor look. For ASCII art that's
+   destined for code comments; clean vector letterforms, full block/box/
+   shape coverage (no ★ ✦). OFL 1.1. */
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('../assets/fonts/jetbrains-mono.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Font attribution:
    - Cozette by Slavfox (https://github.com/slavfox/Cozette), MIT license.
    - "Px437 IBM VGA 8x16" — outline remaster by VileR (https://int10h.org),
      Creative Commons Attribution-ShareAlike 4.0 International
      (http://creativecommons.org/licenses/by-sa/4.0/).
+   - JetBrains Mono by JetBrains (https://github.com/JetBrains/JetBrainsMono),
+     SIL Open Font License 1.1.
    - Pixelify Sans by Stefie Burger (https://github.com/eifetx/pixelify-sans),
      SIL Open Font License 1.1. */

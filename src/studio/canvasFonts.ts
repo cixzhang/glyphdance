@@ -24,6 +24,12 @@ export const CANVAS_FONTS: CanvasFont[] = [
     advanceEm: 0.5,
   },
   {
+    id: 'jetbrains',
+    name: 'JetBrains Mono',
+    family: '"JetBrains Mono", monospace',
+    advanceEm: 0.6,
+  },
+  {
     id: 'system',
     name: 'System Mono',
     family: 'ui-monospace, "SF Mono", Menlo, monospace',
