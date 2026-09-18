@@ -39,23 +39,17 @@ export function framesToStampJson(
   frames: Frame[],
   width: number,
   height: number,
+  fontId?: string,
 ): string {
-  // Bounding box across all frames.
-  let x0 = width, y0 = height, x1 = -1, y1 = -1;
+  // Full lossless representation of all frames: every cell's char, fg, and
+  // bg (including spaces with painted backgrounds), plus per-frame hold
+  // times. No cropping — the grid dimensions are preserved.
   const fgCount = new Map<string, number>();
   const bgCount = new Map<string, number>();
   for (const f of frames) {
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const c = f.cells[cellIndex(x, y, width)];
-        if (c.ch === ' ') continue;
-        if (x < x0) x0 = x;
-        if (x > x1) x1 = x;
-        if (y < y0) y0 = y;
-        if (y > y1) y1 = y;
-        fgCount.set(c.fg, (fgCount.get(c.fg) ?? 0) + 1);
-        if (c.bg) bgCount.set(c.bg, (bgCount.get(c.bg) ?? 0) + 1);
-      }
+    for (const c of f.cells) {
+      if (c.ch !== ' ') fgCount.set(c.fg, (fgCount.get(c.fg) ?? 0) + 1);
+      if (c.bg) bgCount.set(c.bg, (bgCount.get(c.bg) ?? 0) + 1);
     }
   }
   const top = (m: Map<string, number>): string | null => {
@@ -68,51 +62,51 @@ export function framesToStampJson(
     name: string;
     width: number;
     height: number;
+    fontId?: string;
     frames: string[][];
+    holdMs: number[];
     fg: string | null;
     bg: string | null;
-    /** Per-cell colors, parallel to frames: [frame][row] = string of fg/bg
-        chars? No — parallel 2D arrays of color strings, '' = default. */
+    /** Per-cell colors, parallel to frames: [frame][row][col], '' = none. */
     fgMap: string[][][];
     bgMap: string[][][];
     palette: { fg: string[]; bg: string[] };
   } = {
-    kind: 'glyphdance-stamp',
+    kind: 'glyphdance-frames',
     name,
-    width: 0,
-    height: 0,
+    width,
+    height,
     frames: [],
+    holdMs: [],
     fg: top(fgCount),
     bg: top(bgCount),
     fgMap: [],
     bgMap: [],
     palette: { fg: [...fgCount.keys()], bg: [...bgCount.keys()] },
   };
-  if (x1 >= x0) {
-    out.width = x1 - x0 + 1;
-    out.height = y1 - y0 + 1;
-    for (const f of frames) {
-      const rows: string[] = [];
-      const fgRows: string[][] = [];
-      const bgRows: string[][] = [];
-      for (let y = y0; y <= y1; y++) {
-        let row = '';
-        const fgRow: string[] = [];
-        const bgRow: string[] = [];
-        for (let x = x0; x <= x1; x++) {
-          const c = f.cells[cellIndex(x, y, width)];
-          row += c.ch;
-          fgRow.push(c.ch === ' ' ? '' : c.fg);
-          bgRow.push(c.ch === ' ' ? '' : c.bg || '');
-        }
-        rows.push(row);
-        fgRows.push(fgRow);
-        bgRows.push(bgRow);
+  if (fontId) out.fontId = fontId;
+  for (const f of frames) {
+    const rows: string[] = [];
+    const fgRows: string[][] = [];
+    const bgRows: string[][] = [];
+    for (let y = 0; y < height; y++) {
+      let row = '';
+      const fgRow: string[] = [];
+      const bgRow: string[] = [];
+      for (let x = 0; x < width; x++) {
+        const c = f.cells[cellIndex(x, y, width)];
+        row += c.ch;
+        fgRow.push(c.ch === ' ' ? '' : c.fg);
+        bgRow.push(c.bg || '');
       }
-      out.frames.push(rows);
-      out.fgMap.push(fgRows);
-      out.bgMap.push(bgRows);
+      rows.push(row);
+      fgRows.push(fgRow);
+      bgRows.push(bgRow);
     }
+    out.frames.push(rows);
+    out.holdMs.push(f.holdMs);
+    out.fgMap.push(fgRows);
+    out.bgMap.push(bgRows);
   }
   return JSON.stringify(out, null, 2);
 }
@@ -222,11 +216,12 @@ export function downloadStampJson(
   frames: Frame[],
   width: number,
   height: number,
+  fontId?: string,
 ): void {
-  const json = framesToStampJson(docName, frames, width, height);
+  const json = framesToStampJson(docName, frames, width, height, fontId);
   downloadBlob(
     new Blob([json + '\n'], { type: 'application/json;charset=utf-8' }),
-    `${docName}-stamp.json`,
+    `${docName}-frames.json`,
   );
 }
 

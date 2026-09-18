@@ -599,7 +599,7 @@ function ExportPanel({ doc, getActive }: { doc: DocState; getActive: () => numbe
             label="Download all frames as JSON"
             variant="secondary"
             size="sm"
-            onClick={() => downloadStampJson(doc.name, doc.frames, doc.width, doc.height)}
+            onClick={() => downloadStampJson(doc.name, doc.frames, doc.width, doc.height, doc.fontId)}
           >
             JSON · all frames
           </Button>
