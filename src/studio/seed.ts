@@ -29,6 +29,17 @@ export function seedDocument(mode: 'light' | 'dark'): DocState {
   for (let f = 0; f < MOTES_PER_RING; f++) {
     const frame = blankFrame(holds[f]);
     for (let i = 0; i < MOTES_PER_RING; i++) {
+      if (i === 0) {
+        // Special mote: yellow triangle on dark yellow, clean clockwise
+        // orbit (angle increases → top → right → bottom on screen).
+        const angle = -Math.PI / 2 + (f / MOTES_PER_RING) * Math.PI * 2;
+        const x = Math.round(cx + Math.cos(angle) * baseRadius);
+        const y = Math.round(cy + Math.sin(angle) * baseRadius * 0.7);
+        if (x >= 0 && x < GRID_W && y >= 0 && y < GRID_H) {
+          frame.cells[cellIndex(x, y)] = { ch: '▲', fg: '#f1fa8c', bg: '#665500' };
+        }
+        continue;
+      }
       // Each mote orbits the ring at its own pace and bobs in and out —
       // a loose dance, not a rigid rotation. Glyph size pulses with the
       // bob for a lively feel.
