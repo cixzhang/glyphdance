@@ -480,24 +480,26 @@ function AgentPanel({
   // itself is the thing that opens and closes.
   if (isMobile) {
     return (
-      <Card padding={3}>
-        <VStack gap={2}>
-          <Heading level={4}>
-            <IconSparkles {...stylex.props(styles.agentName)} /> Agent
-          </Heading>
-          <AgentBody
-              doc={doc}
-              dispatch={dispatch}
-              mode={mode}
-              panelOpen={panelOpen}
-              onDone={onDone}
-              scrollToId={scrollToId}
-              onScrolled={onScrolled}
-              onSelectStamp={onSelectStamp}
-              onWorkingChange={onWorkingChange}
-            />
-        </VStack>
-      </Card>
+      <VStack gap={2}>
+        <Heading level={4}>
+          <IconSparkles {...stylex.props(styles.agentName)} /> Agent
+        </Heading>
+        <Text type="supporting" color="secondary">
+          Describe the art you want — the agent draws it on your canvas with
+          real brush strokes you can undo, across one frame or many.
+        </Text>
+        <AgentBody
+          doc={doc}
+          dispatch={dispatch}
+          mode={mode}
+          panelOpen={panelOpen}
+          onDone={onDone}
+          scrollToId={scrollToId}
+          onScrolled={onScrolled}
+          onSelectStamp={onSelectStamp}
+          onWorkingChange={onWorkingChange}
+        />
+      </VStack>
     );
   }
   return (
