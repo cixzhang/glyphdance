@@ -196,16 +196,16 @@ function ToolRail({
       // back out via the toolbar.)
       if (brush.tool === 'brush') setOpen(open === 'glyph' ? null : 'glyph');
       else if (brush.tool === 'stamp') setOpen(open === 'stamp' ? null : 'stamp');
-      else if (brush.tool === 'paint') onColorOpenChange(!colorOpen);
       return;
     }
     onBrushChange({ tool: v as ToolId });
     // Opening a menu straight from the tool switch: tapping another menu
     // button while one menu is open swaps to it instead of needing a
     // second tap (the open menu's light-dismiss eats the first click).
+    // Paint no longer auto-opens Colors — the swatch in the tool pill is
+    // the way in.
     if (v === 'brush') setOpen('glyph');
     else if (v === 'stamp') setOpen('stamp');
-    else if (v === 'paint') onColorOpenChange(true);
     else {
       setOpen(null);
       onColorOpenChange(false);
