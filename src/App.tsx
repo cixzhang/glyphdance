@@ -36,9 +36,11 @@ const styles = stylex.create({
     // theme CSS), the root must still be opaque.
     backgroundColor: 'var(--color-background-body, #1b1b1b)',
     // In the installed PWA there is no browser chrome: pad for the notch /
-    // status bar at the top. Bottom safe area is handled by the toolbar
-    // itself to avoid double-counting with the JS-measured viewport height.
+    // status bar at the top and the home indicator at the bottom. The JS
+    // viewport height (812) excludes the home indicator area; the padding
+    // extends the root to cover the full screen.
     paddingTop: 'env(safe-area-inset-top)',
+    paddingBottom: 'env(safe-area-inset-bottom)',
     display: 'grid',
     overflow: 'hidden',
     // PWA standalone: ensure the root fills the full screen viewport.
