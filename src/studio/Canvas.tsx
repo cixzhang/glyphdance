@@ -576,7 +576,7 @@ export function AsciiGrid({
     const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'stamp';
     // Capture one art frame per document frame (or just the active frame).
     const frameIdxs = stampAllFrames ? doc.frames.map((_, i) => i) : [frame];
-    const frames: string[][] = [];
+    const raw: string[][] = [];
     let fgCounts = new Map<string, number>();
     for (const fi of frameIdxs) {
       const fcells = doc.frames[fi].cells;
@@ -590,12 +590,35 @@ export function AsciiGrid({
         }
         rows.push(row);
       }
-      // Trim empty trailing rows/cols for a tight stamp.
-      while (rows.length > 0 && rows[rows.length - 1].trim() === '') rows.pop();
-      let trimLeft = 0;
-      while (rows.length > 0 && rows.every(r => r[trimLeft] === ' ' || r[trimLeft] === undefined)) trimLeft++;
-      const trimmed = rows.map(r => r.slice(trimLeft).replace(/\s+$/, ''));
-      if (trimmed.some(r => r.trim() !== '')) frames.push(trimmed);
+      raw.push(rows);
+    }
+    // Union bounding box of content across all captured frames: every frame
+    // is cropped to the same rect, so motion across the area (a bird flying
+    // through) survives instead of each frame collapsing to its own tight
+    // box. Rows keep a uniform width so placement centers the art as one
+    // block and relative positions stay exact.
+    let bx0 = Infinity;
+    let by0 = Infinity;
+    let bx1 = -1;
+    let by1 = -1;
+    for (const rows of raw) {
+      rows.forEach((row, y) => {
+        [...row].forEach((ch, x) => {
+          if (ch === ' ') return;
+          if (x < bx0) bx0 = x;
+          if (x > bx1) bx1 = x;
+          if (y < by0) by0 = y;
+          if (y > by1) by1 = y;
+        });
+      });
+    }
+    const frames: string[][] = [];
+    if (bx1 >= bx0) {
+      for (const rows of raw) {
+        const cropped: string[] = [];
+        for (let y = by0; y <= by1; y++) cropped.push([...rows[y]].slice(bx0, bx1 + 1).join(''));
+        if (cropped.some((r) => r.trim() !== '')) frames.push(cropped);
+      }
     }
     if (frames.length === 0) {
       setStampError('The selection is empty — nothing to make a stamp from.');
