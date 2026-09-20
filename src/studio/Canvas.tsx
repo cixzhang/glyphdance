@@ -672,6 +672,10 @@ export function AsciiGrid({
         textStroke.current = nextStroke();
         return;
       case 'stamp': {
+        // Pause playback first: placing while frames advance strands the
+        // loop across a moving target — the tap must land on the frame the
+        // user is looking at, not one or two frames later.
+        if (playing) onTogglePlay();
         const id = nextStroke();
         const placed = new Set<string>();
         strokeRef.current = { id, painted: placed, last: [x, y] };
