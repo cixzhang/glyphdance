@@ -35,7 +35,10 @@ const styles = stylex.create({
     height: '100%',
     paddingTop: 10,
     paddingBottom: 10,
-    backgroundColor: 'var(--color-background-body)',
+    // Exact canvas bg, like the top nav and timeline (see --gd-chrome-bg in
+    // syntax-chrome.ts): the chrome melts into the stage instead of floating
+    // a different hue beside it.
+    backgroundColor: 'var(--gd-chrome-bg, var(--color-background-body))',
     borderRight: '1px solid var(--color-border)',
     // Mobile: the rail becomes a horizontal tool strip docked at the bottom.
     '@media (max-width: 760px)': {

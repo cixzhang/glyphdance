@@ -6,7 +6,6 @@ import { StatusDot } from '@astryxdesign/core/StatusDot';
 import { IconMoon, IconSparkles, IconSun } from './icons';
 import { GhostIcon } from './GhostIcon';
 import { Text } from '@astryxdesign/core/Text';
-import Transport from './Transport.tsx';
 import { DOC_NAME } from './document.ts';
 
 // NOTE: the slow spin for the agent icon lives in ./animations.css as the
@@ -74,28 +73,22 @@ const styles = stylex.create({
 
 interface TopBarProps {
   isMobile: boolean;
-  playing: boolean;
   frameLabel: string;
   agentOpen: boolean;
   /** The agent finished a turn while the chat was closed — show a badge. */
   agentDone?: boolean;
   /** The agent is working on a turn — spin its button icon slowly. */
   agentWorking?: boolean;
-  onJumpStart: () => void;
-  onStepBack: () => void;
-  onTogglePlay: () => void;
-  onStepFwd: () => void;
-  onJumpEnd: () => void;
   onToggleAgent: () => void;
   mode: 'light' | 'dark';
   onToggleMode: () => void;
 }
 
 export default function TopBar(props: TopBarProps) {
-  const { isMobile, playing, frameLabel, agentOpen, mode, onToggleMode } = props;
+  const { isMobile, frameLabel, agentOpen, mode, onToggleMode } = props;
   // On mobile, TopNav's own mobile-bar mode renders heading + endContent
-  // only — the doc name and transport move out of the way instead of
-  // overlapping. (Transport also lives in the timeline.)
+  // only — the doc name moves out of the way instead of overlapping.
+  // (Playback transport lives in the timeline, not the top nav.)
   return (
     <TopNavRenderContext.Provider value={isMobile ? 'mobile-bar' : 'default'}>
       <TopNav
@@ -124,14 +117,6 @@ export default function TopBar(props: TopBarProps) {
       }
       centerContent={
         <div {...stylex.props(styles.center)}>
-          <Transport
-            playing={playing}
-            onJumpStart={props.onJumpStart}
-            onStepBack={props.onStepBack}
-            onTogglePlay={props.onTogglePlay}
-            onStepFwd={props.onStepFwd}
-            onJumpEnd={props.onJumpEnd}
-          />
           <Text type="code" color="secondary">
             {frameLabel}
           </Text>

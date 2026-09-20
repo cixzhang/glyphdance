@@ -27,7 +27,7 @@ interface TransportProps {
   onJumpEnd: () => void;
 }
 
-/** Playback transport cluster, shared by the top bar and the timeline. */
+/** Playback transport cluster, shared by the timeline and the mobile canvas overlay. */
 export default function Transport({
   playing,
   onJumpStart,

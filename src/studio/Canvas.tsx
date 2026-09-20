@@ -4,8 +4,7 @@ import { IconButton } from '@astryxdesign/core/IconButton';
 import { Button } from '@astryxdesign/core/Button';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { Text } from '@astryxdesign/core/Text';
-import { Kbd } from '@astryxdesign/core/Kbd';
-import { IconSparkles, IconGrid, IconZoomIn, IconZoomOut, IconPanels, IconClose } from './icons';
+import { IconGrid, IconZoomIn, IconZoomOut, IconPanels, IconClose } from './icons';
 import Transport from './Transport.tsx';
 import { TOOLS } from './ToolRail.tsx';
 import {
@@ -172,18 +171,6 @@ const styles = stylex.create({
   textField: {
     width: 170,
     fontFamily: 'var(--font-family-code)',
-  },
-  pill: {
-    position: 'absolute',
-    top: 14,
-    left: '50%',
-    transform: 'translateX(-50%)',
-    borderRadius: 999,
-    // On mobile the top bar's Agent button is the entry point — the pill
-    // would just eat canvas space.
-    '@media (max-width: 760px)': { display: 'none' },
-    backdropFilter: 'blur(6px)',
-    zIndex: 2,
   },
   status: {
     position: 'absolute',
@@ -1099,7 +1086,6 @@ interface CanvasProps {
   onPlaceStamp: (stampId: string, x: number, y: number, fg: string, bg: string) => void;
   /** Create a custom stamp from canvas art. */
   onMakeStamp: (stamp: CustomStamp) => void;
-  onOpenAgent: () => void;
   /** Mobile only: the playback transport floats top-left of the canvas. */
   playing: boolean;
   onJumpStart: () => void;
@@ -1125,7 +1111,6 @@ export default function Canvas({
   onPick,
   onPlaceStamp,
   onMakeStamp,
-  onOpenAgent,
   playing,
   onJumpStart,
   onStepBack,
@@ -1223,17 +1208,6 @@ export default function Canvas({
         {activeTool.icon}
         <Text type="label">{activeTool.label}</Text>
       </div>
-      <Button
-        label="Open the agent panel"
-        variant="ghost"
-        size="sm"
-        icon={<IconSparkles />}
-        xstyle={styles.pill}
-        onClick={onOpenAgent}
-        tooltip="Open the agent panel"
-      >
-        Ask the agent… <Kbd keys="⌘K" />
-      </Button>
       <div {...stylex.props(styles.status)}>
         {doc.width} × {doc.height} · frame {doc.active + 1}/{doc.frames.length}
         {onionOn ? ' · onion on' : ''}

@@ -261,10 +261,9 @@ export default function App() {
     [],
   );
 
-  // The top bar's Agent button and the canvas "Ask the agent" pill share one
-  // entry point. On desktop they toggle the agent card; on mobile they open
-  // the agent bottom sheet. The mobile control-panels button opens the side
-  // drawer instead.
+  // The top bar's Agent button opens the agent: on desktop it toggles the
+  // agent card, on mobile it opens the agent bottom sheet. The mobile
+  // control-panels button opens the side drawer instead.
   const togglePanels = useCallback(() => {
     if (isMobile) {
       setSheetOpen((v) => !v);
@@ -400,15 +399,9 @@ export default function App() {
       <div {...stylex.props(styles.topbar)}>
         <TopBar
           isMobile={isMobile}
-          playing={playing}
           frameLabel={frameLabel}
           agentOpen={isMobile ? sheetOpen : agentOpen}
           agentWorking={agentWorking}
-          onJumpStart={jumpStart}
-          onStepBack={stepBack}
-          onTogglePlay={togglePlay}
-          onStepFwd={stepFwd}
-          onJumpEnd={jumpEnd}
           onToggleAgent={togglePanels}
           agentDone={agentDone !== null}
           mode={mode}
@@ -446,7 +439,6 @@ export default function App() {
           onPick={onPick}
           onPlaceStamp={onPlaceStamp}
           onMakeStamp={onMakeStamp}
-          onOpenAgent={openPanels}
           playing={playing}
           onJumpStart={jumpStart}
           onStepBack={stepBack}

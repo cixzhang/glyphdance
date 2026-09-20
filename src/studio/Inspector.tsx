@@ -50,7 +50,10 @@ const styles = stylex.create({
     gap: 10,
     height: '100%',
     padding: 10,
-    backgroundColor: 'var(--color-background-surface)',
+    // Exact canvas bg, like the top nav and timeline (see --gd-chrome-bg in
+    // syntax-chrome.ts): the panel melts into the stage instead of floating
+    // a lifted neutral beside it.
+    backgroundColor: 'var(--gd-chrome-bg, var(--color-background-surface))',
     borderLeft: '1px solid var(--color-border)',
     overflowY: 'auto',
   },
