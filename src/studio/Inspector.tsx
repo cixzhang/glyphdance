@@ -27,10 +27,11 @@ import {
   callOpenRouter,
   opText,
   parseModelReply,
-  runAgentActions,
+  runAgentToolCalls,
   type ChatMessage,
   type OpLine,
   type OpTarget,
+  type ToolCall,
 } from './agent.ts';
 import {
   DEFAULT_MODEL,
@@ -228,11 +229,11 @@ function AgentBody({
             m.id === id ? { ...m, ops: [...(m.ops ?? []), op] } : m,
           ),
         );
-      // Dispatch one action at a time so each edit lands visibly on the
+      // Dispatch one tool call at a time so each edit lands visibly on the
       // canvas and stays individually undoable.
-      const runPass = (id: string, actions: Action[]) =>
-        runAgentActions(
-          actions,
+      const runPass = (id: string, calls: ToolCall[]) =>
+        runAgentToolCalls(
+          calls,
           () => docRef.current,
           dispatch,
           (op) => appendOp(id, op),
@@ -245,7 +246,7 @@ function AgentBody({
         ops: [],
       };
       setMessages([...history, assistantMsg]);
-      let result = await runPass(assistantMsg.id, reply.actions);
+      let result = await runPass(assistantMsg.id, reply.toolCalls);
 
       // Repair pass: feed validation failures back to the model with a
       // fresh canvas and let it correct them, once. Best-effort — the
@@ -264,7 +265,7 @@ function AgentBody({
             ),
           );
           const repair = parseModelReply(repairRaw);
-          if (repair && repair.actions.length > 0) {
+          if (repair && repair.toolCalls.length > 0) {
             const repairMsg: ChatMessage = {
               id: msgId(),
               role: 'assistant',
@@ -272,7 +273,7 @@ function AgentBody({
               ops: [],
             };
             setMessages((ms) => [...ms, repairMsg]);
-            const r2 = await runPass(repairMsg.id, repair.actions);
+            const r2 = await runPass(repairMsg.id, repair.toolCalls);
             result = {
               applied: [...result.applied, ...r2.applied],
               skipped: [...result.skipped, ...r2.skipped],

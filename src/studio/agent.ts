@@ -12,6 +12,10 @@ import {
   type DocState,
 } from './document.ts';
 import { validate, type Action } from './actions.ts';
+import {
+  agentToolByName,
+  renderToolDocs,
+} from './agent-tools.ts';
 import type { AgentSettings } from './agent-settings.ts';
 import {
   PIXEL_ART_SKILL,
@@ -80,10 +84,14 @@ export function opText(op: OpLine): string {
 
 interface ModelReply {
   message: string;
-  actions: Action[];
+  toolCalls: ToolCall[];
 }
 
-const THEME_IDS = ['dracula', 'monokai', 'nord', 'solarized', 'tokyo', 'onedark'];
+/** One tool invocation from the model: a shared-catalog tool + arguments. */
+export interface ToolCall {
+  name: string;
+  args: Record<string, unknown>;
+}
 
 const colRuler = (width: number): string =>
   Array.from({ length: width }, (_, x) => String(x % 10)).join('');
@@ -128,13 +136,13 @@ export function describeDocument(
   const parts = [
     `name: ${doc.name}`,
     `canvas: ${doc.width} wide x ${doc.height} tall cells (x is 0..${doc.width - 1}, y is 0..${doc.height - 1})`,
-    `frames: ${doc.frames.length}, active: frame ${doc.active + 1} (in actions, use index ${doc.active})`,
+    `frames: ${doc.frames.length}, active: frame ${doc.active + 1} (in tool calls, use index ${doc.active})`,
     `theme: ${doc.themeId} (background ${theme.bg}; stamp colors: invaders/nature ${theme.invader}, ships/play ${theme.player}, critters/space ${theme.star})`,
     `canvas font: ${font.name} — ${fontNote(doc.fontId)}`,
     `user-created stamps: ${doc.stamps.length > 0 ? doc.stamps.map((s) => s.id).join(', ') : '(none yet)'}`,
     '',
     ...doc.frames.flatMap((f, i) => [
-      `Frame ${i + 1} of ${doc.frames.length}${i === doc.active ? ' — ACTIVE' : ''} (hold ${f.holdMs}ms; in actions, this frame is index ${i}):`,
+      `Frame ${i + 1} of ${doc.frames.length}${i === doc.active ? ' — ACTIVE' : ''} (hold ${f.holdMs}ms; in tool calls, this frame is index ${i}):`,
       '```',
       frameAsText(doc, i),
       '```',
@@ -149,31 +157,15 @@ export function buildSystemPrompt(
   doc: DocState,
   mode: 'light' | 'dark' = 'dark',
 ): string {
-  const theme = themeById(doc.themeId)[mode];
   return `You are the glyphdance co-pilot, an assistant inside an ASCII-art animation studio.
 The canvas is a ${doc.width}-wide x ${doc.height}-tall grid of cells. Each cell holds one character, a foreground color (fg), and a background color (bg; "" means transparent, the theme background shows through).
 A document has frames; each frame has cells and a holdMs (how long the frame shows). doc.active is the selected frame index.
 
-You edit ONLY by emitting actions as JSON. Reply with exactly one JSON object and nothing else:
-{"message": "short human-readable summary", "actions": [ ... ]}
+You edit ONLY by calling tools. Reply with exactly one JSON object and nothing else:
+{"message": "short human-readable summary", "tool_calls": [{"name": "paint_cells", "arguments": {...}}, ...]}
 
-Action types (every field required):
-- {"type":"paintCells","frame":0,"cells":[{"x":1,"y":2,"cell":{"ch":"█","fg":"#4ade80","bg":""}},{"x":2,"y":2,"cell":{"ch":"█","fg":"#4ade80","bg":""}},{"x":1,"y":3,"cell":{"ch":"●","fg":"#f472b6","bg":""}}]}
-  ch must be exactly one character. x is 0..${doc.width - 1}, y is 0..${doc.height - 1}. Batch ALL painted cells for one frame into ONE paintCells action. Notice the fg values differ per element — paint in color, never a whole piece in one fg.
-- {"type":"recolorCells","frame":0,"cells":[{"x":1,"y":2,"fg":"#4ade80","bg":""},{"x":2,"y":2,"fg":"#f472b6","bg":""}]} — change ONLY the colors of existing cells, keeping their characters. Use this to recolor art that's already drawn (like the Paint tool).
-- {"type":"addFrame","after":1} — insert a blank frame after the given frame index.
-- {"type":"resizeCanvas","width":32,"height":20} — resize the canvas (width 4-64, height 4-48); existing art is re-centered on the new canvas, art that doesn't fit is cropped. Use when the user asks for a bigger/smaller canvas.
-- {"type":"duplicateFrame","index":1}
-- {"type":"deleteFrame","index":1}
-- {"type":"clearFrame","frame":0} — erase every cell in a frame (keeps its holdMs). To hand the user a blank slate, clearFrame every frame; the document must keep at least one frame, so NEVER try to delete them all.
-- {"type":"moveFrame","from":2,"to":0}
-- {"type":"setHold","index":0,"holdMs":400}
-- {"type":"setTheme","themeId":"dracula"} — one of: ${THEME_IDS.join(', ')}
-- {"type":"rename","name":"my-piece"}
-- {"type":"setActive","index":2}
-- {"type":"addStamp","stamp":{"id":"cat","fg":"#ffd75e","frames":[[" /\\_/\\ ","( o.o )"," > ^ < "]]}} — CREATE a reusable stamp the user keeps in their Stamps panel (id: lowercase/digits/dashes, 1-20 chars; any size, any frame count; spaces transparent)
-- {"type":"deleteStamp","id":"cat"} — remove a user-created stamp
-- {"type":"placeStamp","stampId":"crab","frame":0,"x":12,"y":7,"fg":"${theme.invader}","bg":""} — paint a stamp CENTERED on x,y (stampFrame picks its art frame, default 0). Use this to USE stamps — never hand-draw a stamp's cells.
+Tools (arguments are JSON; every "required" field must be present; calls apply in order):
+${renderToolDocs()}
 
 ${STAMP_SKILL}
 
@@ -187,14 +179,14 @@ ${PIXEL_ART_SKILL}
 ${COLOR_SKILL}
 
 Rules:
-- Drawing means paintCells on the active frame, or on a frame you just added/duplicated first. Prefer building on the active frame.
-- "Clear the canvas" / "blank slate" means clearFrame on every frame — never deleteFrame them all; the last frame cannot be deleted.
+- Drawing means paint_cells on the active frame, or on a frame you just added/duplicated first. Prefer building on the active frame.
+- "Clear the canvas" / "blank slate" means clear_frame on every frame — never delete_frame them all; the last frame cannot be deleted.
 - Coordinates are 0-based with y=0 at the TOP row. Every frame dump has a column ruler across the top and row numbers down the left — read x/y positions off the ruler, never eyeball them. Never emit out-of-bounds cells.
-- placeStamp centers the stamp on x,y and the WHOLE stamp must fit inside the grid — clipped placements are rejected, so keep the full stamp extent in bounds.
-- Frame numbers for the HUMAN are 1-based: the timeline, status pill, and op log all call the first frame "frame 1". In your "message" text always use 1-based frame numbers — never write "frame 0". In action payloads ("frame", "index", "after", "from", "to") use 0-based indices: human frame N = index N-1. When the user says "frame one" or "the first frame", they mean index 0.
+- place_stamp centers the stamp on x,y; art past the grid edge is clipped, so keep the full stamp extent in bounds when you want the whole stamp visible.
+- Frame numbers for the HUMAN are 1-based: the timeline, status pill, and op log all call the first frame "frame 1". In your "message" text always use 1-based frame numbers — never write "frame 0". In tool arguments ("frame", "index", "after", "from", "to") use 0-based indices: human frame N = index N-1. When the user says "frame one" or "the first frame", they mean index 0.
 - Keep every "ch" to one character. For empty/erase use ch " " with any colors.
-- If the request is truly impossible (contradicts the grid limits or the action set), emit NO actions and explain briefly in "message". If it's merely vague about placement ("add snowflakes", "decorate the sky"), make a reasonable choice per the stamp skill's finding-the-right-stamp steps and say what you chose — a visible best-effort result beats an empty reply. Stay conservative with destructive requests: only clear/delete what the user named.
-- Keep "message" to one or two sentences. Only describe what your actions actually did.
+- If the request is truly impossible (contradicts the grid limits or the tool set), emit NO tool calls and explain briefly in "message". If it's merely vague about placement ("add snowflakes", "decorate the sky"), make a reasonable choice per the stamp skill's finding-the-right-stamp steps and say what you chose — a visible best-effort result beats an empty reply. Stay conservative with destructive requests: only clear/delete what the user named.
+- Keep "message" to one or two sentences. Only describe what your tool calls actually did.
 
 Current document (all frames shown; use the rulers to locate things):
 ${describeDocument(doc, mode)}`;
@@ -212,17 +204,28 @@ export function parseModelReply(text: string): ModelReply | null {
   try {
     const o = JSON.parse(cleaned.slice(start, end + 1)) as {
       message?: unknown;
-      actions?: unknown;
+      tool_calls?: unknown;
     };
-    if (typeof o.message !== 'string' || !Array.isArray(o.actions)) return null;
-    // Keep only well-formed action objects; the action layer re-validates.
-    const actions = (o.actions as unknown[]).filter(
-      (a): a is Action =>
-        typeof a === 'object' &&
-        a !== null &&
-        typeof (a as { type?: unknown }).type === 'string',
+    if (typeof o.message !== 'string' || !Array.isArray(o.tool_calls))
+      return null;
+    // Keep only well-formed tool calls; unknown tools and bad arguments
+    // are reported (not dropped) by runAgentToolCalls.
+    const toolCalls = (o.tool_calls as unknown[]).flatMap(
+      (c): ToolCall[] =>
+        typeof c === 'object' &&
+        c !== null &&
+        typeof (c as { name?: unknown }).name === 'string' &&
+        typeof (c as { arguments?: unknown }).arguments === 'object' &&
+        (c as { arguments?: unknown }).arguments !== null
+          ? [
+              {
+                name: (c as { name: string }).name,
+                args: (c as { arguments: Record<string, unknown> }).arguments,
+              },
+            ]
+          : [],
     );
-    return { message: o.message, actions };
+    return { message: o.message, toolCalls };
   } catch {
     return null;
   }
@@ -339,13 +342,15 @@ export function summarizeAction(a: Action): OpLine {
 }
 
 /**
- * Validate + dispatch a batch of model-proposed actions against the live
- * document, one at a time so each lands visibly (and each stays undoable).
+ * Resolve + validate + dispatch a batch of model-proposed tool calls against
+ * the live document, one at a time so each lands visibly (and each stays
+ * undoable). Uses the same shared tool definitions as WebMCP: unknown tools,
+ * malformed arguments, and validation failures are all reported as skips.
  * Returns what applied and what was skipped (with reasons) — the caller
  * feeds skips back to the model for a repair pass.
  */
-export async function runAgentActions(
-  actions: Action[],
+export async function runAgentToolCalls(
+  calls: ToolCall[],
   getDoc: () => DocState,
   dispatch: (a: Action) => void,
   onOp: (op: OpLine) => void,
@@ -353,16 +358,32 @@ export async function runAgentActions(
 ): Promise<{ applied: OpLine[]; skipped: string[] }> {
   const applied: OpLine[] = [];
   const skipped: string[] = [];
-  for (const a of actions) {
-    const err = validate(getDoc(), a);
-    if (err) {
-      const line = `skipped: ${err}`;
-      skipped.push(describeAction(a) + ' — ' + err);
+  for (const call of calls) {
+    const def = agentToolByName(call.name);
+    if (!def) {
+      const line = `skipped: unknown tool "${call.name}"`;
+      skipped.push(line);
       onOp({ segments: [t(line)] });
       continue;
     }
-    dispatch(a);
-    const op = summarizeAction(a);
+    let action: Action;
+    try {
+      action = def.buildAction(call.args);
+    } catch (e) {
+      const line = `skipped: ${call.name} — invalid arguments (${e instanceof Error ? e.message : String(e)})`;
+      skipped.push(line);
+      onOp({ segments: [t(line)] });
+      continue;
+    }
+    const err = validate(getDoc(), action);
+    if (err) {
+      const line = `skipped: ${err}`;
+      skipped.push(describeAction(action) + ' — ' + err);
+      onOp({ segments: [t(line)] });
+      continue;
+    }
+    dispatch(action);
+    const op = summarizeAction(action);
     applied.push(op);
     onOp(op);
     await new Promise((r) => setTimeout(r, delayMs));
@@ -424,7 +445,7 @@ Applied (${applied.length}): ${applied.length > 0 ? applied.map(opText).join('; 
 Failed (${skipped.length}):
 ${skipped.map((s) => `- ${s}`).join('\n')}
 
-Emit ONE more {"message","actions"} JSON object containing ONLY corrected replacement actions for the failed ones (fix the coordinates, ids, colors, or bounds the errors name). Do NOT repeat actions that already applied. If the user's request is already fully satisfied despite the failures, emit {"message":"...","actions":[]} with an empty actions array and say so.
+Emit ONE more {"message","tool_calls"} JSON object containing ONLY corrected replacement tool calls for the failed ones (fix the coordinates, ids, colors, or bounds the errors name). Do NOT repeat calls that already applied. If the user's request is already fully satisfied despite the failures, emit {"message":"...","tool_calls":[]} with an empty tool_calls array and say so.
 
 ${describeDocument(doc, mode)}`;
 }
