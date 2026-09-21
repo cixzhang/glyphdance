@@ -13,6 +13,7 @@ import Timeline from './studio/Timeline.tsx';
 import { useIsMobile } from './studio/responsive.ts';
 import { useDocument } from './studio/store.ts';
 import { seedDocument } from './studio/seed.ts';
+import { registerWebMCPTools } from './studio/webmcp.ts';
 import {
   clearAutosavedDoc,
   loadAutosavedDoc,
@@ -104,6 +105,16 @@ export default function App() {
   // exists; otherwise we seed the demo scene.
   const [seedDoc] = useState(() => loadAutosavedDoc() ?? seedDocument(initialMode()));
   const { doc, dispatch, undo, redo, canUndo, canRedo } = useDocument(seedDoc);
+
+  // Expose the agent's action layer as WebMCP tools
+  // (navigator.modelContext) so agents running in the browser can invoke
+  // them directly. No-op where the browser doesn't implement WebMCP yet.
+  const docRef = useRef(doc);
+  docRef.current = doc;
+  useEffect(
+    () => registerWebMCPTools(() => docRef.current, dispatch),
+    [dispatch],
+  );
 
   // The canvas theme selector re-skins the whole studio: push the active
   // syntax swatch's colors into the Astryx Theme container as inline custom

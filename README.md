@@ -15,6 +15,7 @@ stamps, and compose full scenes.
 - **Frame timeline** — multi-frame animation with per-frame hold times, onion skinning
 - **Stamp library** — 20+ built-in stamps (invaders, critters, clouds, trees, flowers) plus your own custom stamps, including animated ones made from selections
 - **AI co-pilot** — chat with an agent that edits the canvas through the same validated action layer as the UI (BYO OpenRouter key, stored locally)
+- **WebMCP tools** — the agent's full action set is also exposed as `navigator.modelContext` tools, so agents running in the browser can invoke them directly instead of driving the DOM
 - **Export** — PNG (2×), animated GIF, TXT, and lossless JSON of all frames
 - **PWA** — installable, works offline, documents persist in localStorage
 
