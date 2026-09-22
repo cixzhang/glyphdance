@@ -33,6 +33,7 @@ import {
   type OpTarget,
   type ToolCall,
 } from './agent.ts';
+import type { ToolRuntime } from './agent-tools.ts';
 import {
   DEFAULT_MODEL,
   loadAgentSettings,
@@ -130,6 +131,7 @@ function AgentBody({
   onScrolled,
   onSelectStamp,
   onWorkingChange,
+  runtime,
 }: {
   doc: DocState;
   dispatch: (a: Action) => void;
@@ -145,6 +147,8 @@ function AgentBody({
   onSelectStamp: (id: string) => void;
   /** Fired whenever the agent starts/stops working (drives the top-bar icon). */
   onWorkingChange: (working: boolean) => void;
+  /** Shared capability runtime (undo/redo/transport for runtime tools). */
+  runtime: ToolRuntime;
 }) {
   const [settings, setSettings] = useState<AgentSettings>(() => loadAgentSettings());
   const [keyDraft, setKeyDraft] = useState(settings.apiKey);
@@ -232,12 +236,7 @@ function AgentBody({
       // Dispatch one tool call at a time so each edit lands visibly on the
       // canvas and stays individually undoable.
       const runPass = (id: string, calls: ToolCall[]) =>
-        runAgentToolCalls(
-          calls,
-          () => docRef.current,
-          dispatch,
-          (op) => appendOp(id, op),
-        );
+        runAgentToolCalls(calls, runtime, (op) => appendOp(id, op));
 
       let assistantMsg: ChatMessage = {
         id: msgId(),
@@ -484,6 +483,7 @@ function AgentPanel({
   onScrolled,
   onSelectStamp,
   onWorkingChange,
+  runtime,
 }: {
   open: boolean;
   onToggle: () => void;
@@ -497,6 +497,8 @@ function AgentPanel({
   onScrolled: () => void;
   onSelectStamp: (id: string) => void;
   onWorkingChange: (working: boolean) => void;
+  /** Shared capability runtime (undo/redo/transport for runtime tools). */
+  runtime: ToolRuntime;
 }) {
   // Inside the mobile bottom sheet the card is always expanded — the sheet
   // itself is the thing that opens and closes.
@@ -516,6 +518,7 @@ function AgentPanel({
           onScrolled={onScrolled}
           onSelectStamp={onSelectStamp}
           onWorkingChange={onWorkingChange}
+          runtime={runtime}
         />
       </VStack>
     );
@@ -542,6 +545,7 @@ function AgentPanel({
               onScrolled={onScrolled}
               onSelectStamp={onSelectStamp}
               onWorkingChange={onWorkingChange}
+              runtime={runtime}
             />
       </Collapsible>
     </Card>
@@ -644,6 +648,8 @@ interface InspectorProps {
   onAgentScrolled: () => void;
   onSelectStamp: (id: string) => void;
   onWorkingChange: (working: boolean) => void;
+  /** Shared capability runtime (undo/redo/transport for runtime tools). */
+  runtime: ToolRuntime;
 }
 
 function Inspector({
@@ -664,6 +670,7 @@ function Inspector({
   onAgentScrolled,
   onSelectStamp,
   onWorkingChange,
+  runtime,
 }: InspectorProps) {
   // Live doc for event-time reads: the inspector skips re-rendering on
   // playback ticks (memo at the bottom), so handlers that need the current
@@ -723,6 +730,7 @@ function Inspector({
               onScrolled={onAgentScrolled}
               onSelectStamp={onSelectStamp}
               onWorkingChange={onWorkingChange}
+              runtime={runtime}
             />
           </div>
         </BottomSheet>
@@ -744,6 +752,7 @@ function Inspector({
               onScrolled={onAgentScrolled}
               onSelectStamp={onSelectStamp}
               onWorkingChange={onWorkingChange}
+              runtime={runtime}
             />
       <DocumentPanel doc={doc} dispatch={dispatch} mode={mode} />
       <ExportPanel doc={doc} getActive={getActive} />
@@ -787,7 +796,8 @@ export function inspectorEqual(prev: InspectorProps, next: InspectorProps): bool
     prev.scrollToMessage === next.scrollToMessage &&
     prev.onAgentScrolled === next.onAgentScrolled &&
     prev.onSelectStamp === next.onSelectStamp &&
-    prev.onWorkingChange === next.onWorkingChange
+    prev.onWorkingChange === next.onWorkingChange &&
+    prev.runtime === next.runtime
   );
 }
 

@@ -1,9 +1,21 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { IconButton } from '@astryxdesign/core/IconButton';
+import { Button } from '@astryxdesign/core/Button';
+import { Popover } from '@astryxdesign/core/Popover';
 import { ToggleButton } from '@astryxdesign/core/ToggleButton';
 import { Text } from '@astryxdesign/core/Text';
-import { IconOnion, IconPlus, IconDuplicate, IconTrash } from './icons';
+import {
+  IconOnion,
+  IconPlus,
+  IconMinus,
+  IconDuplicate,
+  IconTrash,
+  IconPanels,
+  IconStepBack,
+  IconStepForward,
+  IconEraser,
+} from './icons';
 import Transport from './Transport.tsx';
 import { AsciiThumb } from './Canvas.tsx';
 import type { DocState } from './document.ts';
@@ -68,6 +80,25 @@ const styles = stylex.create({
     alignItems: 'center',
     gap: 6,
     '@media (max-width: 760px)': { display: 'none' },
+  },
+  frameMenu: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
+    padding: 12,
+    minWidth: 210,
+  },
+  menuRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  holdValue: {
+    fontFamily: 'var(--font-family-code)',
+    fontSize: 12,
+    minWidth: 52,
+    textAlign: 'center',
   },
   filmstrip: {
     flex: 1,
@@ -163,6 +194,33 @@ export default function Timeline(props: TimelineProps) {
   const markStripTouch = () => {
     lastStripTouch.current = Date.now();
   };
+  // Frame options popover: the catalog's frame tools that have no
+  // always-visible button — hold time, reorder, clear. Same actions the
+  // agent's set_hold/move_frame/clear_frame tools dispatch.
+  const [frameMenuOpen, setFrameMenuOpen] = useState(false);
+  const holdMs = doc.frames[active]?.holdMs ?? 400;
+  const nudgeHold = (delta: number) =>
+    dispatch({
+      type: 'setHold',
+      index: active,
+      holdMs: Math.min(5000, Math.max(50, holdMs + delta)),
+    });
+  const moveFrameEarlier = () => {
+    if (active > 0) {
+      dispatch({ type: 'moveFrame', from: active, to: active - 1 });
+      setFrameMenuOpen(false);
+    }
+  };
+  const moveFrameLater = () => {
+    if (active < doc.frames.length - 1) {
+      dispatch({ type: 'moveFrame', from: active, to: active + 1 });
+      setFrameMenuOpen(false);
+    }
+  };
+  const clearActiveFrame = () => {
+    dispatch({ type: 'clearFrame', frame: active });
+    setFrameMenuOpen(false);
+  };
 
   return (
     <div
@@ -203,6 +261,82 @@ export default function Timeline(props: TimelineProps) {
                 isDisabled={doc.frames.length <= 1}
                 onClick={() => dispatch({ type: 'deleteFrame', index: active })}
               />
+              {/* Frame options: hold time, reorder, clear — the catalog's
+                  frame tools that don't have an always-visible button. */}
+              <Popover
+                isOpen={frameMenuOpen}
+                onOpenChange={setFrameMenuOpen}
+                placement="above"
+                alignment="start"
+                label="Frame options"
+                content={
+                  <div {...stylex.props(styles.frameMenu)}>
+                    <div {...stylex.props(styles.menuRow)}>
+                      <Text>Hold</Text>
+                      <div {...stylex.props(styles.menuRow)}>
+                        <IconButton
+                          label="Shorter hold"
+                          icon={<IconMinus />}
+                          variant="ghost"
+                          size="sm"
+                          tooltip="Hold this frame for less time"
+                          isDisabled={holdMs <= 50}
+                          onClick={() => nudgeHold(-100)}
+                        />
+                        <span {...stylex.props(styles.holdValue)}>
+                          {holdMs}ms
+                        </span>
+                        <IconButton
+                          label="Longer hold"
+                          icon={<IconPlus />}
+                          variant="ghost"
+                          size="sm"
+                          tooltip="Hold this frame for longer"
+                          isDisabled={holdMs >= 5000}
+                          onClick={() => nudgeHold(100)}
+                        />
+                      </div>
+                    </div>
+                    <div {...stylex.props(styles.menuRow)}>
+                      <Button
+                        label="Move frame earlier"
+                        variant="ghost"
+                        size="sm"
+                        isDisabled={active === 0}
+                        onClick={moveFrameEarlier}
+                      >
+                        <IconStepBack /> Earlier
+                      </Button>
+                      <Button
+                        label="Move frame later"
+                        variant="ghost"
+                        size="sm"
+                        isDisabled={active === doc.frames.length - 1}
+                        onClick={moveFrameLater}
+                      >
+                        Later <IconStepForward />
+                      </Button>
+                    </div>
+                    <Button
+                      label="Clear frame"
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearActiveFrame}
+                    >
+                      <IconEraser /> Clear frame
+                    </Button>
+                  </div>
+                }
+              >
+                <IconButton
+                  label="Frame options"
+                  icon={<IconPanels />}
+                  variant="ghost"
+                  size="sm"
+                  tooltip="Frame options: hold time, reorder, clear"
+                  onClick={() => setFrameMenuOpen(true)}
+                />
+              </Popover>
               {/* Onion skinning is persistent binary state — a ToggleButton. */}
               <ToggleButton
                 label="Toggle onion skinning"

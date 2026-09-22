@@ -2,10 +2,11 @@
 //
 // The browser calls OpenRouter directly with the user's own BYO key (see
 // agent-settings.ts). The model replies with a single JSON object containing
-// a human-readable message plus a list of document actions; every action is
-// re-validated by the typed action layer before it is dispatched, so the
-// agent can only do what the action layer allows — the same actions a human
-// can take, through the same undoable path.
+// a human-readable message plus a list of tool calls; every call resolves
+// through the shared agent-tools catalog — document actions are re-validated
+// by the typed action layer before dispatch, runtime tools (undo/redo,
+// transport) hit the same functions the human UI uses — so the agent can
+// only do what the catalog allows, through the same paths a human takes.
 
 import {
   cellIndex,
@@ -15,6 +16,7 @@ import { validate, type Action } from './actions.ts';
 import {
   agentToolByName,
   renderToolDocs,
+  type ToolRuntime,
 } from './agent-tools.ts';
 import type { AgentSettings } from './agent-settings.ts';
 import {
@@ -351,8 +353,7 @@ export function summarizeAction(a: Action): OpLine {
  */
 export async function runAgentToolCalls(
   calls: ToolCall[],
-  getDoc: () => DocState,
-  dispatch: (a: Action) => void,
+  rt: ToolRuntime,
   onOp: (op: OpLine) => void,
   delayMs = 350,
 ): Promise<{ applied: OpLine[]; skipped: string[] }> {
@@ -366,6 +367,20 @@ export async function runAgentToolCalls(
       onOp({ segments: [t(line)] });
       continue;
     }
+    if (def.run !== undefined) {
+      // Runtime tool (undo/redo, transport): runs against live app state.
+      const op = { segments: [t(def.run(rt, call.args))] };
+      applied.push(op);
+      onOp(op);
+      await new Promise((r) => setTimeout(r, delayMs));
+      continue;
+    }
+    if (def.buildAction === undefined) {
+      const line = `skipped: ${call.name} — tool has no executor`;
+      skipped.push(line);
+      onOp({ segments: [t(line)] });
+      continue;
+    }
     let action: Action;
     try {
       action = def.buildAction(call.args);
@@ -375,14 +390,14 @@ export async function runAgentToolCalls(
       onOp({ segments: [t(line)] });
       continue;
     }
-    const err = validate(getDoc(), action);
+    const err = validate(rt.getDoc(), action);
     if (err) {
       const line = `skipped: ${err}`;
       skipped.push(describeAction(action) + ' — ' + err);
       onOp({ segments: [t(line)] });
       continue;
     }
-    dispatch(action);
+    rt.dispatch(action);
     const op = summarizeAction(action);
     applied.push(op);
     onOp(op);

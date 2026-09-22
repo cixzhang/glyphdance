@@ -4,12 +4,38 @@
 //   - WebMCP: webmcp.ts registers each def as a navigator.modelContext tool.
 //   - In-app co-pilot: agent.ts renders each def into the system prompt and
 //     parses the model's {"name","arguments"} tool calls back through the
-//     same buildAction + validate path.
+//     same executor — buildAction + validate for document actions, run(rt)
+//     for runtime tools (undo/redo, transport).
 //
-// To add or change a tool, edit it here once — both surfaces follow.
+// The SAME defs also power the human UI: tool-parity.ts maps toolbar and
+// panel controls onto catalog tool names, so a capability can't exist for
+// the agent but not the human (or vice versa).
+//
+// To add or change a tool, edit it here once — every surface follows.
 
 import type { Action, PaintCell, RecolorCell } from './actions.ts';
 import type { CustomStamp, DocState } from './document.ts';
+
+/** The live app surface runtime tools run against. The in-app agent,
+ *  WebMCP, and the human UI all reach undo/redo/transport through this
+ *  same object, so a capability behaves identically no matter who invokes
+ *  it. */
+export interface ToolRuntime {
+  /** The live document, for tools that need to read it. */
+  getDoc: () => DocState;
+  /** Dispatch a validated document action (the human edit path). */
+  dispatch: (a: Action) => void;
+  /** Store commands — the same functions behind the toolbar buttons and
+   *  keyboard shortcuts. Safe no-ops when the stacks are empty. */
+  undo: () => void;
+  redo: () => void;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
+  /** Transport — the same state behind the timeline play button. */
+  play: () => void;
+  pause: () => void;
+  isPlaying: () => boolean;
+}
 
 export interface AgentToolAnnotations {
   readOnlyHint?: boolean;
@@ -19,16 +45,20 @@ export interface AgentToolAnnotations {
 export interface AgentToolDef {
   /** snake_case tool name — the WebMCP tool name and the co-pilot's call name. */
   name: string;
-  /** The Action type this tool builds. */
-  actionType: Action['type'];
   description: string;
   /** JSON Schema for the tool's arguments — the contract for both surfaces. */
   inputSchema: Record<string, unknown>;
   annotations?: AgentToolAnnotations;
-  /** Build the typed Action from parsed tool arguments (throws on bad shape). */
-  buildAction: (args: Record<string, unknown>) => Action;
-  /** Example arguments, rendered into the co-pilot's system prompt. */
+  /** Arguments that exercise the schema, used by tests and docs. */
   exampleArgs: Record<string, unknown>;
+  /** Document-action tools build a typed Action, which is then validated
+   *  and dispatched through the same path as every human edit. */
+  actionType?: Action['type'];
+  buildAction?: (args: Record<string, unknown>) => Action;
+  /** Runtime tools run against live app state instead of building an
+   *  Action (undo/redo, transport). Returns a short human-readable
+   *  result line for the op log. Exactly one of buildAction/run is set. */
+  run?: (rt: ToolRuntime, args: Record<string, unknown>) => string;
 }
 
 // --- argument coercion (throws on bad shape; callers report it) ---
@@ -439,6 +469,72 @@ export const AGENT_TOOLS: AgentToolDef[] = [
       y: 7,
       fg: '#ff79c6',
       bg: '',
+    },
+  },
+  {
+    name: 'undo',
+    description:
+      'Undo the last change to the document — the same undo stack as the toolbar Undo button and keyboard shortcut. Reports "nothing to undo" when the stack is empty.',
+    inputSchema: { type: 'object', properties: {} },
+    exampleArgs: {},
+    run: (rt) => {
+      if (!rt.canUndo()) return 'nothing to undo';
+      rt.undo();
+      return 'undid the last change';
+    },
+  },
+  {
+    name: 'redo',
+    description:
+      'Redo the last undone change — the same redo stack as the toolbar Redo button and keyboard shortcut. Reports "nothing to redo" when the stack is empty.',
+    inputSchema: { type: 'object', properties: {} },
+    exampleArgs: {},
+    run: (rt) => {
+      if (!rt.canRedo()) return 'nothing to redo';
+      rt.redo();
+      return 'redid the last undone change';
+    },
+  },
+  {
+    name: 'set_font',
+    actionType: 'setFont',
+    description:
+      'Set the canvas pixel font — the same font picker as the Document panel. fontId is one of: "cozette" (default, widest glyph coverage), "vga" (authentic IBM VGA 8x16), "jetbrains" (JetBrains Mono), "system" (system monospace).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        fontId: {
+          type: 'string',
+          description: 'one of cozette, vga, jetbrains, system',
+        },
+      },
+      required: ['fontId'],
+    },
+    buildAction: (args) => ({ type: 'setFont', fontId: reqStr(args, 'fontId') }),
+    exampleArgs: { fontId: 'vga' },
+  },
+  {
+    name: 'play',
+    description:
+      'Start playing the animation — the same state as the timeline play button. Reports "already playing" when playback is already running.',
+    inputSchema: { type: 'object', properties: {} },
+    exampleArgs: {},
+    run: (rt) => {
+      if (rt.isPlaying()) return 'already playing';
+      rt.play();
+      return 'started playback';
+    },
+  },
+  {
+    name: 'pause',
+    description:
+      'Pause the animation — the same state as the timeline pause button. Pausing leaves the playhead on the current frame so you can inspect or edit it. Reports "already paused" when playback is already stopped.',
+    inputSchema: { type: 'object', properties: {} },
+    exampleArgs: {},
+    run: (rt) => {
+      if (!rt.isPlaying()) return 'already paused';
+      rt.pause();
+      return 'paused playback';
     },
   },
 ];

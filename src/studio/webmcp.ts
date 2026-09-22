@@ -12,9 +12,12 @@
 // exists on both surfaces).
 
 import { validate, type Action } from './actions.ts';
-import { AGENT_TOOLS, type AgentToolDef } from './agent-tools.ts';
+import {
+  AGENT_TOOLS,
+  type AgentToolDef,
+  type ToolRuntime,
+} from './agent-tools.ts';
 import { describeDocument, opText, summarizeAction } from './agent.ts';
-import type { DocState } from './document.ts';
 
 /** MCP CallToolResult shape WebMCP execute handlers return. */
 export interface WebMCPResult {
@@ -54,19 +57,16 @@ const err = (text: string): WebMCPResult => ({
 
 /**
  * Build the full WebMCP tool set from the shared agent tool catalog.
- * getDoc must return the live document at call time; dispatch applies an
- * already-validated action through the undoable store.
+ * The ToolRuntime carries the live document getter, the validated dispatch
+ * path, and the store/transport functions — the same object the in-app
+ * agent and the human UI use.
  */
-export function buildWebMCPTools(
-  getDoc: () => DocState,
-  dispatch: (a: Action) => void,
-): WebMCPToolDefinition[] {
+export function buildWebMCPTools(rt: ToolRuntime): WebMCPToolDefinition[] {
   /** Run one action through validate + dispatch, like the in-app agent. */
   const run = (action: Action): WebMCPResult => {
-    const doc = getDoc();
-    const problem = validate(doc, action);
+    const problem = validate(rt.getDoc(), action);
     if (problem) return err(`rejected: ${problem}`);
-    dispatch(action);
+    rt.dispatch(action);
     return ok(opText(summarizeAction(action)));
   };
 
@@ -76,6 +76,14 @@ export function buildWebMCPTools(
     inputSchema: def.inputSchema,
     annotations: def.annotations,
     execute: async (args) => {
+      if (def.run !== undefined) {
+        // Runtime tool (undo/redo, transport): same function the human UI
+        // calls; no-ops report themselves as plain text, not errors.
+        return ok(def.run(rt, args));
+      }
+      if (def.buildAction === undefined) {
+        return err('tool has no executor');
+      }
       let action: Action;
       try {
         action = def.buildAction(args);
@@ -96,7 +104,7 @@ export function buildWebMCPTools(
         'Read the current document: canvas size, frame count, active frame, theme, canvas font, user stamps, and every frame rendered as text with a column ruler, row numbers, and a color legend. Call this first to see what you are editing. Frame indices in actions are 0-based; the UI shows them 1-based.',
       inputSchema: { type: 'object', properties: {} },
       annotations: { readOnlyHint: true },
-      execute: async () => ok(describeDocument(getDoc(), 'dark')),
+      execute: async () => ok(describeDocument(rt.getDoc(), 'dark')),
     },
   ];
 }
@@ -115,10 +123,7 @@ export function webMCPavailable(): boolean {
  * console note) where the browser doesn't implement WebMCP yet.
  * Returns an unregister function for cleanup.
  */
-export function registerWebMCPTools(
-  getDoc: () => DocState,
-  dispatch: (a: Action) => void,
-): () => void {
+export function registerWebMCPTools(rt: ToolRuntime): () => void {
   if (!webMCPavailable()) {
     console.info(
       '[glyphdance] WebMCP not available in this browser — agent tools not exposed via navigator.modelContext',
@@ -126,7 +131,7 @@ export function registerWebMCPTools(
     return () => {};
   }
   const mc = navigator.modelContext!;
-  const tools = buildWebMCPTools(getDoc, dispatch);
+  const tools = buildWebMCPTools(rt);
   for (const tool of tools) {
     try {
       mc.registerTool(tool);

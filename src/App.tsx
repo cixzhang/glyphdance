@@ -14,6 +14,7 @@ import { useIsMobile } from './studio/responsive.ts';
 import { useDocument } from './studio/store.ts';
 import { seedDocument } from './studio/seed.ts';
 import { registerWebMCPTools } from './studio/webmcp.ts';
+import type { ToolRuntime } from './studio/agent-tools.ts';
 import {
   clearAutosavedDoc,
   loadAutosavedDoc,
@@ -111,10 +112,6 @@ export default function App() {
   // them directly. No-op where the browser doesn't implement WebMCP yet.
   const docRef = useRef(doc);
   docRef.current = doc;
-  useEffect(
-    () => registerWebMCPTools(() => docRef.current, dispatch),
-    [dispatch],
-  );
 
   // The canvas theme selector re-skins the whole studio: push the active
   // syntax swatch's colors into the Astryx Theme container as inline custom
@@ -197,6 +194,31 @@ export default function App() {
   const togglePlay = useCallback(() => setPlaying((p) => !p), []);
   const toggleOnion = useCallback(() => setOnionOn((o) => !o), []);
   const toggleAgent = useCallback(() => setAgentOpen((o) => !o), []);
+  // The shared capability runtime: the same object powers WebMCP tools, the
+  // in-app co-pilot's runtime tools (undo/redo/play/pause), and the parity
+  // registry's human surfaces. Refs mirror the changing values so the
+  // object stays referentially stable for memoized children.
+  const playingRef = useRef(playing);
+  playingRef.current = playing;
+  const canUndoRef = useRef(canUndo);
+  canUndoRef.current = canUndo;
+  const canRedoRef = useRef(canRedo);
+  canRedoRef.current = canRedo;
+  const runtime = useMemo<ToolRuntime>(
+    () => ({
+      getDoc: () => docRef.current,
+      dispatch,
+      undo,
+      redo,
+      canUndo: () => canUndoRef.current,
+      canRedo: () => canRedoRef.current,
+      play: () => setPlaying(true),
+      pause: () => setPlaying(false),
+      isPlaying: () => playingRef.current,
+    }),
+    [dispatch, undo, redo],
+  );
+  useEffect(() => registerWebMCPTools(runtime), [runtime]);
 
   // Desktop undo/redo shortcuts: Cmd/Ctrl+Z and Cmd/Ctrl+Shift+Z (or
   // Ctrl+Y). Skipped inside text fields so the field's native undo wins.
@@ -400,6 +422,7 @@ export default function App() {
       onAgentScrolled={handleAgentScrolled}
       onSelectStamp={selectStamp}
       onWorkingChange={setAgentWorking}
+      runtime={runtime}
     />
   );
 

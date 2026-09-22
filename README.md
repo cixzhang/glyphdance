@@ -15,7 +15,8 @@ stamps, and compose full scenes.
 - **Frame timeline** — multi-frame animation with per-frame hold times, onion skinning
 - **Stamp library** — 20+ built-in stamps (invaders, critters, clouds, trees, flowers) plus your own custom stamps, including animated ones made from selections
 - **AI co-pilot** — chat with an agent that edits the canvas through the same validated action layer as the UI (BYO OpenRouter key, stored locally)
-- **WebMCP tools** — the agent's full action set is also exposed as `navigator.modelContext` tools, so agents running in the browser can invoke them directly instead of driving the DOM
+- **WebMCP tools** — the agent's full capability set (document actions plus undo/redo, transport, and canvas font) is also exposed as `navigator.modelContext` tools, so agents running in the browser can invoke them directly instead of driving the DOM
+- **Human/agent parity** — the toolbar, timeline, transport, and panels render from the same capability registry (`src/studio/tool-parity.ts`) that the agent and WebMCP tools come from; every capability is reachable by both humans and agents
 - **Export** — PNG (2×), animated GIF, TXT, and lossless JSON of all frames
 - **PWA** — installable, works offline, documents persist in localStorage
 

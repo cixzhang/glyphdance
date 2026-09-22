@@ -25,6 +25,7 @@ import type { Brush, ToolId } from './brush.ts';
 import type { DocState } from './document.ts';
 import { docContentEqual } from './document.ts';
 import type { Action } from './actions.ts';
+import { TOOLBAR, isCanvasTool, toolbarLabel } from './tool-parity.ts';
 
 const styles = stylex.create({
   rail: {
@@ -106,23 +107,27 @@ const styles = stylex.create({
   },
 });
 
-// Every tool paints today except Select, which stays an honest stub until
-// region selection lands.
-const LIVE_TOOLS = new Set(['select', 'brush', 'paint', 'erase', 'fill', 'text', 'stamp', 'pick']);
+// The toolbar's buttons come from the parity registry (tool-parity.ts):
+// order, ids, and labels live there, next to the catalog capabilities each
+// button exercises. Icons stay here — they're presentation, not capability.
+const TOOL_ICONS: Record<ToolId, ReactNode> = {
+  select: <IconSelect />,
+  brush: <IconBrush />,
+  stamp: <IconStamp />,
+  text: <IconText />,
+  paint: <IconPaint />,
+  fill: <IconFill />,
+  pick: <IconEyedropper />,
+  erase: <IconEraser />,
+};
 
 // Shared with the canvas: the mobile tool badge shows the active tool's
-// icon + label, so this list is the single source of truth. Order is the
-// toolbar order: brush, stamp, text, paint, eraser, fill, eyedropper, then
-// the Colors button (rendered separately, right after the group).
-export const TOOLS = [  { id: 'select', icon: <IconSelect />, label: 'Select' },
-  { id: 'brush', icon: <IconBrush />, label: 'Brush' },
-  { id: 'stamp', icon: <IconStamp />, label: 'Stamp' },
-  { id: 'text', icon: <IconText />, label: 'Text' },
-  { id: 'paint', icon: <IconPaint />, label: 'Paint' },
-  { id: 'fill', icon: <IconFill />, label: 'Fill' },
-  { id: 'pick', icon: <IconEyedropper />, label: 'Eyedropper' },
-  { id: 'erase', icon: <IconEraser />, label: 'Eraser' },
-] as const;
+// icon + label, so this derived list is its single source of truth.
+export const TOOLS = TOOLBAR.filter(isCanvasTool).map((e) => ({
+  id: e.id,
+  label: e.label,
+  icon: TOOL_ICONS[e.id],
+}));
 
 export function ColorSwatchIcon({ fg, bg }: { fg: string; bg: string }) {
   const transparent = bg === '';
@@ -247,9 +252,8 @@ function ToolRail({
         onChange={handleGroupChange}
         xstyle={styles.group}
       >
-        {TOOLS.filter((t) => LIVE_TOOLS.has(t.id)).map((t) => {
-          // 'select' never passes the filter, so the cast is honest.
-          const id = t.id as ToolId;
+        {TOOLS.map((t) => {
+          const id = t.id;
           if (id === 'brush') return toolButton(id, t.label, t.icon, brushRef);
           if (id === 'stamp') return toolButton(id, t.label, t.icon, stampRef);
           return toolButton(id, t.label, t.icon);
@@ -258,7 +262,7 @@ function ToolRail({
       {/* Mobile: Colors lives in the toolbar (tappable), opening the sheet. */}
       {isMobile && (
         <IconButton
-          label="Colors"
+          label={toolbarLabel("colors")}
           icon={<ColorSwatchIcon fg={brush.fg} bg={brush.bg} />}
           variant="ghost"
           size="md"
@@ -338,13 +342,13 @@ function ToolRail({
             onOpenChange={onColorOpenChange}
             placement={placement}
             alignment="start"
-            label="Colors"
+            label={toolbarLabel("colors")}
             content={
               <ColorPopoverContent brush={brush} onChange={onBrushChange} />
             }
           >
             <IconButton
-              label="Colors"
+              label={toolbarLabel("colors")}
               icon={<ColorSwatchIcon fg={brush.fg} bg={brush.bg} />}
               variant="ghost"
               size="md"
@@ -357,7 +361,7 @@ function ToolRail({
       )}
       <div {...stylex.props(styles.spacer)} />
       <IconButton
-        label="Undo"
+        label={toolbarLabel("undo")}
         xstyle={styles.tool}
         icon={<IconUndo />}
         variant="ghost"
@@ -367,7 +371,7 @@ function ToolRail({
         onClick={onUndo}
       />
       <IconButton
-        label="Redo"
+        label={toolbarLabel("redo")}
         xstyle={styles.tool}
         icon={<IconRedo />}
         variant="ghost"
