@@ -199,11 +199,15 @@ function ToolRail({
 
   const handleGroupChange = (v: string | null) => {
     if (v === null) {
-      // Re-tapped the active tool: toggle its menu. (On mobile the bottom
-      // sheet has no anchor toggle of its own, so this is the only way
-      // back out via the toolbar.)
-      if (brush.tool === 'brush') setOpen(open === 'glyph' ? null : 'glyph');
-      else if (brush.tool === 'stamp') setOpen(open === 'stamp' ? null : 'stamp');
+      // Re-tapped the active tool. On mobile the bottom sheet has no anchor
+      // toggle of its own, so this is the only way back out via the toolbar.
+      // On desktop the Popover's anchor toggle owns open/close (via
+      // onOpenChange) — doing it here too fights the native toggle with a
+      // stale closure and reopens the menu right after it closes.
+      if (isMobile) {
+        if (brush.tool === 'brush') setOpen(open === 'glyph' ? null : 'glyph');
+        else if (brush.tool === 'stamp') setOpen(open === 'stamp' ? null : 'stamp');
+      }
       return;
     }
     onBrushChange({ tool: v as ToolId });
@@ -354,7 +358,6 @@ function ToolRail({
               size="md"
               tooltip={`Colors — FG ${brush.fg}, BG ${brush.bg === '' ? 'transparent' : brush.bg}`}
               xstyle={styles.tool}
-              onClick={() => onColorOpenChange(true)}
             />
           </Popover>
         </>
